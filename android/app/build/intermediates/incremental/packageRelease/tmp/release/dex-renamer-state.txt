@@ -1,0 +1,4 @@
+#Mon Sep 01 21:42:42 JST 2025
+base.0=/Users/KT/Desktop/Project8/android/app/build/intermediates/dex/release/minifyReleaseWithR8/classes.dex
+path.0=classes.dex
+renamed.0=classes.dex
