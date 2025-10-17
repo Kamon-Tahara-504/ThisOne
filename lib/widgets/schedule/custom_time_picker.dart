@@ -84,6 +84,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     final currentIndex = (currentOffset / itemExtent).round();
     final page = currentOffset / itemExtent;
 
+    // スクロール位置が変わった場合は常にUIを更新（リアルタイム表示のため）
     if (_scrollOffset != page) {
       setState(() {
         _scrollOffset = page;
@@ -103,6 +104,19 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
     });
     widget.onChanged(_toLogicalIndex(index));
     HapticFeedback.selectionClick();
+  }
+
+  // スクロール中は現在の位置、停止中は選択されたインデックスから時刻を取得
+  String _getCurrentDisplayTime() {
+    if (_isScrolling) {
+      // スクロール中は_scrollOffsetから現在の時刻を計算
+      final currentIndex = _scrollOffset.round().clamp(0, _totalItems - 1);
+      final logicalIndex = _toLogicalIndex(currentIndex);
+      return widget.timeOptions[logicalIndex];
+    } else {
+      // 停止中は確定した選択インデックスを使用
+      return widget.timeOptions[_toLogicalIndex(_selectedIndex)];
+    }
   }
 
   @override
@@ -248,7 +262,7 @@ class _CustomTimePickerState extends State<CustomTimePicker> {
                     duration: const Duration(milliseconds: 120),
                     curve: Curves.easeOut,
                     child: Text(
-                      widget.timeOptions[_toLogicalIndex(_selectedIndex)],
+                      _getCurrentDisplayTime(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
