@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'scroll_controller_manager.dart';
 
 /// ヘッダーの表示制御を管理するクラス
 class HeaderController extends ChangeNotifier {
-  bool _isHeaderVisible = true;
+  double _headerOffset = 0.0; // 0.0=完全表示, 1.0=完全非表示
   double _lastScrollPosition = 0.0;
+  bool _isScrollingDown = false;
 
   // 定数
   static const double _headerHeight = 54.0;
   static const Duration _headerAnimationDuration = Duration(milliseconds: 200);
 
-  /// ヘッダーの表示状態
-  bool get isHeaderVisible => _isHeaderVisible;
+  /// ヘッダーのオフセット（0.0=完全表示, 1.0=完全非表示）
+  double get headerOffset => _headerOffset;
+
+  /// ヘッダーの表示状態（互換性のため残す）
+  bool get isHeaderVisible => _headerOffset < 0.5;
 
   /// ヘッダーの高さ
   static double get headerHeight => _headerHeight;
@@ -28,47 +31,45 @@ class HeaderController extends ChangeNotifier {
     // 現在のページのみ監視
     if (currentPageIndex != targetPageIndex) return;
 
-    final scrollDelta = currentPosition - _lastScrollPosition;
-
-    // 最小スクロール量のフィルタ
-    if (scrollDelta.abs() > ScrollControllerManager.scrollSensitivity) {
-      final shouldChangeState = _shouldChangeHeaderVisibility(scrollDelta);
-      if (shouldChangeState) {
-        _updateHeaderVisibility(scrollDelta);
+    // 最上部付近（50px以下）に到達したらヘッダーを完全表示
+    if (currentPosition <= 50.0) {
+      if (_headerOffset != 0.0) {
+        _headerOffset = 0.0;
+        notifyListeners();
       }
+      _lastScrollPosition = currentPosition;
+      return;
     }
 
-    // 前回位置を更新
+    // スクロール量を計算
+    final delta = currentPosition - _lastScrollPosition;
+
+    // スクロール量が微小な場合は無視
+    if (delta.abs() < 0.5) {
+      return;
+    }
+
+    // スクロール方向の検出
+    final isNowScrollingDown = delta > 0;
+
+    // スクロール方向が変わったらリセット
+    if (isNowScrollingDown != _isScrollingDown) {
+      _isScrollingDown = isNowScrollingDown;
+    }
+
+    // スクロール量に応じてoffsetを計算
+    // deltaを_headerHeightで割ることで、ヘッダーの高さ分スクロールしたら完全に隠れる/表示される
+    final offsetDelta = delta / _headerHeight;
+
+    if (_isScrollingDown) {
+      // 下スクロール: ヘッダーを隠す（offsetを増やす）
+      _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+    } else {
+      // 上スクロール: ヘッダーを表示（offsetを減らす）
+      _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+    }
+
     _lastScrollPosition = currentPosition;
-  }
-
-  /// ヘッダーの表示/非表示を変更すべきかを判定
-  bool _shouldChangeHeaderVisibility(double scrollDelta) {
-    if (scrollDelta > 0) {
-      // 下スクロール：ヘッダーを隠す
-      if (_isHeaderVisible &&
-          scrollDelta > ScrollControllerManager.scrollSensitivity) {
-        return true;
-      }
-    } else {
-      // 上スクロール：ヘッダーを表示
-      if (!_isHeaderVisible &&
-          (-scrollDelta) > ScrollControllerManager.scrollThreshold) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /// ヘッダーの表示状態を更新
-  void _updateHeaderVisibility(double scrollDelta) {
-    if (scrollDelta > 0) {
-      // 下スクロール：ヘッダーを隠す
-      _isHeaderVisible = false;
-    } else {
-      // 上スクロール：ヘッダーを表示
-      _isHeaderVisible = true;
-    }
     notifyListeners();
   }
 
@@ -78,8 +79,10 @@ class HeaderController extends ChangeNotifier {
     const baseOffset = 4.0;
     final baseTop = statusBarHeight + baseOffset;
 
-    // 表示時は通常、非表示時は詰める
-    return _isHeaderVisible ? baseTop + _headerHeight : statusBarHeight;
+    // offsetに応じて連続的にパディングを計算
+    // offset=0.0(完全表示): baseTop + _headerHeight
+    // offset=1.0(完全非表示): statusBarHeight
+    return baseTop + (_headerHeight * (1.0 - _headerOffset));
   }
 
   /// ヘッダーの位置を計算
@@ -88,22 +91,26 @@ class HeaderController extends ChangeNotifier {
     const baseOffset = 4.0;
     final baseTop = statusBarHeight + baseOffset;
 
-    // 表示/非表示の切り替え
-    return _isHeaderVisible ? baseTop : baseTop - _headerHeight;
+    // offsetに応じて連続的に位置を計算
+    // offset=0.0(完全表示): baseTop
+    // offset=1.0(完全非表示): baseTop - _headerHeight
+    return baseTop - (_headerHeight * _headerOffset);
   }
 
   /// ヘッダーの表示状態を手動で設定
   void setHeaderVisible(bool visible) {
-    if (_isHeaderVisible != visible) {
-      _isHeaderVisible = visible;
+    final targetOffset = visible ? 0.0 : 1.0;
+    if (_headerOffset != targetOffset) {
+      _headerOffset = targetOffset;
       notifyListeners();
     }
   }
 
   /// ヘッダーの表示状態をリセット
   void reset() {
-    _isHeaderVisible = true;
+    _headerOffset = 0.0;
     _lastScrollPosition = 0.0;
+    _isScrollingDown = false;
     notifyListeners();
   }
 

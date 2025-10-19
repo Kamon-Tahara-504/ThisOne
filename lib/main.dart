@@ -21,7 +21,7 @@ class CustomPageScrollPhysics extends ScrollPhysics {
 
   const CustomPageScrollPhysics({
     super.parent,
-    this.speedMultiplier = 1.0, // 1.0が標準速度、大きいほど速い、小さいほど遅い
+    this.speedMultiplier = 0.5, // 1.0が標準速度、大きいほど速い、小さいほど遅い
   });
 
   @override
@@ -334,10 +334,8 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
           ),
-          // アニメーションヘッダー
-          AnimatedPositioned(
-            duration: HeaderController.headerAnimationDuration,
-            curve: Curves.easeInOut,
+          // スクロール連動ヘッダー
+          Positioned(
             top: _headerController.calculateHeaderTop(context),
             left: 0,
             right: 0,
@@ -348,7 +346,7 @@ class _MainScreenState extends State<MainScreen> {
                 CollapsibleAppBar(
                   onAccountButtonPressed:
                       () => accountInfoOverlay.handleAccountButtonPressed(),
-                  scrollProgress: _headerController.isHeaderVisible ? 0.0 : 1.0,
+                  scrollProgress: _headerController.headerOffset,
                 ),
                 // ガイドライン
                 Container(
