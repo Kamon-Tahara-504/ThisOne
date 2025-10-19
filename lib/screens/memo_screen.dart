@@ -299,7 +299,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
                 child: ListView.builder(
                   controller: widget.scrollController,
                   padding: const EdgeInsets.only(
-                    top: 60,
+                    top: 12,
                     left: 16,
                     right: 16,
                     bottom: 16,
@@ -319,12 +319,50 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
                   },
                 ),
               ),
-          // 色フィルタリングボタンとステータス表示（浮かせる）
-          MemoFilterHeader(
-            selectedColorFilter: _currentFilter.colorTag,
-            memoCount: filteredMemos.length,
-            onShowColorFilterBottomSheet: _showColorFilterBottomSheet,
-            onClearColorFilter: _clearColorFilter,
+          // メモ数表示（メモリストと重なる位置）
+          Positioned(
+            top: 4,
+            right: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF2B2B2B).withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[700]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.description, size: 14, color: Colors.grey[400]),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${filteredMemos.length}件',
+                    style: TextStyle(
+                      color: Colors.grey[300],
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 色フィルタリングボタン（右下）
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: MemoFilterHeader(
+              selectedColorFilter: _currentFilter.colorTag,
+              onShowColorFilterBottomSheet: _showColorFilterBottomSheet,
+              onClearColorFilter: _clearColorFilter,
+            ),
           ),
         ],
       ),
