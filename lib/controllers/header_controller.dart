@@ -52,8 +52,11 @@ class HeaderController extends ChangeNotifier {
     final offsetDelta = delta / _headerHeight;
 
     if (_isScrollingDown) {
-      // 下スクロール: ヘッダーを隠す（offsetを増やす）
-      _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+      // 下スクロール: 上部付近（50px以下）以外でヘッダーを隠す
+      if (currentPosition > 50.0) {
+        _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+      }
+      // 上部付近（50px以下）では何もしない（ヘッダーは表示されたまま）
     } else {
       // 上スクロール: 上部付近（50px以下）の場合のみヘッダーを表示
       if (currentPosition <= 50.0) {
