@@ -31,16 +31,6 @@ class HeaderController extends ChangeNotifier {
     // 現在のページのみ監視
     if (currentPageIndex != targetPageIndex) return;
 
-    // 最上部付近（50px以下）に到達したらヘッダーを完全表示
-    if (currentPosition <= 50.0) {
-      if (_headerOffset != 0.0) {
-        _headerOffset = 0.0;
-        notifyListeners();
-      }
-      _lastScrollPosition = currentPosition;
-      return;
-    }
-
     // スクロール量を計算
     final delta = currentPosition - _lastScrollPosition;
 
@@ -65,8 +55,11 @@ class HeaderController extends ChangeNotifier {
       // 下スクロール: ヘッダーを隠す（offsetを増やす）
       _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
     } else {
-      // 上スクロール: ヘッダーを表示（offsetを減らす）
-      _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+      // 上スクロール: 上部付近（50px以下）の場合のみヘッダーを表示
+      if (currentPosition <= 50.0) {
+        _headerOffset = (_headerOffset + offsetDelta).clamp(0.0, 1.0);
+      }
+      // 上部付近以外では何もしない（ヘッダーは隠れたまま）
     }
 
     _lastScrollPosition = currentPosition;
