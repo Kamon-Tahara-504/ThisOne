@@ -16,93 +16,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
-      body: Column(
+      body: ListView(
+        controller: widget.scrollController,
+        padding: const EdgeInsets.all(16),
         children: [
-          // ヘッダーエリア
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2B2B2B),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '設定',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          _buildSettingItem(
+            icon: Icons.person,
+            title: 'アカウント',
+            subtitle: 'プロフィールとアカウント設定',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AccountScreen()),
+              );
+            },
           ),
-          // 設定リスト
-          Expanded(
-            child: ListView(
-              controller: widget.scrollController,
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildSettingItem(
-                  icon: Icons.person,
-                  title: 'アカウント',
-                  subtitle: 'プロフィールとアカウント設定',
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AccountScreen(),
-                      ),
-                    );
-                  },
-                ),
-                _buildSettingItem(
-                  icon: Icons.notifications,
-                  title: '通知',
-                  subtitle: '通知とリマインダーの設定',
-                  onTap: () {},
-                ),
-                _buildSettingItem(
-                  icon: Icons.palette,
-                  title: 'テーマ',
-                  subtitle: 'アプリの外観をカスタマイズ',
-                  onTap: () {},
-                ),
-                _buildSettingItem(
-                  icon: Icons.backup,
-                  title: 'データ',
-                  subtitle: 'バックアップと同期',
-                  onTap: () {},
-                ),
-                _buildSettingItem(
-                  icon: Icons.security,
-                  title: 'プライバシー',
-                  subtitle: 'セキュリティとプライバシー設定',
-                  onTap: () {},
-                ),
-                _buildSettingItem(
-                  icon: Icons.help,
-                  title: 'ヘルプ',
-                  subtitle: 'よくある質問とサポート',
-                  onTap: () {},
-                ),
-                _buildSettingItem(
-                  icon: Icons.info,
-                  title: 'アプリについて',
-                  subtitle: 'バージョン情報とライセンス',
-                  onTap: () {},
-                ),
-              ],
-            ),
+          _buildSettingItem(
+            icon: Icons.notifications,
+            title: '通知',
+            subtitle: '通知とリマインダーの設定',
+            onTap: () {},
+          ),
+          _buildSettingItem(
+            icon: Icons.palette,
+            title: 'テーマ',
+            subtitle: 'アプリの外観をカスタマイズ',
+            onTap: () {},
+          ),
+          _buildSettingItem(
+            icon: Icons.backup,
+            title: 'データ',
+            subtitle: 'バックアップと同期',
+            onTap: () {},
+          ),
+          _buildSettingItem(
+            icon: Icons.security,
+            title: 'プライバシー',
+            subtitle: 'セキュリティとプライバシー設定',
+            onTap: () {},
+          ),
+          _buildSettingItem(
+            icon: Icons.help,
+            title: 'ヘルプ',
+            subtitle: 'よくある質問とサポート',
+            onTap: () {},
+          ),
+          _buildSettingItem(
+            icon: Icons.info,
+            title: 'アプリについて',
+            subtitle: 'バージョン情報とライセンス',
+            onTap: () {},
           ),
         ],
       ),
