@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import 'account_settings_screen.dart';
+import 'notification_settings_screen.dart';
 
+/// メイン設定画面
+///
+/// 機能:
+/// - 7つの設定カテゴリを表示
+/// - 各カテゴリから対応する詳細設定画面に遷移
+/// - 統一されたデザインで設定項目を表示
+///
+/// 設定カテゴリ:
+/// - アカウント: プロフィールとアカウント設定
+/// - 通知: 通知とリマインダーの設定
+/// - テーマ: アプリの外観をカスタマイズ
+/// - データ: バックアップと同期
+/// - プライバシー: セキュリティとプライバシー設定
+/// - ヘルプ: よくある質問とサポート
+/// - アプリについて: バージョン情報とライセンス
 class SettingsScreen extends StatefulWidget {
   final ScrollController? scrollController;
 
@@ -37,7 +53,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.notifications,
             title: '通知',
             subtitle: '通知とリマインダーの設定',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationSettingsScreen(),
+                ),
+              );
+            },
           ),
           _buildSettingItem(
             icon: Icons.palette,

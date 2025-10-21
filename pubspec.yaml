@@ -58,6 +58,11 @@ dependencies:
   
   # SVG support for official logos
   flutter_svg: ^2.0.10
+  
+  # Settings and app info
+  shared_preferences: ^2.2.2  # 設定の永続化
+  package_info_plus: ^9.0.0   # バージョン情報取得
+  url_launcher: ^6.2.2        # メール・URL起動
 
 dev_dependencies:
   flutter_test:
