@@ -3,6 +3,7 @@ import '../../gradients.dart';
 import 'account_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'data_management_screen.dart';
+import 'theme_settings_screen.dart';
 
 /// メイン設定画面
 ///
@@ -67,7 +68,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.palette,
             title: 'テーマ',
             subtitle: 'アプリの外観をカスタマイズ',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ThemeSettingsScreen(),
+                ),
+              );
+            },
           ),
           _buildSettingItem(
             icon: Icons.backup,
