@@ -14,7 +14,7 @@ class _AccountScreenState extends State<AccountScreen> {
   final SupabaseService _supabaseService = SupabaseService();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  
+
   bool _isLoading = true;
   bool _isEditing = false;
   Map<String, dynamic>? _userProfile;
@@ -56,23 +56,23 @@ class _AccountScreenState extends State<AccountScreen> {
         displayName: _displayNameController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
       );
-      
+
       setState(() {
         _isEditing = false;
       });
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('プロフィールを更新しました')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('プロフィールを更新しました')));
       }
-      
+
       await _loadUserProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('プロフィールの更新に失敗しました: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('プロフィールの更新に失敗しました: $e')));
       }
     }
   }
@@ -88,18 +88,26 @@ class _AccountScreenState extends State<AccountScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _supabaseService.getCurrentUser();
-    
+
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
       appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(56.0),
+        preferredSize: Size.fromHeight(
+          statusBarHeight + 56.0,
+        ), // StatusBar + 4 + 52
         child: Container(
           color: const Color(0xFF2B2B2B),
           child: SafeArea(
             bottom: false,
             child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              height: 52,
+              margin: const EdgeInsets.only(top: 4.0), // baseOffsetと同じ
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14.0,
+                vertical: 1.0,
+              ),
               child: Row(
                 children: [
                   // 戻るボタン
@@ -183,13 +191,14 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
           // メインコンテンツ
           Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFE85A3B),
-                    ),
-                  )
-                : user == null
+            child:
+                _isLoading
+                    ? const Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFE85A3B),
+                      ),
+                    )
+                    : user == null
                     ? _buildNotLoggedInView()
                     : _buildLoggedInView(user),
           ),
@@ -247,9 +256,11 @@ class _AccountScreenState extends State<AccountScreen> {
                 onPressed: () async {
                   final result = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const UnifiedAuthScreen()),
+                    MaterialPageRoute(
+                      builder: (context) => const UnifiedAuthScreen(),
+                    ),
                   );
-                  
+
                   if (result == true) {
                     await _loadUserProfile();
                   }
@@ -337,9 +348,10 @@ class _AccountScreenState extends State<AccountScreen> {
                         ? _userProfile!['display_name']
                         : 'ユーザーネーム未設定',
                     style: TextStyle(
-                      color: _userProfile?['display_name']?.isEmpty == false
-                          ? Colors.white
-                          : Colors.grey[500],
+                      color:
+                          _userProfile?['display_name']?.isEmpty == false
+                              ? Colors.white
+                              : Colors.grey[500],
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
                     ),
@@ -347,9 +359,9 @@ class _AccountScreenState extends State<AccountScreen> {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // アカウント情報セクション
           const Text(
             'アカウント情報',
@@ -360,7 +372,7 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          
+
           // メールアドレス
           _buildInfoItem(
             icon: Icons.email,
@@ -368,16 +380,21 @@ class _AccountScreenState extends State<AccountScreen> {
             value: user.email ?? '未設定',
             isEditable: false,
           ),
-          
+
           // 電話番号
           _buildInfoItem(
             icon: Icons.phone,
             title: '電話番号',
-            value: _isEditing ? null : (_userProfile?['phone_number']?.isEmpty == false ? _userProfile!['phone_number'] : '未設定'),
+            value:
+                _isEditing
+                    ? null
+                    : (_userProfile?['phone_number']?.isEmpty == false
+                        ? _userProfile!['phone_number']
+                        : '未設定'),
             isEditable: true,
             controller: _isEditing ? _phoneController : null,
           ),
-          
+
           // ログイン済み表示
           _buildInfoItem(
             icon: Icons.verified_user,
@@ -386,9 +403,9 @@ class _AccountScreenState extends State<AccountScreen> {
             valueColor: const Color(0xFFE85A3B),
             isEditable: false,
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           // ログアウトボタン
           Container(
             width: double.infinity,
@@ -397,10 +414,7 @@ class _AccountScreenState extends State<AccountScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: ListTile(
-              leading: Icon(
-                Icons.logout,
-                color: Colors.red[400],
-              ),
+              leading: Icon(Icons.logout, color: Colors.red[400]),
               title: Text(
                 'ログアウト',
                 style: TextStyle(
@@ -440,11 +454,7 @@ class _AccountScreenState extends State<AccountScreen> {
               gradient: createOrangeYellowGradient(),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -453,10 +463,7 @@ class _AccountScreenState extends State<AccountScreen> {
               children: [
                 Text(
                   title,
-                  style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 if (_isEditing && isEditable && controller != null)
@@ -487,8 +494,11 @@ class _AccountScreenState extends State<AccountScreen> {
                   Text(
                     value ?? '未設定',
                     style: TextStyle(
-                      color: valueColor ?? 
-                          (value != null && value != '未設定' ? Colors.white : Colors.grey[500]),
+                      color:
+                          valueColor ??
+                          (value != null && value != '未設定'
+                              ? Colors.white
+                              : Colors.grey[500]),
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
@@ -504,58 +514,53 @@ class _AccountScreenState extends State<AccountScreen> {
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF3A3A3A),
-        title: const Text(
-          'ログアウト',
-          style: TextStyle(color: Colors.white),
-        ),
-        content: const Text(
-          'ログアウトしますか？\nローカルのデータは保持されます。',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'キャンセル',
-              style: TextStyle(color: Colors.grey[400]),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF3A3A3A),
+            title: const Text('ログアウト', style: TextStyle(color: Colors.white)),
+            content: const Text(
+              'ログアウトしますか？\nローカルのデータは保持されます。',
+              style: TextStyle(color: Colors.white),
             ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.red[400],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: TextButton(
-              onPressed: () async {
-                final navigator = Navigator.of(context);
-                final scaffoldMessenger = ScaffoldMessenger.of(context);
-                navigator.pop();
-                try {
-                  await _supabaseService.signOut();
-                  if (mounted) {
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(content: Text('ログアウトしました')),
-                    );
-                    navigator.pop(); // アカウント画面を閉じる
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(content: Text('ログアウトに失敗しました: $e')),
-                    );
-                  }
-                }
-              },
-              child: const Text(
-                'ログアウト',
-                style: TextStyle(color: Colors.white),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('キャンセル', style: TextStyle(color: Colors.grey[400])),
               ),
-            ),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.red[400],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: TextButton(
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    final scaffoldMessenger = ScaffoldMessenger.of(context);
+                    navigator.pop();
+                    try {
+                      await _supabaseService.signOut();
+                      if (mounted) {
+                        scaffoldMessenger.showSnackBar(
+                          const SnackBar(content: Text('ログアウトしました')),
+                        );
+                        navigator.pop(); // アカウント画面を閉じる
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(content: Text('ログアウトに失敗しました: $e')),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text(
+                    'ログアウト',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
-} 
+}
