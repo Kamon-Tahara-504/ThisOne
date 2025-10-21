@@ -4,6 +4,7 @@ import 'account_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'data_management_screen.dart';
 import 'theme_settings_screen.dart';
+import 'privacy_settings_screen.dart';
 
 /// メイン設定画面
 ///
@@ -94,7 +95,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.security,
             title: 'プライバシー',
             subtitle: 'セキュリティとプライバシー設定',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacySettingsScreen(),
+                ),
+              );
+            },
           ),
           _buildSettingItem(
             icon: Icons.help,
