@@ -5,6 +5,7 @@ import 'notification_settings_screen.dart';
 import 'data_management_screen.dart';
 import 'theme_settings_screen.dart';
 import 'privacy_settings_screen.dart';
+import 'help_screen.dart';
 
 /// メイン設定画面
 ///
@@ -108,7 +109,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.help,
             title: 'ヘルプ',
             subtitle: 'よくある質問とサポート',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpScreen()),
+              );
+            },
           ),
           _buildSettingItem(
             icon: Icons.info,
