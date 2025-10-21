@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import 'account_settings_screen.dart';
 import 'notification_settings_screen.dart';
+import 'data_management_screen.dart';
 
 /// メイン設定画面
 ///
@@ -72,7 +73,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.backup,
             title: 'データ',
             subtitle: 'バックアップと同期',
-            onTap: () {},
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DataManagementScreen(),
+                ),
+              );
+            },
           ),
           _buildSettingItem(
             icon: Icons.security,

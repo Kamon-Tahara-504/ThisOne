@@ -16,7 +16,7 @@ class SettingsActionItem extends StatelessWidget {
   final VoidCallback onTap;
   final bool enabled;
   final bool isLoading;
-  final Color? titleColor;
+  final bool isDangerous;
 
   const SettingsActionItem({
     super.key,
@@ -26,7 +26,7 @@ class SettingsActionItem extends StatelessWidget {
     required this.onTap,
     this.enabled = true,
     this.isLoading = false,
-    this.titleColor,
+    this.isDangerous = false,
   });
 
   @override
@@ -50,7 +50,10 @@ class SettingsActionItem extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-            color: titleColor ?? (enabled ? Colors.white : Colors.grey[500]),
+            color:
+                isDangerous
+                    ? Colors.red[400]
+                    : (enabled ? Colors.white : Colors.grey[500]),
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
