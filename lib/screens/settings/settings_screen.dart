@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../gradients.dart';
-import 'account_screen.dart';
+import '../../gradients.dart';
+import 'account_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final ScrollController? scrollController;
@@ -27,7 +27,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AccountScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const AccountSettingsScreen(),
+                ),
               );
             },
           ),

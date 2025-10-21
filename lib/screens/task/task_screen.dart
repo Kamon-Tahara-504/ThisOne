@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../gradients.dart';
-import '../services/supabase_service.dart';
-import '../utils/error_handler.dart';
-import '../models/task.dart';
+import '../../gradients.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
+import '../../models/task.dart';
 
 class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更

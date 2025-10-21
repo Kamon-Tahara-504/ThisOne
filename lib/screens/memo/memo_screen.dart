@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../services/supabase_service.dart';
-import '../gradients.dart';
-import '../widgets/memo_item_card.dart';
-import '../widgets/memo_filter_header.dart';
-import '../widgets/empty_memo_state.dart';
-import '../widgets/color_palette.dart';
-import '../utils/error_handler.dart';
-import '../models/memo.dart';
+import '../../services/supabase_service.dart';
+import '../../gradients.dart';
+import '../../widgets/memo_item_card.dart';
+import '../../widgets/memo_filter_header.dart';
+import '../../widgets/empty_memo_state.dart';
+import '../../widgets/color_palette.dart';
+import '../../utils/error_handler.dart';
+import '../../models/memo.dart';
 import 'memo_detail_screen.dart';
 
 class MemoScreen extends StatefulWidget {

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../gradients.dart';
-import '../widgets/schedule/add_schedule_bottom_sheet.dart';
-import '../widgets/overlays/custom_bottom_sheet.dart';
-import '../services/supabase_service.dart';
-import '../utils/error_handler.dart';
-import '../models/schedule.dart';
+import '../../gradients.dart';
+import '../../widgets/schedule/add_schedule_bottom_sheet.dart';
+import '../../widgets/overlays/custom_bottom_sheet.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
+import '../../models/schedule.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;

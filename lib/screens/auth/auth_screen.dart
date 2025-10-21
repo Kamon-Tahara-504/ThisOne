@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_signin_button/flutter_signin_button.dart';
-import '../services/supabase_service.dart';
-import '../gradients.dart';
+import '../../services/supabase_service.dart';
+import '../../gradients.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -36,9 +36,10 @@ class _AuthScreenState extends State<AuthScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
-        
+
         if (mounted) {
-          if (response.user != null && response.user!.emailConfirmedAt == null) {
+          if (response.user != null &&
+              response.user!.emailConfirmedAt == null) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('サインアップが完了しました！メールを確認してアカウントを有効化してください。'),
@@ -46,9 +47,9 @@ class _AuthScreenState extends State<AuthScreen> {
               ),
             );
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('サインアップが完了しました！')),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('サインアップが完了しました！')));
           }
         }
       } else {
@@ -57,9 +58,9 @@ class _AuthScreenState extends State<AuthScreen> {
           password: _passwordController.text,
         );
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('ログインしました！')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('ログインしました！')));
           // ログイン成功時は前の画面に戻る
           Navigator.pop(context, true);
         }
@@ -80,7 +81,7 @@ class _AuthScreenState extends State<AuthScreen> {
           default:
             errorMessage = 'エラー: ${error.message}';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -116,9 +117,9 @@ class _AuthScreenState extends State<AuthScreen> {
       final success = await _supabaseService.signInWithGoogle();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Googleでログインしました！')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Googleでログインしました！')));
           Navigator.pop(context, true);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -243,12 +244,18 @@ class _AuthScreenState extends State<AuthScreen> {
                         shadowColor: Colors.transparent,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              _isSignUp ? 'サインアップ' : 'ログイン',
-                              style: const TextStyle(color: Colors.white, fontSize: 16),
-                            ),
+                      child:
+                          _isLoading
+                              ? const CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                              : Text(
+                                _isSignUp ? 'サインアップ' : 'ログイン',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
+                              ),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -259,14 +266,16 @@ class _AuthScreenState extends State<AuthScreen> {
                       });
                     },
                     child: Text(
-                      _isSignUp 
-                          ? '既にアカウントをお持ちですか？ ログイン' 
+                      _isSignUp
+                          ? '既にアカウントをお持ちですか？ ログイン'
                           : 'アカウントをお持ちでない方は サインアップ',
-                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // OR区切り
                   Row(
                     children: [
@@ -285,7 +294,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Google Sign-In ボタン
                   SignInButton(
                     Buttons.Google,
@@ -296,15 +305,12 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
-                  
+
                   if (!_isSignUp) ...[
                     const SizedBox(height: 16),
                     const Text(
                       '※ メール確認が必要な場合があります',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ],
