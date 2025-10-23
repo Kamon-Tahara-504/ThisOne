@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
 import '../../gradients.dart';
-import '../../widgets/memo_item_card.dart';
-import '../../widgets/memo_filter_header.dart';
-import '../../widgets/empty_memo_state.dart';
+import '../../widgets/memo/memo_item_card.dart';
+import '../../widgets/memo/memo_filter.dart';
+import '../../widgets/memo/empty_memo_state.dart';
 import '../../widgets/color_palette.dart';
 import '../../utils/error_handler.dart';
 import '../../models/memo.dart';
@@ -358,7 +358,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
           Positioned(
             bottom: 16,
             right: 16,
-            child: MemoFilterHeader(
+            child: MemoFilterWidget(
               selectedColorFilter: _currentFilter.colorTag,
               onShowColorFilterBottomSheet: _showColorFilterBottomSheet,
               onClearColorFilter: _clearColorFilter,

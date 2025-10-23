@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'dart:async';
-import '../../widgets/memo_back_header.dart';
+import '../../widgets/memo/memo_back_header.dart';
 import '../../widgets/quill_rich_editor.dart';
-import '../../widgets/memo_save_manager.dart';
+import '../../widgets/memo/memo_save_manager.dart';
 import '../../utils/calculator_utils.dart';
 import '../../models/memo.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../gradients.dart';
-import '../utils/color_utils.dart';
+import '../../gradients.dart';
+import '../../utils/color_utils.dart';
 
 class MemoFilterHeader extends StatelessWidget {
   final String? selectedColorFilter;

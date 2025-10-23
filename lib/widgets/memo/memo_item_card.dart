@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../gradients.dart';
-import '../utils/color_utils.dart';
-import '../models/memo.dart'; // 型安全なMemoモデル
+import '../../gradients.dart';
+import '../../utils/color_utils.dart';
+import '../../models/memo.dart'; // 型安全なMemoモデル
 
 class MemoItemCard extends StatelessWidget {
   final Memo memo; // 型安全なMemoモデルに変更

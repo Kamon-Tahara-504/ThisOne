@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/color_utils.dart'; // 色分けラベル用のユーティリティを追加
+import '../../utils/color_utils.dart'; // 色分けラベル用のユーティリティを追加
 
 class MemoBackHeader extends StatelessWidget {
   final TextEditingController titleController;
@@ -41,7 +41,10 @@ class MemoBackHeader extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
                           onPressed: onBackPressed,
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -75,7 +78,7 @@ class MemoBackHeader extends StatelessWidget {
             ),
           ),
         ),
-        
+
         // タイトル編集エリア
         Container(
           color: const Color(0xFF2B2B2B),
@@ -89,12 +92,22 @@ class MemoBackHeader extends StatelessWidget {
                 width: 6,
                 height: 38, // 高さを短縮
                 decoration: BoxDecoration(
-                  gradient: ColorUtils.isGradientColor(colorHex ?? ColorUtils.defaultColorHex)
-                      ? ColorUtils.getGradientFromHex(colorHex ?? ColorUtils.defaultColorHex)
-                      : null,
-                  color: ColorUtils.isGradientColor(colorHex ?? ColorUtils.defaultColorHex)
-                      ? null
-                      : ColorUtils.getColorFromHex(colorHex ?? ColorUtils.defaultColorHex),
+                  gradient:
+                      ColorUtils.isGradientColor(
+                            colorHex ?? ColorUtils.defaultColorHex,
+                          )
+                          ? ColorUtils.getGradientFromHex(
+                            colorHex ?? ColorUtils.defaultColorHex,
+                          )
+                          : null,
+                  color:
+                      ColorUtils.isGradientColor(
+                            colorHex ?? ColorUtils.defaultColorHex,
+                          )
+                          ? null
+                          : ColorUtils.getColorFromHex(
+                            colorHex ?? ColorUtils.defaultColorHex,
+                          ),
                   borderRadius: BorderRadius.circular(3),
                 ),
               ),
@@ -120,7 +133,10 @@ class MemoBackHeader extends StatelessWidget {
                           ),
                           decoration: const InputDecoration(
                             hintText: 'タイトルを入力...',
-                            hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                            hintStyle: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(vertical: 6),
                             isDense: true,
@@ -135,13 +151,20 @@ class MemoBackHeader extends StatelessWidget {
                           children: [
                             // モード表示ラベル
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.grey[600]!.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                mode == 'memo' ? 'メモ' : (mode == 'calculator' || mode == 'rich') ? '計算機' : mode,
+                                mode == 'memo'
+                                    ? 'メモ'
+                                    : (mode == 'calculator' || mode == 'rich')
+                                    ? '計算機'
+                                    : mode,
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 10,
@@ -180,13 +203,13 @@ class MemoBackHeader extends StatelessWidget {
     if (lastUpdated == null) {
       return '更新: 未更新';
     }
-    
+
     final year = lastUpdated!.year;
     final month = lastUpdated!.month;
     final day = lastUpdated!.day;
     final hour = lastUpdated!.hour.toString().padLeft(2, '0');
     final minute = lastUpdated!.minute.toString().padLeft(2, '0');
-    
+
     return '更新: $year/$month/$day $hour:$minute';
   }
-} 
+}

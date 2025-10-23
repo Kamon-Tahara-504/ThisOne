@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'dart:async';
-import '../services/supabase_service.dart';
+import '../../services/supabase_service.dart';
 
 /// メモの保存状態を表すクラス
 class MemoSaveState {
@@ -44,12 +44,12 @@ class MemoSaveManager {
 
   Timer? _debounceTimer;
   MemoSaveState _state = const MemoSaveState();
-  
+
   // 初期値を保存
   late String _initialTitle;
   late String _initialContent;
   late String _initialRichContent;
-  
+
   bool _isInitialized = false;
 
   MemoSaveManager({
@@ -70,16 +70,18 @@ class MemoSaveManager {
   /// 初期化処理（PostFrameCallbackで呼び出すことを推奨）
   void initialize() {
     if (_isInitialized) return;
-    
+
     // 実際のコントローラーの内容を初期値として設定
     _initialTitle = titleController.text.trim();
     _initialContent = quillController.document.toPlainText();
-    _initialRichContent = jsonEncode({'ops': quillController.document.toDelta().toJson()});
-    
+    _initialRichContent = jsonEncode({
+      'ops': quillController.document.toDelta().toJson(),
+    });
+
     // リスナーを追加
     titleController.addListener(_onTextChanged);
     quillController.addListener(_onTextChanged);
-    
+
     _isInitialized = true;
   }
 
@@ -98,21 +100,24 @@ class MemoSaveManager {
   /// 変更検知とデバウンス処理
   void _onTextChanged() {
     if (!_isInitialized) return;
-    
+
     // 現在の内容を取得
     final currentTitle = titleController.text.trim();
     final currentContent = quillController.document.toPlainText();
-    final currentRichContent = jsonEncode({'ops': quillController.document.toDelta().toJson()});
-    
+    final currentRichContent = jsonEncode({
+      'ops': quillController.document.toDelta().toJson(),
+    });
+
     // 初期値と比較して実際に変更があったかチェック
-    final hasActualChanges = currentTitle != _initialTitle || 
-                            currentContent != _initialContent ||
-                            currentRichContent != _initialRichContent;
-    
+    final hasActualChanges =
+        currentTitle != _initialTitle ||
+        currentContent != _initialContent ||
+        currentRichContent != _initialRichContent;
+
     if (hasActualChanges != _state.hasChanges) {
       _updateState(_state.copyWith(hasChanges: hasActualChanges));
     }
-    
+
     if (_state.hasChanges) {
       _debounceTimer?.cancel();
       _debounceTimer = Timer(debounceDuration, () {
@@ -126,38 +131,45 @@ class MemoSaveManager {
   /// 強制保存（戻るボタン押下時など）
   Future<void> saveChanges() async {
     if (!_state.hasChanges || _state.isSaving) return;
-    
+
     _updateState(_state.copyWith(isSaving: true, errorMessage: null));
-    
+
     try {
       final plainText = quillController.document.toPlainText();
-      final richContentMap = {'ops': quillController.document.toDelta().toJson()};
-      
+      final richContentMap = {
+        'ops': quillController.document.toDelta().toJson(),
+      };
+
       await _supabaseService.updateMemo(
         memoId: memoId,
-        title: titleController.text.trim().isEmpty 
-            ? '無題' 
-            : titleController.text.trim(),
+        title:
+            titleController.text.trim().isEmpty
+                ? '無題'
+                : titleController.text.trim(),
         content: plainText,
         richContent: richContentMap,
       );
-      
+
       // 保存成功時に初期値を更新
-      _initialTitle = titleController.text.trim().isEmpty ? '無題' : titleController.text.trim();
+      _initialTitle =
+          titleController.text.trim().isEmpty
+              ? '無題'
+              : titleController.text.trim();
       _initialContent = plainText;
       _initialRichContent = jsonEncode(richContentMap);
-      
-      _updateState(_state.copyWith(
-        hasChanges: false,
-        isSaving: false,
-        lastUpdated: DateTime.now(),
-        errorMessage: null,
-      ));
+
+      _updateState(
+        _state.copyWith(
+          hasChanges: false,
+          isSaving: false,
+          lastUpdated: DateTime.now(),
+          errorMessage: null,
+        ),
+      );
     } catch (e) {
-      _updateState(_state.copyWith(
-        isSaving: false,
-        errorMessage: e.toString(),
-      ));
+      _updateState(
+        _state.copyWith(isSaving: false, errorMessage: e.toString()),
+      );
     }
   }
 
@@ -178,4 +190,4 @@ class MemoSaveManager {
 
   /// エラーメッセージ
   String? get errorMessage => _state.errorMessage;
-} 
+}
