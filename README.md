@@ -69,40 +69,60 @@ lib/
 │   ├── auth_screen.dart               # 認証画面（レガシー）
 │   ├── unified_auth_screen.dart       # 統合認証画面
 │   ├── account_screen.dart            # アカウント管理画面
-│   └── settings_screen.dart           # 設定画面
+│   ├── settings_screen.dart           # 設定画面
+│   └── settings/                      # 設定画面群
+│       ├── account_settings_screen.dart    # アカウント設定画面
+│       ├── app_info_screen.dart           # アプリ情報画面
+│       ├── data_management_screen.dart     # データ管理画面
+│       ├── help_screen.dart               # ヘルプ画面
+│       ├── notification_settings_screen.dart # 通知設定画面
+│       ├── privacy_settings_screen.dart    # プライバシー設定画面
+│       └── theme_settings_screen.dart      # テーマ設定画面
 ├── utils/
 │   ├── calculator_utils.dart          # 計算ユーティリティ
 │   ├── color_utils.dart               # カラーユーティリティ
 │   ├── error_handler.dart             # エラーハンドリングユーティリティ
 │   └── network_utils.dart             # ネットワークユーティリティ
 └── widgets/
-    ├── app_bars/
-    │   ├── collapsible_app_bar.dart   # 折りたたみ可能なアプリバー
-    │   └── custom_app_bar.dart        # カスタムアプリバー
-    ├── auth/
-    │   ├── google_signin_button.dart  # Googleサインインボタン
-    │   ├── login_bottom_sheet.dart    # ログインボトムシート
-    │   ├── signup_page.dart           # サインアップページ
-    │   └── x_signin_button.dart       # X（Twitter）サインインボタン
+    ├── account/                        # アカウント関連ウィジェット
+    │   ├── account_info_item.dart      # アカウント情報アイテム
+    │   ├── logged_in_view.dart         # ログイン済み表示
+    │   ├── logout_dialog.dart          # ログアウトダイアログ
+    │   └── not_logged_in_view.dart     # 未ログイン表示
+    ├── app_bars/                       # ヘッダー関連ウィジェット
+    │   ├── collapsible_app_bar.dart    # 折りたたみ可能なアプリバー
+    │   ├── custom_app_bar.dart         # カスタムアプリバー
+    │   └── static_header_guideline.dart # 静的ヘッダーガイドライン
+    ├── auth/                           # 認証関連ウィジェット
+    │   ├── google_signin_button.dart   # Googleサインインボタン
+    │   ├── login_bottom_sheet.dart     # ログインボトムシート
+    │   ├── signup_page.dart            # サインアップページ
+    │   └── x_signin_button.dart        # X（Twitter）サインインボタン
+    ├── memo/                           # メモ関連ウィジェット
+    │   ├── empty_memo_state.dart       # 空のメモ状態表示
+    │   ├── memo_back_header.dart       # メモ画面ヘッダー
+    │   ├── memo_filter.dart            # メモフィルター
+    │   ├── memo_item_card.dart         # メモアイテムカード
+    │   └── memo_save_manager.dart      # メモ自動保存管理
     ├── navigation/
     │   └── custom_bottom_navigation_bar.dart # カスタムボトムナビゲーション
     ├── overlays/
-    │   ├── account_info_overlay.dart  # アカウント情報オーバーレイ
-    │   └── custom_bottom_sheet.dart   # カスタムボトムシート
-    ├── schedule/
+    │   ├── account_info_overlay.dart   # アカウント情報オーバーレイ
+    │   └── custom_bottom_sheet.dart    # カスタムボトムシート
+    ├── schedule/                       # スケジュール関連ウィジェット
     │   ├── add_schedule_bottom_sheet.dart # スケジュール追加ボトムシート
-    │   ├── custom_time_picker.dart    # カスタム時間選択ピッカー（PageView版）
-    │   ├── schedule_calendar_widget.dart # スケジュールカレンダーウィジェット
-    │   └── time_setting_widget.dart   # 時間設定ウィジェット（間隔選択・時間選択）
-    ├── memo_back_header.dart          # メモ画面ヘッダー
-    ├── memo_filter_header.dart        # メモフィルターヘッダー
-    ├── memo_item_card.dart            # メモアイテムカード
-    ├── memo_save_manager.dart         # メモ自動保存管理
-    ├── empty_memo_state.dart          # 空のメモ状態表示
-    ├── color_palette.dart             # カラーパレット
-    ├── quill_color_panel.dart         # Quillカラーパネル
-    ├── quill_rich_editor.dart         # リッチテキストエディタ
-    └── quill_toolbar.dart             # エディタツールバー
+    │   ├── custom_time_picker.dart     # カスタム時間選択ピッカー（PageView版）
+    │   ├── notification_settings.dart  # 通知設定ウィジェット
+    │   └── time_setting_widget.dart    # 時間設定ウィジェット（間隔選択・時間選択）
+    ├── settings/                       # 設定関連ウィジェット
+    │   ├── settings_action_item.dart   # 設定アクションアイテム
+    │   ├── settings_navigation_item.dart # 設定ナビゲーションアイテム
+    │   ├── settings_selection_item.dart # 設定選択アイテム
+    │   └── settings_toggle_item.dart   # 設定トグルアイテム
+    ├── color_palette.dart              # カラーパレット
+    ├── quill_color_panel.dart          # Quillカラーパネル
+    ├── quill_rich_editor.dart          # リッチテキストエディタ
+    └── quill_toolbar.dart              # エディタツールバー
 
 database/
 ├── README.md                          # データベースドキュメント
@@ -244,6 +264,15 @@ flutter run --verbose
   - [x] アカウント設定への遷移
   - [x] 通知・テーマ・データ・プライバシー設定項目
   - [x] ヘルプ・アプリ情報項目
+  - [x] 静的ヘッダーガイドライン統一
+  - [x] 設定画面の詳細実装
+    - [x] アカウント設定画面（プロフィール編集・ログアウト）
+    - [x] 通知設定画面（プッシュ通知・リマインダー設定）
+    - [x] テーマ設定画面（ダーク/ライト/システム設定）
+    - [x] データ管理画面（同期・バックアップ・キャッシュクリア）
+    - [x] プライバシー設定画面（自動削除・データ削除）
+    - [x] ヘルプ画面（FAQ・フィードバック・お問い合わせ）
+    - [x] アプリ情報画面（バージョン・ライセンス・開発者情報）
 - [x] Supabase設定・サービス層
 - [x] データベーススキーマ設計・作成
 - [x] RLSセキュリティ設定
@@ -253,11 +282,11 @@ flutter run --verbose
 
 ### 🚧 開発中・今後の予定
 - [ ] **設定画面の機能実装**
-  - [ ] テーマ設定（ダーク/ライト/システム）
-  - [ ] 通知設定（リマインダー・プッシュ通知）
-  - [ ] データ設定（バックアップ・エクスポート）
-  - [ ] プライバシー設定
-  - [ ] ヘルプ・サポート機能
+  - [ ] テーマ設定の実際の動作実装
+  - [ ] 通知設定の実際の動作実装
+  - [ ] データ設定の実際の動作実装
+  - [ ] プライバシー設定の実際の動作実装
+  - [ ] ヘルプ・サポート機能の実際の動作実装
 - [ ] **追加機能**
   - [ ] プッシュ通知機能
   - [ ] データエクスポート・インポート機能
@@ -400,4 +429,4 @@ dependencies:
 プロジェクトへの貢献は歓迎します！  
 新しい機能の提案やバグ報告は、GitHubのIssueでお知らせください。
 
-*README最終更新: 2025/9/25*  
+*README最終更新: 2025/10/23*  
