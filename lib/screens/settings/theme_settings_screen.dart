@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
+import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// テーマ設定画面
 ///
@@ -198,6 +199,9 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                 ],
               ),
             ),
+
+            // グラデーションガイドライン
+            const StaticHeaderGuideline(),
 
             // メインコンテンツ
             Expanded(

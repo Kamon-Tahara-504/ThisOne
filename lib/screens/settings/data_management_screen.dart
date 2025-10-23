@@ -3,6 +3,7 @@ import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings/settings_toggle_item.dart';
 import '../../widgets/settings/settings_action_item.dart';
+import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// データ管理画面
 ///
@@ -348,6 +349,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                 ],
               ),
             ),
+
+            // グラデーションガイドライン
+            const StaticHeaderGuideline(),
 
             // メインコンテンツ
             Expanded(

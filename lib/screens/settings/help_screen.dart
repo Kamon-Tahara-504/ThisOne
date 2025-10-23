@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
+import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// ヘルプ画面
 ///
@@ -180,6 +181,9 @@ class _HelpScreenState extends State<HelpScreen> {
                 ],
               ),
             ),
+
+            // グラデーションガイドライン
+            const StaticHeaderGuideline(),
 
             // メインコンテンツ
             Expanded(

@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings/settings_action_item.dart';
+import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// プライバシー設定画面
 ///
@@ -378,6 +379,9 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                 ],
               ),
             ),
+
+            // グラデーションガイドライン
+            const StaticHeaderGuideline(),
 
             // メインコンテンツ
             Expanded(
