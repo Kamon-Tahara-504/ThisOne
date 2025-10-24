@@ -13,14 +13,12 @@ class AddTaskBottomSheet extends StatefulWidget {
 
 class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
   final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
   TaskPriority _selectedPriority = TaskPriority.low;
   DateTime? _selectedDueDate;
 
   @override
   void dispose() {
     _titleController.dispose();
-    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -57,10 +55,6 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
     if (_titleController.text.trim().isNotEmpty) {
       widget.onAdd({
         'title': _titleController.text.trim(),
-        'description':
-            _descriptionController.text.trim().isEmpty
-                ? null
-                : _descriptionController.text.trim(),
         'priority': _selectedPriority,
         'dueDate': _selectedDueDate,
       });
@@ -238,44 +232,6 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
                             hintStyle: TextStyle(color: Colors.grey),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.all(16),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // メモ入力
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'メモ',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3A3A3A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey[600]!),
-                        ),
-                        child: TextField(
-                          controller: _descriptionController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                          maxLines: 4,
-                          decoration: const InputDecoration(
-                            hintText: 'タスクの詳細を入力...',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(12),
                           ),
                         ),
                       ),

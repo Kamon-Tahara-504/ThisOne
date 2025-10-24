@@ -4,6 +4,7 @@ import '../../services/supabase_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/task.dart';
 import '../../widgets/task/task_card.dart';
+import '../../widgets/overlays/sort_overlay.dart';
 
 class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更
@@ -24,6 +25,8 @@ class TaskScreen extends StatefulWidget {
 class _TaskScreenState extends State<TaskScreen> {
   late List<Task> _tasks; // 型安全なTaskモデルに変更
   final SupabaseService _supabaseService = SupabaseService();
+  TaskSortOrder _currentSortOrder = TaskSortOrder.createdAt;
+  SortOverlay? _sortOverlay;
 
   @override
   void initState() {
@@ -36,7 +39,21 @@ class _TaskScreenState extends State<TaskScreen> {
     super.didUpdateWidget(oldWidget);
     if (widget.tasks != null) {
       _tasks = List.from(widget.tasks!);
+      setState(() {
+        // ソート順を適用
+        _applySorting();
+      });
     }
+  }
+
+  @override
+  void dispose() {
+    _sortOverlay?.dispose();
+    super.dispose();
+  }
+
+  void _applySorting() {
+    _tasks = _tasks.applySort(_currentSortOrder);
   }
 
   Future<void> _toggleTask(int index) async {
@@ -100,8 +117,26 @@ class _TaskScreenState extends State<TaskScreen> {
     }
   }
 
+  void _showSortOverlay() {
+    _sortOverlay?.dispose();
+    _sortOverlay = SortOverlay(
+      context: context,
+      currentSortOrder: _currentSortOrder,
+      onSortChanged: (sortOrder) {
+        setState(() {
+          _currentSortOrder = sortOrder;
+          _applySorting();
+        });
+      },
+    );
+    _sortOverlay!.toggle();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // ソート済みのタスクリストを取得
+    final sortedTasks = _tasks.applySort(_currentSortOrder);
+
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
       body: Column(
@@ -109,7 +144,7 @@ class _TaskScreenState extends State<TaskScreen> {
           // タスクリスト
           Expanded(
             child:
-                _tasks.isEmpty
+                sortedTasks.isEmpty
                     ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -148,19 +183,48 @@ class _TaskScreenState extends State<TaskScreen> {
                     : ListView.builder(
                       controller: widget.scrollController,
                       padding: const EdgeInsets.all(16),
-                      itemCount: _tasks.length,
+                      itemCount: sortedTasks.length,
                       itemBuilder: (context, index) {
-                        final task = _tasks[index];
+                        final task = sortedTasks[index];
+                        final originalIndex = _tasks.indexOf(task);
                         return TaskCard(
                           task: task,
-                          onToggleComplete: () => _toggleTask(index),
-                          onDelete: () => _deleteTask(index),
+                          onToggleComplete: () => _toggleTask(originalIndex),
+                          onDelete: () => _deleteTask(originalIndex),
                         );
                       },
                     ),
           ),
         ],
       ),
+      floatingActionButton:
+          sortedTasks.isNotEmpty
+              ? Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  gradient: createOrangeYellowGradient(),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE85A3B).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: IconButton(
+                  onPressed: _showSortOverlay,
+                  icon: const Icon(
+                    Icons.sort,
+                    color: Color(0xFF2B2B2B),
+                    size: 24,
+                  ),
+                  padding: EdgeInsets.zero,
+                ),
+              )
+              : null,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
