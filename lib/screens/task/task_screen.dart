@@ -200,27 +200,33 @@ class _TaskScreenState extends State<TaskScreen> {
       floatingActionButton:
           sortedTasks.isNotEmpty
               ? Container(
-                width: 48,
-                height: 48,
+                width: 56,
+                height: 56,
                 decoration: BoxDecoration(
                   gradient: createOrangeYellowGradient(),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFE85A3B).withValues(alpha: 0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 8,
                       offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: IconButton(
-                  onPressed: _showSortOverlay,
-                  icon: const Icon(
-                    Icons.sort,
-                    color: Color(0xFF2B2B2B),
-                    size: 24,
+                child: Material(
+                  color: Colors.transparent,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    onTap: _showSortOverlay,
+                    customBorder: const CircleBorder(),
+                    child: const Center(
+                      child: Icon(
+                        Icons.sort,
+                        color: Color(0xFF2B2B2B),
+                        size: 24,
+                      ),
+                    ),
                   ),
-                  padding: EdgeInsets.zero,
                 ),
               )
               : null,
