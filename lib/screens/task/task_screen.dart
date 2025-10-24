@@ -3,6 +3,7 @@ import '../../gradients.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/task.dart';
+import '../../widgets/task/task_card.dart';
 
 class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更
@@ -22,7 +23,6 @@ class TaskScreen extends StatefulWidget {
 
 class _TaskScreenState extends State<TaskScreen> {
   late List<Task> _tasks; // 型安全なTaskモデルに変更
-  final TextEditingController _taskController = TextEditingController();
   final SupabaseService _supabaseService = SupabaseService();
 
   @override
@@ -36,39 +36,6 @@ class _TaskScreenState extends State<TaskScreen> {
     super.didUpdateWidget(oldWidget);
     if (widget.tasks != null) {
       _tasks = List.from(widget.tasks!);
-    }
-  }
-
-  @override
-  void dispose() {
-    _taskController.dispose();
-    super.dispose();
-  }
-
-  void addTask(String title) async {
-    if (title.trim().isNotEmpty) {
-      try {
-        final newTask = await _supabaseService.addTaskTyped(
-          title: title.trim(),
-          priority: TaskPriority.low,
-        );
-
-        if (newTask != null) {
-          setState(() {
-            _tasks.add(newTask);
-          });
-          _notifyTasksChanged();
-        }
-      } catch (e) {
-        if (mounted) {
-          AppErrorHandler.handleError(
-            context,
-            e,
-            operation: 'タスクの追加',
-            onRetry: () => addTask(title),
-          );
-        }
-      }
     }
   }
 
@@ -151,7 +118,7 @@ class _TaskScreenState extends State<TaskScreen> {
                             shaderCallback:
                                 (bounds) => createOrangeYellowGradient()
                                     .createShader(bounds),
-                            child: Icon(
+                            child: const Icon(
                               Icons.task_alt,
                               size: 64,
                               color: Colors.white,
@@ -184,72 +151,10 @@ class _TaskScreenState extends State<TaskScreen> {
                       itemCount: _tasks.length,
                       itemBuilder: (context, index) {
                         final task = _tasks[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3A3A3A),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color:
-                                  task.isCompleted
-                                      ? const Color(
-                                        0xFFE85A3B,
-                                      ).withValues(alpha: 0.3)
-                                      : Colors.grey[700]!,
-                            ),
-                          ),
-                          child: ListTile(
-                            leading: GestureDetector(
-                              onTap: () => _toggleTask(index),
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color:
-                                        task.isCompleted
-                                            ? const Color(0xFFE85A3B)
-                                            : Colors.grey[500]!,
-                                    width: 2,
-                                  ),
-                                  color:
-                                      task.isCompleted
-                                          ? const Color(0xFFE85A3B)
-                                          : Colors.transparent,
-                                ),
-                                child:
-                                    task.isCompleted
-                                        ? const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 16,
-                                        )
-                                        : null,
-                              ),
-                            ),
-                            title: Text(
-                              task.title,
-                              style: TextStyle(
-                                color:
-                                    task.isCompleted
-                                        ? Colors.grey[500]
-                                        : Colors.white,
-                                fontSize: 16,
-                                decoration:
-                                    task.isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                              ),
-                            ),
-                            trailing: IconButton(
-                              onPressed: () => _deleteTask(index),
-                              icon: Icon(
-                                Icons.delete_outline,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ),
+                        return TaskCard(
+                          task: task,
+                          onToggleComplete: () => _toggleTask(index),
+                          onDelete: () => _deleteTask(index),
                         );
                       },
                     ),

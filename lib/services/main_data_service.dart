@@ -102,6 +102,46 @@ class MainDataService extends ChangeNotifier {
     }
   }
 
+  /// タスクを詳細情報付きで追加
+  Future<void> addTaskWithDetails(Map<String, dynamic> taskData) async {
+    if (_isDisposed || taskData['title'].toString().trim().isEmpty) return;
+
+    try {
+      final newTask = await _supabaseService.addTaskTyped(
+        title: taskData['title'].toString().trim(),
+        description: taskData['description'],
+        priority: taskData['priority'] ?? TaskPriority.low,
+        dueDate: taskData['dueDate'],
+      );
+
+      if (!_isDisposed) {
+        if (newTask != null) {
+          _tasks.add(newTask);
+          notifyListeners();
+        } else {
+          // 認証されていない場合はローカルに保存
+          final localTask = Task(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+            userId: 'local',
+            title: taskData['title'].toString().trim(),
+            description: taskData['description'],
+            isCompleted: false,
+            priority: taskData['priority'] ?? TaskPriority.low,
+            dueDate: taskData['dueDate'],
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+
+          _tasks.add(localTask);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      // エラーハンドリングは呼び出し元で行う
+      rethrow;
+    }
+  }
+
   /// メモを作成
   Future<void> createMemo(String title, String mode, String colorHex) async {
     if (_isDisposed) return;

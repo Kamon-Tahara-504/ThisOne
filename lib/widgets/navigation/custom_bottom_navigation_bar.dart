@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/color_utils.dart';
+import '../task/add_task_bottom_sheet.dart';
+import '../overlays/custom_bottom_sheet.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final Function(int) onTabChanged;
   final PageController pageController;
   final SupabaseService supabaseService;
-  final Function(String) onTaskAdded;
+  final Function(Map<String, dynamic>) onTaskCreate;
   final Function(String, String, String) onMemoCreated;
   final VoidCallback? onScheduleCreate; // スケジュール作成コールバックを追加
 
@@ -18,7 +20,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
     required this.onTabChanged,
     required this.pageController,
     required this.supabaseService,
-    required this.onTaskAdded,
+    required this.onTaskCreate,
     required this.onMemoCreated,
     this.onScheduleCreate, // スケジュール作成コールバックを追加
   });
@@ -187,63 +189,15 @@ class CustomBottomNavigationBar extends StatelessWidget {
   }
 
   void _showCreateTaskDialog(BuildContext context) {
-    showDialog(
+    showCustomBottomSheet(
       context: context,
-      builder: (context) {
-        final TextEditingController controller = TextEditingController();
-        return AlertDialog(
-          backgroundColor: const Color(0xFF3A3A3A),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('タスク追加', style: TextStyle(color: Colors.white)),
-              if (supabaseService.getCurrentUser() == null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  'ローカルに保存されます（ログインして同期）',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                ),
-              ],
-            ],
-          ),
-          content: TextField(
-            controller: controller,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: 'タスクを入力してください',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey[600]!),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Color(0xFFE85A3B)),
-              ),
-            ),
-            autofocus: false,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('キャンセル', style: TextStyle(color: Colors.grey[400])),
-            ),
-            Container(
-              decoration: BoxDecoration(
-                gradient: createHorizontalOrangeYellowGradient(),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextButton(
-                onPressed: () {
-                  if (controller.text.trim().isNotEmpty) {
-                    Navigator.pop(context);
-                    onTaskAdded(controller.text.trim());
-                  }
-                },
-                child: const Text('追加', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ],
-        );
-      },
+      initialHeight: 0.8,
+      minHeight: 0.5,
+      child: AddTaskBottomSheet(
+        onAdd: (taskData) {
+          onTaskCreate(taskData);
+        },
+      ),
     );
   }
 

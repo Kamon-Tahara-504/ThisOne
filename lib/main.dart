@@ -251,11 +251,15 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   // タスクを追加
-  Future<void> _addTask(String title) async {
-    if (_isDisposed || !mounted || title.trim().isEmpty) return;
+  Future<void> _addTask(Map<String, dynamic> taskData) async {
+    if (_isDisposed ||
+        !mounted ||
+        taskData['title'].toString().trim().isEmpty) {
+      return;
+    }
 
     try {
-      await _dataService.addTask(title);
+      await _dataService.addTaskWithDetails(taskData);
       if (!_dataService.tasks.any((task) => task.userId == 'local')) {
         AppErrorHandler.showInfo(context, 'ログインしていないため、タスクはローカルに保存されました');
       }
@@ -265,7 +269,7 @@ class _MainScreenState extends State<MainScreen> {
           context,
           e,
           operation: 'タスクの保存',
-          onRetry: () => _addTask(title),
+          onRetry: () => _addTask(taskData),
         );
       }
     }
@@ -397,7 +401,7 @@ class _MainScreenState extends State<MainScreen> {
             onTabChanged: (index) => _appPageController.navigateToTab(index),
             pageController: _appPageController.pageController,
             supabaseService: SupabaseService(),
-            onTaskAdded: (title) => _addTask(title),
+            onTaskCreate: (taskData) => _addTask(taskData),
             onMemoCreated:
                 (title, mode, colorHex) => _createMemo(title, mode, colorHex),
             onScheduleCreate: _handleScheduleCreate,
