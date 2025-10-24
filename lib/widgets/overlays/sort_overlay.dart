@@ -93,19 +93,19 @@ class SortOverlay {
           // ヘッダー
           Row(
             children: [
-              Icon(Icons.sort, color: const Color(0xFFE85A3B), size: 16),
-              const SizedBox(width: 6),
               ShaderMask(
                 shaderCallback:
                     (bounds) => createHorizontalOrangeYellowGradient()
                         .createShader(bounds),
-                child: const Text(
-                  '並び替え',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: const Icon(Icons.sort, color: Colors.white, size: 16),
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                '並び替え',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
