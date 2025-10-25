@@ -160,7 +160,7 @@ class MemoItemCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       // メモの内容プレビュー
-                      if (memo.content.isNotEmpty) ...[
+                      if (memo.previewText.trim().isNotEmpty) ...[
                         Text(
                           memo.previewText,
                           style: TextStyle(
