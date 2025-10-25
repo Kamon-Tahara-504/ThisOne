@@ -539,118 +539,112 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               int.parse(colorHex.substring(1), radix: 16) +
                                   0xFF000000,
                             );
-                            final isNotificationEnabled =
-                                schedule.reminderMinutes > 0;
 
                             return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
+                              margin: const EdgeInsets.only(bottom: 12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFF3A3A3A),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey[700]!),
                               ),
                               child: IntrinsicHeight(
-                                child: Row(
-                                  children: [
-                                    // 左側の色バー（メモと同じスタイル）
-                                    Container(
-                                      width: 8,
-                                      height: double.infinity,
-                                      decoration: BoxDecoration(
-                                        color: scheduleColor,
-                                        borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(12),
-                                          bottomLeft: Radius.circular(12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // 色インジケーター（カードの高さに合わせて動的調整）
+                                      Container(
+                                        width: 4,
+                                        height: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: scheduleColor,
+                                          borderRadius: BorderRadius.circular(
+                                            2,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    // スケジュール本体部分
-                                    Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(6),
+                                      const SizedBox(width: 12),
+
+                                      // メインコンテンツ
+                                      Expanded(
                                         child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            // タイトル行
+                                            // タイトル
+                                            Text(
+                                              schedule.title,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+
+                                            // 時間表示
                                             Row(
                                               children: [
-                                                // 時間表示（大きくする）
-                                                Container(
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 8,
-                                                        vertical: 4,
-                                                      ),
-                                                  decoration: BoxDecoration(
-                                                    color: scheduleColor
-                                                        .withValues(alpha: 0.2),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          8,
-                                                        ),
-                                                    border: Border.all(
-                                                      color: scheduleColor
-                                                          .withValues(
-                                                            alpha: 0.5,
-                                                          ),
-                                                    ),
-                                                  ),
-                                                  child: Text(
-                                                    schedule.timeDisplayString,
-                                                    style: TextStyle(
-                                                      color: scheduleColor,
-                                                      fontSize: 14, // 10から14に変更
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
+                                                Icon(
+                                                  Icons.schedule,
+                                                  size: 14,
+                                                  color: Colors.grey[500],
                                                 ),
-                                                const SizedBox(width: 12),
-                                                Expanded(
-                                                  child: Text(
-                                                    schedule.title,
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                                // 通知アイコン
-                                                if (isNotificationEnabled)
-                                                  Icon(
-                                                    Icons.notifications,
-                                                    color: Colors.grey[500],
-                                                    size: 18,
-                                                  ),
                                                 const SizedBox(width: 4),
-                                                // 削除ボタン
-                                                IconButton(
-                                                  onPressed:
-                                                      () => _deleteSchedule(
-                                                        schedule,
-                                                      ),
-                                                  icon: Icon(
-                                                    Icons.delete_outline,
+                                                Text(
+                                                  schedule.timeDisplayString,
+                                                  style: TextStyle(
                                                     color: Colors.grey[500],
-                                                    size: 20,
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            // 説明文（ある場合のみ表示）
-                                            if (schedule
-                                                    .description
-                                                    ?.isNotEmpty ==
-                                                true) ...[
+
+                                            // 場所（あれば）
+                                            if (schedule.location != null &&
+                                                schedule
+                                                    .location!
+                                                    .isNotEmpty) ...[
+                                              const SizedBox(height: 4),
+                                              Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.location_on,
+                                                    size: 12,
+                                                    color: Colors.grey[400],
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      schedule.location!,
+                                                      style: TextStyle(
+                                                        color: Colors.grey[400],
+                                                        fontSize: 12,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+
+                                            // 説明文（あれば）
+                                            if (schedule.description != null &&
+                                                schedule
+                                                    .description!
+                                                    .isNotEmpty) ...[
                                               const SizedBox(height: 4),
                                               Text(
                                                 schedule.description!,
                                                 style: TextStyle(
                                                   color: Colors.grey[400],
-                                                  fontSize: 14,
+                                                  fontSize: 12,
                                                   height: 1.4,
                                                 ),
                                                 maxLines: 2,
@@ -660,8 +654,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           ],
                                         ),
                                       ),
-                                    ),
-                                  ],
+
+                                      // 削除ボタン（タスクカードと同じスタイル）
+                                      GestureDetector(
+                                        onTap: () => _deleteSchedule(schedule),
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[400]!.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.delete_outline,
+                                            color: Colors.red[400],
+                                            size: 20,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );
