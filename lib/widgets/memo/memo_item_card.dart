@@ -50,31 +50,30 @@ class MemoItemCard extends StatelessWidget {
         onTap: isAnimating ? null : onTap, // アニメーション中はタップを無効化
         borderRadius: BorderRadius.circular(12),
         child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // 左側の付箋テープ部分
-              Container(
-                width: 8,
-                height: double.infinity,
-                decoration: BoxDecoration(
-                  gradient:
-                      ColorUtils.isGradientColor(memo.colorTag)
-                          ? ColorUtils.getGradientFromHex(memo.colorTag)
-                          : null,
-                  color:
-                      ColorUtils.isGradientColor(memo.colorTag)
-                          ? null
-                          : ColorUtils.getColorFromHex(memo.colorTag),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    bottomLeft: Radius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 色インジケーター（カードの高さに合わせて動的調整）
+                Container(
+                  width: 4,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient:
+                        ColorUtils.isGradientColor(memo.colorTag)
+                            ? ColorUtils.getGradientFromHex(memo.colorTag)
+                            : null,
+                    color:
+                        ColorUtils.isGradientColor(memo.colorTag)
+                            ? null
+                            : ColorUtils.getColorFromHex(memo.colorTag),
+                    borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-              ),
-              // メモ本体部分
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
+                const SizedBox(width: 12),
+                // メモ本体部分
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -180,8 +179,8 @@ class MemoItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
