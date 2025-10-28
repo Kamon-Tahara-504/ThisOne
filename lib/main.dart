@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'supabase_config.dart';
 import 'services/supabase_service.dart';
+import 'services/data_migration_service.dart';
 import 'widgets/app_bars/collapsible_app_bar.dart';
 import 'widgets/overlays/account_info_overlay.dart';
 import 'widgets/navigation/custom_bottom_navigation_bar.dart';
@@ -111,6 +112,7 @@ class _MainScreenState extends State<MainScreen> {
   late ScrollControllerManager _scrollControllerManager;
   late HeaderController _headerController;
   late MainDataService _dataService;
+  late DataMigrationService _migrationService;
   bool _isDisposed = false; // 二重dispose防止
 
   @override
@@ -124,6 +126,7 @@ class _MainScreenState extends State<MainScreen> {
     _scrollControllerManager = ScrollControllerManager();
     _headerController = HeaderController();
     _dataService = MainDataService();
+    _migrationService = DataMigrationService();
 
     // ヘッダーコントローラーの変更を監視
     _headerController.addListener(() {
@@ -223,6 +226,86 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _loadData() async {
     if (_isDisposed || !mounted) return;
 
+    // データ移行チェック
+    final supabaseService = SupabaseService();
+    final user = supabaseService.getCurrentUser();
+
+    if (user != null) {
+      try {
+        // 移行が必要かチェック
+        final needsMigration = await _migrationService.needsMigration(user.id);
+
+        if (needsMigration) {
+          // 移行ダイアログを表示
+          if (mounted) {
+            final confirmed = await showDialog<bool>(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    backgroundColor: const Color(0xFF3A3A3A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    title: const Text(
+                      'データ移行',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    content: Text(
+                      'クラウドのデータをローカルに移行しますか？\n\n※この操作は自動的に実行されます',
+                      style: TextStyle(color: Colors.grey[300], fontSize: 16),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          'スキップ',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text(
+                          '移行する',
+                          style: TextStyle(
+                            color: Color(0xFFE85A3B),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+            );
+
+            if (confirmed == true && mounted) {
+              // 移行を実行
+              await _migrationService.migrateFromSupabase(user.id);
+
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('データ移行が完了しました'),
+                    backgroundColor: Color(0xFFE85A3B),
+                  ),
+                );
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // 移行エラーは無視して続行
+        debugPrint('移行エラー: $e');
+      }
+    }
+
+    // タスクを読み込み
     try {
       await _dataService.loadTasks();
     } catch (e) {
@@ -236,6 +319,7 @@ class _MainScreenState extends State<MainScreen> {
       }
     }
 
+    // メモを読み込み
     try {
       await _dataService.loadMemos();
     } catch (e) {
@@ -244,6 +328,20 @@ class _MainScreenState extends State<MainScreen> {
           context,
           e,
           operation: 'メモの読み込み',
+          onRetry: _loadData,
+        );
+      }
+    }
+
+    // スケジュールを読み込み
+    try {
+      await _dataService.loadSchedules();
+    } catch (e) {
+      if (!_isDisposed && mounted) {
+        AppErrorHandler.handleError(
+          context,
+          e,
+          operation: 'スケジュールの読み込み',
           onRetry: _loadData,
         );
       }
