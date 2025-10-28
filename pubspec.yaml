@@ -63,6 +63,11 @@ dependencies:
   shared_preferences: ^2.2.2  # 設定の永続化
   package_info_plus: ^9.0.0   # バージョン情報取得
   url_launcher: ^6.2.2        # メール・URL起動
+  
+  # Local database
+  sqflite: ^2.3.0             # SQLiteデータベース
+  path: ^1.8.3                # パス操作
+  path_provider: ^2.1.1       # アプリディレクトリ取得
 
 dev_dependencies:
   flutter_test:
