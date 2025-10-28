@@ -3,34 +3,56 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 import '../models/task.dart';
 import '../models/memo.dart';
+import '../models/schedule.dart';
+import 'local_memo_service.dart';
+import 'local_task_service.dart';
+import 'local_schedule_service.dart';
 
 /// メイン画面のデータ管理を担当するクラス
+///
+/// ローカルストレージ（SQLite）を使用してデータを管理します。
+/// Supabaseは認証のみに使用します。
 class MainDataService extends ChangeNotifier {
   final SupabaseService _supabaseService = SupabaseService();
+  final LocalMemoService _localMemoService = LocalMemoService();
+  final LocalTaskService _localTaskService = LocalTaskService();
+  final LocalScheduleService _localScheduleService = LocalScheduleService();
 
   // データ
   final List<Task> _tasks = [];
   final List<Memo> _memos = [];
+  final List<Schedule> _schedules = [];
 
   // 状態
   bool _isLoading = true;
   bool _isLoadingMemos = true;
+  bool _isLoadingSchedules = true;
   String? _newlyCreatedMemoId;
   bool _isDisposed = false;
 
   // ゲッター
   List<Task> get tasks => List.unmodifiable(_tasks);
   List<Memo> get memos => List.unmodifiable(_memos);
+  List<Schedule> get schedules => List.unmodifiable(_schedules);
   bool get isLoading => _isLoading;
   bool get isLoadingMemos => _isLoadingMemos;
+  bool get isLoadingSchedules => _isLoadingSchedules;
   String? get newlyCreatedMemoId => _newlyCreatedMemoId;
+
+  /// 現在のユーザーIDを取得
+  ///
+  /// ログインしている場合はユーザーID、未ログインの場合は'local'を返す
+  String get _userId {
+    final user = _supabaseService.getCurrentUser();
+    return user?.id ?? 'local';
+  }
 
   /// タスクを読み込み
   Future<void> loadTasks() async {
     if (_isDisposed) return;
 
     try {
-      final tasks = await _supabaseService.getUserTasksTyped();
+      final tasks = await _localTaskService.getTasks(_userId);
       if (!_isDisposed) {
         _tasks.clear();
         _tasks.addAll(tasks);
@@ -41,7 +63,6 @@ class MainDataService extends ChangeNotifier {
       if (!_isDisposed) {
         _isLoading = false;
         notifyListeners();
-        // エラーハンドリングは呼び出し元で行う
         rethrow;
       }
     }
@@ -52,7 +73,7 @@ class MainDataService extends ChangeNotifier {
     if (_isDisposed) return;
 
     try {
-      final memos = await _supabaseService.getUserMemosTyped();
+      final memos = await _localMemoService.getMemos(_userId);
       if (!_isDisposed) {
         _memos.clear();
         _memos.addAll(memos);
@@ -63,7 +84,27 @@ class MainDataService extends ChangeNotifier {
       if (!_isDisposed) {
         _isLoadingMemos = false;
         notifyListeners();
-        // エラーハンドリングは呼び出し元で行う
+        rethrow;
+      }
+    }
+  }
+
+  /// スケジュールを読み込み
+  Future<void> loadSchedules() async {
+    if (_isDisposed) return;
+
+    try {
+      final schedules = await _localScheduleService.getSchedules(_userId);
+      if (!_isDisposed) {
+        _schedules.clear();
+        _schedules.addAll(schedules);
+        _isLoadingSchedules = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      if (!_isDisposed) {
+        _isLoadingSchedules = false;
+        notifyListeners();
         rethrow;
       }
     }
@@ -74,30 +115,17 @@ class MainDataService extends ChangeNotifier {
     if (_isDisposed || title.trim().isEmpty) return;
 
     try {
-      final newTask = await _supabaseService.addTaskTyped(title: title.trim());
+      final newTask = await _localTaskService.addTask(
+        userId: _userId,
+        title: title.trim(),
+        priority: TaskPriority.low,
+      );
 
       if (!_isDisposed) {
-        if (newTask != null) {
-          _tasks.add(newTask);
-          notifyListeners();
-        } else {
-          // 認証されていない場合はローカルに保存
-          final localTask = Task(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            userId: 'local',
-            title: title.trim(),
-            isCompleted: false,
-            priority: TaskPriority.low,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-
-          _tasks.add(localTask);
-          notifyListeners();
-        }
+        _tasks.add(newTask);
+        notifyListeners();
       }
     } catch (e) {
-      // エラーハンドリングは呼び出し元で行う
       rethrow;
     }
   }
@@ -107,7 +135,8 @@ class MainDataService extends ChangeNotifier {
     if (_isDisposed || taskData['title'].toString().trim().isEmpty) return;
 
     try {
-      final newTask = await _supabaseService.addTaskTyped(
+      final newTask = await _localTaskService.addTask(
+        userId: _userId,
         title: taskData['title'].toString().trim(),
         description: taskData['description'],
         priority: taskData['priority'] ?? TaskPriority.low,
@@ -115,29 +144,10 @@ class MainDataService extends ChangeNotifier {
       );
 
       if (!_isDisposed) {
-        if (newTask != null) {
-          _tasks.add(newTask);
-          notifyListeners();
-        } else {
-          // 認証されていない場合はローカルに保存
-          final localTask = Task(
-            id: DateTime.now().millisecondsSinceEpoch.toString(),
-            userId: 'local',
-            title: taskData['title'].toString().trim(),
-            description: taskData['description'],
-            isCompleted: false,
-            priority: taskData['priority'] ?? TaskPriority.low,
-            dueDate: taskData['dueDate'],
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          );
-
-          _tasks.add(localTask);
-          notifyListeners();
-        }
+        _tasks.add(newTask);
+        notifyListeners();
       }
     } catch (e) {
-      // エラーハンドリングは呼び出し元で行う
       rethrow;
     }
   }
@@ -149,24 +159,23 @@ class MainDataService extends ChangeNotifier {
     try {
       // modeをMemoModeに変換
       final memoMode = MemoMode.fromString(mode);
-      final newMemo = await _supabaseService.addMemoTyped(
+      final newMemo = await _localMemoService.addMemo(
+        userId: _userId,
         title: title,
+        content: '',
         mode: memoMode,
-        colorHex: colorHex,
+        colorTag: colorHex,
       );
 
       if (!_isDisposed) {
-        if (newMemo != null) {
-          // 新しく作成されたメモのIDを設定
-          _newlyCreatedMemoId = newMemo.id;
-          notifyListeners();
+        // 新しく作成されたメモのIDを設定
+        _newlyCreatedMemoId = newMemo.id;
+        notifyListeners();
 
-          // メモリストを再読み込み
-          await loadMemos();
-        }
+        // メモリストを再読み込み
+        await loadMemos();
       }
     } catch (e) {
-      // エラーハンドリングは呼び出し元で行う
       rethrow;
     }
   }
@@ -195,12 +204,21 @@ class MainDataService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// スケジュールを更新
+  void updateSchedules(List<Schedule> updatedSchedules) {
+    if (_isDisposed) return;
+    _schedules.clear();
+    _schedules.addAll(updatedSchedules);
+    notifyListeners();
+  }
+
   /// 認証状態の変更を監視
   void startAuthStateListener() {
     _supabaseService.authStateChanges.listen((AuthState data) {
       if (!_isDisposed) {
         loadTasks();
         loadMemos();
+        loadSchedules();
       }
     });
   }
