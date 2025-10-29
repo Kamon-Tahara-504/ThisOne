@@ -184,6 +184,29 @@ class DataImportService {
       );
     }
 
+    // データ構造の詳細検証
+    final data = jsonData['data'];
+    if (data is! Map<String, dynamic>) {
+      return ImportResult(success: false, message: 'データ構造が正しくありません');
+    }
+
+    // 各データタイプの構造確認
+    for (final key in ['memos', 'tasks', 'schedules']) {
+      if (data.containsKey(key)) {
+        final items = data[key];
+        if (items is! List) {
+          return ImportResult(success: false, message: '$key のデータ形式が正しくありません');
+        }
+      }
+    }
+
+    // ファイルサイズの確認（概算）
+    final jsonString = jsonData.toString();
+    if (jsonString.length > 100 * 1024 * 1024) {
+      // 100MB制限
+      return ImportResult(success: false, message: 'バックアップファイルが大きすぎます');
+    }
+
     return ImportResult(success: true, message: '検証成功');
   }
 

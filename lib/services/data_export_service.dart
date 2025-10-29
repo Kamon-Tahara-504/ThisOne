@@ -11,6 +11,21 @@ import '../models/memo.dart';
 import '../models/task.dart';
 import '../models/schedule.dart';
 
+/// エクスポート結果
+class ExportResult {
+  final bool success;
+  final String message;
+  final String? filePath;
+  final Map<String, int>? counts;
+
+  ExportResult({
+    required this.success,
+    required this.message,
+    this.filePath,
+    this.counts,
+  });
+}
+
 /// データエクスポートサービス
 ///
 /// ローカルに保存されたデータをJSON形式でエクスポートし、
@@ -23,8 +38,8 @@ class DataExportService {
 
   /// 全データをエクスポート
   ///
-  /// 戻り値: エクスポートが成功した場合はtrue
-  Future<bool> exportAllData() async {
+  /// 戻り値: エクスポート結果
+  Future<ExportResult> exportAllData() async {
     try {
       // 現在のユーザーIDを取得
       final userId = _getUserId();
@@ -33,6 +48,12 @@ class DataExportService {
       final memos = await _localMemoService.getMemos(userId);
       final tasks = await _localTaskService.getTasks(userId);
       final schedules = await _localScheduleService.getSchedules(userId);
+
+      // データが空の場合の処理
+      final totalItems = memos.length + tasks.length + schedules.length;
+      if (totalItems == 0) {
+        return ExportResult(success: false, message: 'エクスポートするデータがありません。');
+      }
 
       // エクスポートデータを作成
       final exportData = {
@@ -56,6 +77,17 @@ class DataExportService {
       final jsonString = const JsonEncoder.withIndent('  ').convert(exportData);
       final file = await _createExportFile(jsonString);
 
+      // ファイルサイズをチェック
+      final fileSize = await file.length();
+      if (fileSize > 50 * 1024 * 1024) {
+        // 50MB制限
+        return ExportResult(
+          success: false,
+          message:
+              'エクスポートファイルが大きすぎます（${(fileSize / 1024 / 1024).toStringAsFixed(1)}MB）。',
+        );
+      }
+
       // ファイルを共有
       await Share.shareXFiles(
         [XFile(file.path)],
@@ -64,19 +96,47 @@ class DataExportService {
             'ThisOne バックアップ - ${DateTime.now().toString().substring(0, 16)}',
       );
 
-      return true;
+      return ExportResult(
+        success: true,
+        message: 'エクスポートが完了しました（$totalItems件）。',
+        filePath: file.path,
+        counts: {
+          'memos': memos.length,
+          'tasks': tasks.length,
+          'schedules': schedules.length,
+        },
+      );
+    } on FileSystemException catch (e) {
+      debugPrint('ファイルシステムエラー: $e');
+      return ExportResult(
+        success: false,
+        message: 'ファイルの作成に失敗しました。ストレージの空き容量を確認してください。',
+      );
+    } on FormatException catch (e) {
+      debugPrint('データフォーマットエラー: $e');
+      return ExportResult(success: false, message: 'データの変換中にエラーが発生しました。');
     } catch (e) {
       debugPrint('エクスポートエラー: $e');
-      return false;
+      return ExportResult(
+        success: false,
+        message: 'エクスポート中に予期しないエラーが発生しました: ${e.toString()}',
+      );
     }
   }
 
   /// 特定のデータタイプのみをエクスポート
   ///
   /// [dataTypes] エクスポートするデータタイプのリスト
-  /// 戻り値: エクスポートが成功した場合はtrue
-  Future<bool> exportSelectedData(List<String> dataTypes) async {
+  /// 戻り値: エクスポート結果
+  Future<ExportResult> exportSelectedData(List<String> dataTypes) async {
     try {
+      if (dataTypes.isEmpty) {
+        return ExportResult(
+          success: false,
+          message: 'エクスポートするデータタイプが選択されていません。',
+        );
+      }
+
       final userId = _getUserId();
       final exportData = {
         'version': '1.0.0',
@@ -86,12 +146,15 @@ class DataExportService {
         'counts': <String, int>{},
       };
 
+      int totalItems = 0;
+
       // 選択されたデータタイプのみを取得
       if (dataTypes.contains('memos')) {
         final memos = await _localMemoService.getMemos(userId);
         (exportData['data'] as Map<String, dynamic>)['memos'] =
             memos.map((memo) => _memoToMap(memo)).toList();
         (exportData['counts'] as Map<String, int>)['memos'] = memos.length;
+        totalItems += memos.length;
       }
 
       if (dataTypes.contains('tasks')) {
@@ -99,6 +162,7 @@ class DataExportService {
         (exportData['data'] as Map<String, dynamic>)['tasks'] =
             tasks.map((task) => _taskToMap(task)).toList();
         (exportData['counts'] as Map<String, int>)['tasks'] = tasks.length;
+        totalItems += tasks.length;
       }
 
       if (dataTypes.contains('schedules')) {
@@ -107,6 +171,14 @@ class DataExportService {
             schedules.map((schedule) => _scheduleToMap(schedule)).toList();
         (exportData['counts'] as Map<String, int>)['schedules'] =
             schedules.length;
+        totalItems += schedules.length;
+      }
+
+      if (totalItems == 0) {
+        return ExportResult(
+          success: false,
+          message: '選択されたデータタイプにエクスポート可能なデータがありません。',
+        );
       }
 
       // JSONファイルとして保存
@@ -121,10 +193,18 @@ class DataExportService {
             'ThisOne バックアップ - ${DateTime.now().toString().substring(0, 16)}',
       );
 
-      return true;
+      return ExportResult(
+        success: true,
+        message: '選択データのエクスポートが完了しました（$totalItems件）。',
+        filePath: file.path,
+        counts: exportData['counts'] as Map<String, int>,
+      );
     } catch (e) {
       debugPrint('選択エクスポートエラー: $e');
-      return false;
+      return ExportResult(
+        success: false,
+        message: '選択データのエクスポート中にエラーが発生しました: ${e.toString()}',
+      );
     }
   }
 

@@ -208,23 +208,41 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     });
 
     try {
-      final success = await _exportService.exportAllData();
+      final result = await _exportService.exportAllData();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(success ? 'エクスポートが完了しました' : 'エクスポートに失敗しました'),
+            content: Text(result.message),
             backgroundColor:
-                success ? const Color(0xFFE85A3B) : Colors.red[700],
+                result.success ? const Color(0xFFE85A3B) : Colors.red[700],
+            duration: Duration(seconds: result.success ? 3 : 5),
+            action:
+                result.success && result.counts != null
+                    ? SnackBarAction(
+                      label: '詳細',
+                      textColor: Colors.white,
+                      onPressed: () => _showExportDetails(result.counts!),
+                    )
+                    : null,
           ),
         );
+
+        // 成功した場合はデータ統計を更新
+        if (result.success) {
+          final newDataCounts = await _exportService.getDataCounts();
+          setState(() {
+            _dataCounts = newDataCounts;
+          });
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('エクスポートに失敗しました: $e'),
+            content: Text('エクスポート中に予期しないエラーが発生しました'),
             backgroundColor: Colors.red[700],
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -256,52 +274,67 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     String progressMessage = 'インポート準備中...';
     double progressValue = 0.0;
 
+    late StateSetter dialogSetState;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder:
           (context) => StatefulBuilder(
-            builder:
-                (context, setDialogState) => AlertDialog(
-                  backgroundColor: const Color(0xFF3A3A3A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  title: const Text(
-                    'データインポート中',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      LinearProgressIndicator(
-                        value: progressValue,
-                        backgroundColor: Colors.grey[600],
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                          Color(0xFFE85A3B),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        progressMessage,
-                        style: TextStyle(color: Colors.grey[300], fontSize: 14),
-                      ),
-                    ],
+            builder: (context, setDialogState) {
+              dialogSetState = setDialogState;
+              return AlertDialog(
+                backgroundColor: const Color(0xFF3A3A3A),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Text(
+                  'データインポート中',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    LinearProgressIndicator(
+                      value: progressValue,
+                      backgroundColor: Colors.grey[600],
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFFE85A3B),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      progressMessage,
+                      style: TextStyle(color: Colors.grey[300], fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${(progressValue * 100).toInt()}%',
+                      style: const TextStyle(
+                        color: Color(0xFFE85A3B),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
     );
 
     try {
       final result = await _importService.importFromFile(
         progressCallback: (progress, message) {
-          progressValue = progress;
-          progressMessage = message;
-          // ダイアログの状態を更新（StatefulBuilderを使用）
+          dialogSetState(() {
+            progressValue = progress;
+            progressMessage = message;
+          });
         },
       );
 
@@ -676,6 +709,19 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               isDangerous: true,
                               onTap: _clearCache,
                             ),
+
+                            const SizedBox(height: 24),
+
+                            // ヘルプセクション
+                            _buildSectionHeader('ヘルプ'),
+                            const SizedBox(height: 12),
+
+                            SettingsActionItem(
+                              icon: Icons.help_outline,
+                              title: 'バックアップについて',
+                              subtitle: '使い方とよくある質問',
+                              onTap: _showBackupHelp,
+                            ),
                           ],
                         ),
                       ),
@@ -705,6 +751,163 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
+        ),
+      ],
+    );
+  }
+
+  /// エクスポート詳細を表示
+  ///
+  /// [counts] エクスポートされたデータの件数
+  void _showExportDetails(Map<String, int> counts) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF3A3A3A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'エクスポート詳細',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildDetailRow('メモ', counts['memos'] ?? 0),
+                const SizedBox(height: 8),
+                _buildDetailRow('タスク', counts['tasks'] ?? 0),
+                const SizedBox(height: 8),
+                _buildDetailRow('スケジュール', counts['schedules'] ?? 0),
+                const Divider(color: Colors.grey),
+                _buildDetailRow(
+                  '合計',
+                  counts.values.fold(0, (sum, count) => sum + count),
+                  isTotal: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  '閉じる',
+                  style: TextStyle(color: Color(0xFFE85A3B), fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// 詳細行を構築
+  Widget _buildDetailRow(String label, int count, {bool isTotal = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: isTotal ? Colors.white : Colors.grey[300],
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+        Text(
+          '$count件',
+          style: TextStyle(
+            color: isTotal ? const Color(0xFFE85A3B) : Colors.grey[300],
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// バックアップヘルプを表示
+  void _showBackupHelp() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF3A3A3A),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'バックアップについて',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHelpSection(
+                    '📤 エクスポート',
+                    '現在のデータをJSONファイルとして保存し、他のアプリや端末と共有できます。',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildHelpSection(
+                    '📥 インポート',
+                    'バックアップファイルからデータを復元します。重複するデータは自動的にスキップされます。',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildHelpSection(
+                    '🔒 プライバシー',
+                    'すべてのデータは端末内に保存され、外部サーバーには送信されません。',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildHelpSection(
+                    '💡 ヒント',
+                    '• 定期的にバックアップを作成することをお勧めします\n'
+                        '• バックアップファイルは安全な場所に保管してください\n'
+                        '• 機種変更時にはエクスポート→インポートでデータ移行できます',
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  '閉じる',
+                  style: TextStyle(color: Color(0xFFE85A3B), fontSize: 16),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  /// ヘルプセクションを構築
+  Widget _buildHelpSection(String title, String content) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: Color(0xFFE85A3B),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: TextStyle(color: Colors.grey[300], fontSize: 14, height: 1.4),
         ),
       ],
     );
