@@ -70,6 +70,10 @@ dependencies:
   path_provider: ^2.1.1       # アプリディレクトリ取得
   uuid: ^4.5.1                # UUID生成
   
+  # Backup functionality
+  share_plus: ^10.1.2         # ファイル共有
+  file_picker: ^8.1.4         # ファイル選択
+  
 
 dev_dependencies:
   flutter_test:

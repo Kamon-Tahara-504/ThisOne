@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
+import '../../services/data_export_service.dart';
+import '../../services/data_import_service.dart';
 import '../../widgets/settings/settings_toggle_item.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
@@ -28,15 +30,19 @@ class DataManagementScreen extends StatefulWidget {
 
 class _DataManagementScreenState extends State<DataManagementScreen> {
   final SettingsService _settingsService = SettingsService();
+  final DataExportService _exportService = DataExportService();
+  final DataImportService _importService = DataImportService();
 
   bool _autoSync = true;
   bool _syncOnWifiOnly = false;
   String _lastSyncTime = '';
+  Map<String, int> _dataCounts = {};
 
   bool _isLoading = true;
   bool _isSyncing = false;
   bool _isClearingCache = false;
-  bool _isBackingUp = false;
+  bool _isExporting = false;
+  bool _isImporting = false;
 
   @override
   void initState() {
@@ -51,11 +57,13 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     final autoSync = await _settingsService.getAutoSync();
     final syncOnWifiOnly = await _settingsService.getSyncOnWifiOnly();
     final lastSyncTime = await _settingsService.getLastSyncTime();
+    final dataCounts = await _exportService.getDataCounts();
 
     setState(() {
       _autoSync = autoSync;
       _syncOnWifiOnly = syncOnWifiOnly;
       _lastSyncTime = lastSyncTime;
+      _dataCounts = dataCounts;
       _isLoading = false;
     });
   }
@@ -178,30 +186,36 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     }
   }
 
-  /// データをバックアップ
-  Future<void> _backupData() async {
+  /// データをエクスポート
+  Future<void> _exportData() async {
+    final totalItems = _dataCounts.values.fold(0, (sum, count) => sum + count);
+
     final confirmed = await _showConfirmDialog(
-      title: 'データをバックアップ',
-      message: '現在のデータをSupabaseにバックアップします。',
-      confirmText: 'バックアップ',
+      title: 'データをエクスポート',
+      message:
+          '現在のデータ（$totalItems件）をファイルとしてエクスポートします。\n'
+          'メモ: ${_dataCounts['memos'] ?? 0}件\n'
+          'タスク: ${_dataCounts['tasks'] ?? 0}件\n'
+          'スケジュール: ${_dataCounts['schedules'] ?? 0}件',
+      confirmText: 'エクスポート',
       isDangerous: false,
     );
 
     if (!confirmed) return;
 
     setState(() {
-      _isBackingUp = true;
+      _isExporting = true;
     });
 
     try {
-      // TODO: 実際のバックアップ処理を実装
-      await Future.delayed(const Duration(seconds: 2));
+      final success = await _exportService.exportAllData();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('バックアップが完了しました'),
-            backgroundColor: Color(0xFFE85A3B),
+          SnackBar(
+            content: Text(success ? 'エクスポートが完了しました' : 'エクスポートに失敗しました'),
+            backgroundColor:
+                success ? const Color(0xFFE85A3B) : Colors.red[700],
           ),
         );
       }
@@ -209,14 +223,123 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('バックアップに失敗しました: $e'),
+            content: Text('エクスポートに失敗しました: $e'),
             backgroundColor: Colors.red[700],
           ),
         );
       }
     } finally {
       setState(() {
-        _isBackingUp = false;
+        _isExporting = false;
+      });
+    }
+  }
+
+  /// データをインポート
+  Future<void> _importData() async {
+    final confirmed = await _showConfirmDialog(
+      title: 'データをインポート',
+      message:
+          'バックアップファイルからデータをインポートします。\n'
+          '重複するデータはスキップされます。',
+      confirmText: 'インポート',
+      isDangerous: false,
+    );
+
+    if (!confirmed) return;
+
+    setState(() {
+      _isImporting = true;
+    });
+
+    // 進行状況ダイアログを表示
+    String progressMessage = 'インポート準備中...';
+    double progressValue = 0.0;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  backgroundColor: const Color(0xFF3A3A3A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    'データインポート中',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LinearProgressIndicator(
+                        value: progressValue,
+                        backgroundColor: Colors.grey[600],
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFFE85A3B),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        progressMessage,
+                        style: TextStyle(color: Colors.grey[300], fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+          ),
+    );
+
+    try {
+      final result = await _importService.importFromFile(
+        progressCallback: (progress, message) {
+          progressValue = progress;
+          progressMessage = message;
+          // ダイアログの状態を更新（StatefulBuilderを使用）
+        },
+      );
+
+      // 進行状況ダイアログを閉じる
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message),
+            backgroundColor:
+                result.success ? const Color(0xFFE85A3B) : Colors.red[700],
+          ),
+        );
+
+        // 成功した場合はデータ統計を更新
+        if (result.success) {
+          final newDataCounts = await _exportService.getDataCounts();
+          setState(() {
+            _dataCounts = newDataCounts;
+          });
+        }
+      }
+    } catch (e) {
+      // 進行状況ダイアログを閉じる
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('インポートに失敗しました: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isImporting = false;
       });
     }
   }
@@ -475,12 +598,74 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                             _buildSectionHeader('データ管理'),
                             const SizedBox(height: 12),
 
+                            // データ統計表示
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3A3A3A),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      gradient: createOrangeYellowGradient(),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.storage,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'ローカルデータ',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'メモ: ${_dataCounts['memos'] ?? 0}件 | '
+                                          'タスク: ${_dataCounts['tasks'] ?? 0}件 | '
+                                          'スケジュール: ${_dataCounts['schedules'] ?? 0}件',
+                                          style: TextStyle(
+                                            color: Colors.grey[400],
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
                             SettingsActionItem(
-                              icon: Icons.backup,
-                              title: 'データをバックアップ',
-                              subtitle: 'Supabaseにバックアップを作成',
-                              isLoading: _isBackingUp,
-                              onTap: _backupData,
+                              icon: Icons.file_upload,
+                              title: 'データをエクスポート',
+                              subtitle: 'バックアップファイルを作成・共有',
+                              isLoading: _isExporting,
+                              onTap: _exportData,
+                            ),
+
+                            SettingsActionItem(
+                              icon: Icons.file_download,
+                              title: 'データをインポート',
+                              subtitle: 'バックアップファイルから復元',
+                              isLoading: _isImporting,
+                              onTap: _importData,
                             ),
 
                             SettingsActionItem(
