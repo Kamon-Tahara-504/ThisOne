@@ -69,6 +69,7 @@ dependencies:
   path: ^1.8.3                # パス操作
   path_provider: ^2.1.1       # アプリディレクトリ取得
   uuid: ^4.5.1                # UUID生成
+  
 
 dev_dependencies:
   flutter_test:
