@@ -523,8 +523,8 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 同期設定セクション
-                            _buildSectionHeader('同期設定'),
+                            // 同期（設定 + 状態 統合セクション）
+                            _buildSectionHeader('同期'),
                             const SizedBox(height: 12),
 
                             SettingsToggleItem(
@@ -559,13 +559,9 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                                   ),
                             ),
 
-                            const SizedBox(height: 24),
-
-                            // 同期状態セクション
-                            _buildSectionHeader('同期状態'),
                             const SizedBox(height: 12),
 
-                            // 最終同期日時表示
+                            // 最終同期日時表示（同期セクション内に統合）
                             Container(
                               padding: const EdgeInsets.all(16),
                               margin: const EdgeInsets.only(bottom: 12),
@@ -831,7 +827,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     );
   }
 
-  /// バックアップヘルプを表示
+  /// バックアップヘルプを表示（アイコンを使わない簡潔な表現）
   void _showBackupHelp() {
     showDialog(
       context: context,
@@ -855,22 +851,22 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHelpSection(
-                    '📤 エクスポート',
+                    'エクスポート',
                     '現在のデータをJSONファイルとして保存し、他のアプリや端末と共有できます。',
                   ),
                   const SizedBox(height: 16),
                   _buildHelpSection(
-                    '📥 インポート',
+                    'インポート',
                     'バックアップファイルからデータを復元します。重複するデータは自動的にスキップされます。',
                   ),
                   const SizedBox(height: 16),
                   _buildHelpSection(
-                    '🔒 プライバシー',
+                    'プライバシー',
                     'すべてのデータは端末内に保存され、外部サーバーには送信されません。',
                   ),
                   const SizedBox(height: 16),
                   _buildHelpSection(
-                    '💡 ヒント',
+                    'ヒント',
                     '• 定期的にバックアップを作成することをお勧めします\n'
                         '• バックアップファイルは安全な場所に保管してください\n'
                         '• 機種変更時にはエクスポート→インポートでデータ移行できます',
