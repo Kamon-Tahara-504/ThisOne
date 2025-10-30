@@ -322,6 +322,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     required String subtitle,
   }) {
     final isSelected = _themeMode == mode;
+    final bool isEnabled = mode == 'dark'; // ライト/システムは未実装のため無効化
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -348,28 +349,34 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           child: Icon(icon, color: Colors.white, size: 20),
         ),
         title: Text(
-          title,
+          isEnabled ? title : '$title（未実装）',
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[300],
+            color:
+                isEnabled
+                    ? (isSelected ? Colors.white : Colors.grey[300])
+                    : Colors.grey[500],
             fontSize: 16,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
         subtitle: Text(
-          subtitle,
+          isEnabled ? subtitle : '未実装です（今後対応予定）',
           style: TextStyle(color: Colors.grey[500], fontSize: 14),
         ),
         trailing: Radio<String>(
           value: mode,
           groupValue: _themeMode,
-          onChanged: (value) {
-            if (value != null) {
-              _updateThemeMode(value);
-            }
-          },
+          onChanged:
+              isEnabled
+                  ? (value) {
+                    if (value != null) {
+                      _updateThemeMode(value);
+                    }
+                  }
+                  : null,
           activeColor: const Color(0xFFE85A3B),
         ),
-        onTap: () => _updateThemeMode(mode),
+        onTap: isEnabled ? () => _updateThemeMode(mode) : null,
       ),
     );
   }
