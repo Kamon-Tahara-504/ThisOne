@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
+// 外部ブラウザは使用せず、アプリ内で表示する
 import '../../gradients.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import 'terms_screen.dart';
+import 'privacy_policy_screen.dart';
 
 /// アプリ情報画面
 ///
@@ -169,21 +171,20 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     );
   }
 
-  /// URLを開く
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('リンクを開けませんでした'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  // 利用規約画面へ遷移
+  void _openTerms() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TermsScreen()),
+    );
+  }
+
+  // プライバシーポリシー画面へ遷移
+  void _openPrivacy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+    );
   }
 
   @override
@@ -323,24 +324,21 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                             const SizedBox(height: 24),
 
                             // リンクセクション
-                            _buildSectionHeader('リンク'),
+                            _buildSectionHeader('ポリシー'),
                             const SizedBox(height: 12),
 
                             _buildInfoCard(
                               icon: Icons.article,
                               title: '利用規約',
                               subtitle: 'サービス利用規約',
-                              onTap:
-                                  () => _launchUrl('https://example.com/terms'),
+                              onTap: _openTerms,
                             ),
 
                             _buildInfoCard(
                               icon: Icons.privacy_tip,
                               title: 'プライバシーポリシー',
                               subtitle: '個人情報の取り扱い',
-                              onTap:
-                                  () =>
-                                      _launchUrl('https://example.com/privacy'),
+                              onTap: _openPrivacy,
                             ),
 
                             const SizedBox(height: 24),
