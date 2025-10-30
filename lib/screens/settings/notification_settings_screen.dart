@@ -298,8 +298,8 @@ class _NotificationSettingsScreenState
 
                           const SizedBox(height: 24),
 
-                          // タスク通知セクション
-                          _buildSectionHeader('タスク通知'),
+                          // ツール通知セクション（タスク通知 + スケジュール通知を統合）
+                          _buildSectionHeader('ツール通知'),
                           const SizedBox(height: 12),
 
                           SettingsToggleItem(
@@ -331,12 +331,8 @@ class _NotificationSettingsScreenState
                                 }),
                           ),
 
-                          const SizedBox(height: 24),
-
-                          // スケジュール通知セクション
-                          _buildSectionHeader('スケジュール通知'),
                           const SizedBox(height: 12),
-
+                          // スケジュール通知（同一セクション内に配置）
                           SettingsToggleItem(
                             icon: Icons.event,
                             title: 'スケジュール通知',
