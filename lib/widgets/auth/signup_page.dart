@@ -4,6 +4,7 @@ import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import 'google_signin_button.dart';
 import 'x_signin_button.dart';
+import 'disabled_auth_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -441,41 +442,21 @@ class _SignupPageState extends State<SignupPage> {
                   Column(
                     children: [
                       // Google登録 - ブランディングガイドライン準拠（開発中）
-                      Column(
-                        children: [
-                          GoogleSignInButton(
-                            onPressed: null, // 無効化
-                            text: "Googleで新規会員登録",
-                            borderRadius: 12.0,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '開発中です（今後対応予定）',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      DisabledAuthButton(
+                        button: GoogleSignInButton(
+                          onPressed: null, // 無効化
+                          text: "Googleで新規会員登録",
+                          borderRadius: 12.0,
+                        ),
                       ),
                       const SizedBox(height: 16),
                       // X登録 - ブランディングガイドライン準拠（開発中）
-                      Column(
-                        children: [
-                          XSignInButton(
-                            onPressed: null, // 無効化
-                            text: "Xで新規会員登録",
-                            borderRadius: 12.0,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '開発中です（今後対応予定）',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      DisabledAuthButton(
+                        button: XSignInButton(
+                          onPressed: null, // 無効化
+                          text: "Xで新規会員登録",
+                          borderRadius: 12.0,
+                        ),
                       ),
                     ],
                   ),

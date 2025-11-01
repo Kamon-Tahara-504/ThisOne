@@ -4,14 +4,12 @@ import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import 'google_signin_button.dart';
 import 'x_signin_button.dart';
+import 'disabled_auth_button.dart';
 
 class LoginBottomSheet extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
 
-  const LoginBottomSheet({
-    super.key,
-    this.onLoginSuccess,
-  });
+  const LoginBottomSheet({super.key, this.onLoginSuccess});
 
   @override
   State<LoginBottomSheet> createState() => _LoginBottomSheetState();
@@ -42,11 +40,11 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ログインしました！')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ログインしました！')));
         widget.onLoginSuccess?.call();
       }
     } on AuthException catch (error) {
@@ -62,7 +60,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           default:
             errorMessage = 'エラー: ${error.message}';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
@@ -89,6 +87,8 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     }
   }
 
+  // TODO: 開発中の機能 - 今後実装予定
+  // ignore: unused_element
   Future<void> _loginWithGoogle() async {
     setState(() {
       _isLoading = true;
@@ -98,9 +98,9 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
       final success = await _supabaseService.signInWithGoogle();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Googleでログインしました！')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Googleでログインしました！')));
           widget.onLoginSuccess?.call();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -129,6 +129,8 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     }
   }
 
+  // TODO: 開発中の機能 - 今後実装予定
+  // ignore: unused_element
   Future<void> _loginWithX() async {
     setState(() {
       _isLoading = true;
@@ -138,9 +140,9 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
       final success = await _supabaseService.signInWithTwitter();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Xでログインしました！')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Xでログインしました！')));
           widget.onLoginSuccess?.call();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -197,13 +199,16 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              
+
               // コンテンツ
               Expanded(
                 child: SingleChildScrollView(
                   controller: scrollController,
                   padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: _showEmailLogin ? _buildEmailLoginForm() : _buildLoginOptions(),
+                  child:
+                      _showEmailLogin
+                          ? _buildEmailLoginForm()
+                          : _buildLoginOptions(),
                 ),
               ),
             ],
@@ -217,7 +222,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     return Column(
       children: [
         const SizedBox(height: 20),
-        
+
         // メールログインボタン
         Container(
           width: double.infinity,
@@ -227,11 +232,14 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: ElevatedButton(
-            onPressed: _isLoading ? null : () {
-              setState(() {
-                _showEmailLogin = true;
-              });
-            },
+            onPressed:
+                _isLoading
+                    ? null
+                    : () {
+                      setState(() {
+                        _showEmailLogin = true;
+                      });
+                    },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.transparent,
               shadowColor: Colors.transparent,
@@ -257,22 +265,26 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
         ),
         const SizedBox(height: 16),
-        
-        // Googleログインボタン - ブランディングガイドライン準拠
-        GoogleSignInButton(
-          onPressed: _isLoading ? null : _loginWithGoogle,
-          text: "Googleでログイン",
-          borderRadius: 12.0,
+
+        // Googleログインボタン - ブランディングガイドライン準拠（開発中）
+        DisabledAuthButton(
+          button: GoogleSignInButton(
+            onPressed: null, // 無効化
+            text: "Googleでログイン",
+            borderRadius: 12.0,
+          ),
         ),
         const SizedBox(height: 16),
-        
-        // Xログインボタン - ブランディングガイドライン準拠
-        XSignInButton(
-          onPressed: _isLoading ? null : _loginWithX,
-          text: "Xでログイン",
-          borderRadius: 12.0,
+
+        // Xログインボタン - ブランディングガイドライン準拠（開発中）
+        DisabledAuthButton(
+          button: XSignInButton(
+            onPressed: null, // 無効化
+            text: "Xでログイン",
+            borderRadius: 12.0,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
       ],
     );
   }
@@ -295,7 +307,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
         ),
         const SizedBox(height: 20),
-        
+
         // メールアドレス入力
         const Text(
           'メールアドレス',
@@ -326,7 +338,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
         ),
         const SizedBox(height: 20),
-        
+
         // パスワード入力
         const Text(
           'パスワード',
@@ -355,7 +367,9 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
               prefixIcon: const Icon(Icons.lock_outlined, color: Colors.grey),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                  _obscurePassword
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
                   color: Colors.grey,
                 ),
                 onPressed: () {
@@ -368,7 +382,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
         ),
         const SizedBox(height: 32),
-        
+
         // ログインボタン
         Container(
           width: double.infinity,
@@ -386,20 +400,21 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: _isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : const Text(
-                    'ログイン',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+            child:
+                _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                      'ログイン',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
           ),
         ),
         const SizedBox(height: 20),
-        
+
         // パスワードを忘れた方
         Center(
           child: TextButton(
