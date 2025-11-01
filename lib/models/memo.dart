@@ -56,6 +56,29 @@ class Memo {
 
   /// SupabaseのMapデータからMemoオブジェクトを作成
   factory Memo.fromMap(Map<String, dynamic> map) {
+    // tagsの処理: Supabaseからはリスト、SQLiteからはJSON文字列
+    List<String> parseTags(dynamic tagsData) {
+      if (tagsData == null) return [];
+      if (tagsData is List) return List<String>.from(tagsData);
+      if (tagsData is String) {
+        try {
+          final decoded = jsonDecode(tagsData);
+          return List<String>.from(decoded);
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
+
+    // is_pinnedの処理: Supabaseからはbool、SQLiteからはint
+    bool parsePinned(dynamic pinnedData) {
+      if (pinnedData == null) return false;
+      if (pinnedData is bool) return pinnedData;
+      if (pinnedData is int) return pinnedData == 1;
+      return false;
+    }
+
     return Memo(
       id: map['id'] as String,
       userId: map['user_id'] as String,
@@ -63,8 +86,8 @@ class Memo {
       content: map['content'] as String? ?? '',
       mode: MemoMode.fromString(map['mode'] as String? ?? 'memo'),
       richContent: map['rich_content'] as String?,
-      tags: List<String>.from(map['tags'] ?? []),
-      isPinned: map['is_pinned'] as bool? ?? false,
+      tags: parseTags(map['tags']),
+      isPinned: parsePinned(map['is_pinned']),
       colorTag: map['color_tag'] as String? ?? '#FFD700',
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),

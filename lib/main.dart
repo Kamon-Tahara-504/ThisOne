@@ -311,6 +311,7 @@ class _MainScreenState extends State<MainScreen> {
       ScheduleScreen(
         key: _scheduleScreenKey,
         scrollController: _scrollControllerManager.getScrollController(1),
+        dataService: _dataService,
       ),
       // 2: メモ画面
       _dataService.isLoadingMemos

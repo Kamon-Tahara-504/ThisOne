@@ -3,83 +3,34 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../gradients.dart';
 import '../../widgets/schedule/add_schedule_bottom_sheet.dart';
 import '../../widgets/overlays/custom_bottom_sheet.dart';
-import '../../services/supabase_service.dart';
+import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/schedule.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;
+  final MainDataService dataService;
 
-  const ScheduleScreen({super.key, this.scrollController});
+  const ScheduleScreen({
+    super.key,
+    this.scrollController,
+    required this.dataService,
+  });
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  final Map<DateTime, List<Schedule>> _schedules = {}; // 型安全なScheduleモデルに変更
-  final SupabaseService _supabaseService = SupabaseService();
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSchedules();
-  }
-
-  /// Supabaseからスケジュールデータを読み込み
-  Future<void> _loadSchedules() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final schedules = await _supabaseService.getUserSchedulesTyped();
-
-      // 型安全なScheduleオブジェクトを日付ごとにグループ化
-      final scheduleMap = schedules.groupByDate();
-
-      setState(() {
-        _schedules.clear();
-        _schedules.addAll(scheduleMap);
-      });
-    } catch (e) {
-      if (mounted) {
-        AppErrorHandler.handleError(
-          context,
-          e,
-          operation: 'スケジュールの読み込み',
-          onRetry: _loadSchedules,
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
 
   /// スケジュールを削除（データベースからも削除）
   Future<void> _deleteSchedule(Schedule schedule) async {
     try {
-      // データベースから削除
-      await _supabaseService.deleteScheduleTyped(schedule.id);
-
-      // ローカルのMapからも削除
-      setState(() {
-        final date = DateTime(
-          schedule.scheduleDate.year,
-          schedule.scheduleDate.month,
-          schedule.scheduleDate.day,
-        );
-        _schedules[date]?.remove(schedule);
-        if (_schedules[date]?.isEmpty == true) {
-          _schedules.remove(date);
-        }
-      });
+      // ローカルデータベースから削除
+      await widget.dataService.deleteSchedule(schedule.id);
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
@@ -92,9 +43,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
   }
 
-  List<Schedule> _getSchedulesForDate(DateTime date) {
+  List<Schedule> _getSchedulesForDate(
+    DateTime date,
+    List<Schedule> allSchedules,
+  ) {
     final normalizedDate = DateTime(date.year, date.month, date.day);
-    return _schedules[normalizedDate] ?? [];
+    return allSchedules.where((schedule) {
+      final scheduleDate = DateTime(
+        schedule.scheduleDate.year,
+        schedule.scheduleDate.month,
+        schedule.scheduleDate.day,
+      );
+      return scheduleDate == normalizedDate;
+    }).toList();
   }
 
   /// カレンダー表示形式を切り替える
@@ -129,35 +90,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   /// スケジュールを追加（データベースにも保存）
   Future<void> _addSchedule(Map<String, dynamic> schedule) async {
     try {
-      // データベースに保存
-      final newSchedule = await _supabaseService.addScheduleTyped(
+      // ローカルデータベースに保存
+      await widget.dataService.addSchedule(
         title: schedule['title'],
         description: schedule['description'],
-        date: schedule['date'],
+        scheduleDate: schedule['date'],
         startTime: schedule['startTime'],
         endTime: schedule['endTime'],
-        isAllDay: schedule['isAllDay'],
+        isAllDay: schedule['isAllDay'] ?? false,
         reminderMinutes: schedule['reminderMinutes'],
-        colorHex: schedule['colorHex'],
+        colorHex: schedule['colorHex'] ?? '#E85A3B',
       );
-
-      if (newSchedule != null) {
-        // ローカルのMapに追加
-        setState(() {
-          final date = DateTime(
-            newSchedule.scheduleDate.year,
-            newSchedule.scheduleDate.month,
-            newSchedule.scheduleDate.day,
-          );
-          if (_schedules[date] != null) {
-            _schedules[date]!.add(newSchedule);
-          } else {
-            _schedules[date] = [newSchedule];
-          }
-        });
-      } else {
-        throw Exception('データベースへの保存に失敗しました');
-      }
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
@@ -188,506 +131,536 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final todaySchedules = _getSchedulesForDate(_selectedDate);
+    return AnimatedBuilder(
+      animation: widget.dataService,
+      builder: (context, child) {
+        final allSchedules = widget.dataService.schedules;
+        final todaySchedules = _getSchedulesForDate(
+          _selectedDate,
+          allSchedules,
+        );
+        final isLoading = widget.dataService.isLoadingSchedules;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF2B2B2B),
-      body:
-          _isLoading
-              ? const Center(
-                child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
-              )
-              : CustomScrollView(
-                controller: widget.scrollController,
-                slivers: [
-                  // カレンダー部分
-                  SliverToBoxAdapter(
-                    child: Container(
-                      margin: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3A3A3A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[700]!),
-                      ),
-                      child: Column(
-                        children: [
-                          // カスタムヘッダー
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                // 左矢印
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _focusedDate = DateTime(
-                                        _focusedDate.year,
-                                        _focusedDate.month - 1,
-                                      );
-                                    });
-                                  },
-                                  icon: const Icon(
-                                    Icons.chevron_left,
-                                    color: Colors.white,
-                                  ),
-                                  iconSize: 24,
-                                  splashRadius: 20,
-                                ),
-
-                                // 中央に配置するためのSpacer
-                                const Spacer(),
-
-                                // 年月表示
-                                Text(
-                                  '${_focusedDate.year}年${_focusedDate.month}月',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-
-                                const SizedBox(width: 12),
-
-                                // 表示形式切り替えボタン
-                                GestureDetector(
-                                  onTap: _toggleCalendarFormat,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 6,
+        return Scaffold(
+          backgroundColor: const Color(0xFF2B2B2B),
+          body:
+              isLoading
+                  ? const Center(
+                    child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
+                  )
+                  : CustomScrollView(
+                    controller: widget.scrollController,
+                    slivers: [
+                      // カレンダー部分
+                      SliverToBoxAdapter(
+                        child: Container(
+                          margin: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3A3A3A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey[700]!),
+                          ),
+                          child: Column(
+                            children: [
+                              // カスタムヘッダー
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                child: Row(
+                                  children: [
+                                    // 左矢印
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _focusedDate = DateTime(
+                                            _focusedDate.year,
+                                            _focusedDate.month - 1,
+                                          );
+                                        });
+                                      },
+                                      icon: const Icon(
+                                        Icons.chevron_left,
+                                        color: Colors.white,
+                                      ),
+                                      iconSize: 24,
+                                      splashRadius: 20,
                                     ),
-                                    decoration: BoxDecoration(
-                                      gradient:
-                                          createHorizontalOrangeYellowGradient(),
-                                      borderRadius: BorderRadius.circular(14),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withValues(
-                                            alpha: 0.3,
-                                          ),
-                                          blurRadius: 3,
-                                          offset: const Offset(0, 1),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      _getCalendarFormatText(),
+
+                                    // 中央に配置するためのSpacer
+                                    const Spacer(),
+
+                                    // 年月表示
+                                    Text(
+                                      '${_focusedDate.year}年${_focusedDate.month}月',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 10,
+                                        fontSize: 16,
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                  ),
-                                ),
 
-                                // 中央に配置するためのSpacer
-                                const Spacer(),
+                                    const SizedBox(width: 12),
 
-                                // 右矢印
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _focusedDate = DateTime(
-                                        _focusedDate.year,
-                                        _focusedDate.month + 1,
-                                      );
-                                    });
-                                  },
-                                  icon: const Icon(
-                                    Icons.chevron_right,
-                                    color: Colors.white,
-                                  ),
-                                  iconSize: 24,
-                                  splashRadius: 20,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // TableCalendar（ヘッダー非表示）
-                          TableCalendar<Map<String, dynamic>>(
-                            firstDay: DateTime.utc(2020, 1, 1),
-                            lastDay: DateTime.utc(2030, 12, 31),
-                            focusedDay: _focusedDate,
-                            selectedDayPredicate:
-                                (day) => isSameDay(_selectedDate, day),
-                            calendarFormat: _calendarFormat,
-                            eventLoader:
-                                (date) =>
-                                    _getSchedulesForDate(
-                                      date,
-                                    ).map((s) => s.toMap()).toList(),
-                            startingDayOfWeek: StartingDayOfWeek.sunday,
-                            headerVisible: false,
-                            calendarStyle: CalendarStyle(
-                              outsideDaysVisible: true,
-                              weekendTextStyle: const TextStyle(
-                                color: Colors.white,
-                              ),
-                              defaultTextStyle: const TextStyle(
-                                color: Colors.white,
-                              ),
-                              // 前月・次月の日付スタイル（薄いグレー）
-                              outsideTextStyle: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 16,
-                              ),
-                              // 過去の日付も白色で表示（期限切れでも色を変えない）
-                              todayTextStyle: const TextStyle(
-                                color: Colors.white,
-                              ),
-                              selectedTextStyle: const TextStyle(
-                                color: Colors.white,
-                              ),
-                              selectedDecoration: const BoxDecoration(
-                                color: Colors.transparent,
-                                shape: BoxShape.circle,
-                              ),
-                              todayDecoration: BoxDecoration(
-                                gradient: createOrangeYellowGradient(),
-                                shape: BoxShape.circle,
-                              ),
-                              markerDecoration: const BoxDecoration(
-                                color: Colors.transparent,
-                              ),
-                              markersMaxCount: 1,
-                              markerSize: 0,
-                            ),
-                            calendarBuilders: CalendarBuilders(
-                              // 曜日ビルダー（日〜土）
-                              dowBuilder: (context, day) {
-                                final weekdays = [
-                                  '日',
-                                  '月',
-                                  '火',
-                                  '水',
-                                  '木',
-                                  '金',
-                                  '土',
-                                ];
-                                return Center(
-                                  child: Text(
-                                    weekdays[day.weekday % 7],
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                );
-                              },
-
-                              selectedBuilder: (context, day, focusedDay) {
-                                final isToday = isSameDay(day, DateTime.now());
-
-                                return Container(
-                                  margin: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    gradient: createOrangeYellowGradient(),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Container(
-                                    margin: const EdgeInsets.all(2),
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFF3A3A3A), // 背景色に合わせる
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child:
-                                        isToday
-                                            ? Container(
-                                              margin: const EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
-                                                gradient:
-                                                    createOrangeYellowGradient(),
-                                                shape: BoxShape.circle,
+                                    // 表示形式切り替えボタン
+                                    GestureDetector(
+                                      onTap: _toggleCalendarFormat,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient:
+                                              createHorizontalOrangeYellowGradient(),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.3,
                                               ),
-                                              child: Center(
-                                                child: Text(
-                                                  day.day.toString(),
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                            : Center(
-                                              child: Text(
-                                                day.day.toString(),
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
-                                              ),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
                                             ),
-                                  ),
-                                );
-                              },
-                              markerBuilder: (context, day, events) {
-                                final eventCount = events.length;
-                                if (eventCount > 0) {
-                                  return Positioned(
-                                    right: 1,
-                                    bottom: 1,
-                                    child: Container(
-                                      decoration: const BoxDecoration(
-                                        color: Colors.green,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      width: 18,
-                                      height: 18,
-                                      child: Center(
+                                          ],
+                                        ),
                                         child: Text(
-                                          eventCount > 99
-                                              ? '99+'
-                                              : eventCount.toString(),
+                                          _getCalendarFormatText(),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 10,
-                                            fontWeight: FontWeight.bold,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
                                     ),
-                                  );
-                                }
-                                return null;
-                              },
-                            ),
-                            onDaySelected: (selectedDay, focusedDay) {
-                              setState(() {
-                                _selectedDate = selectedDay;
-                                _focusedDate = focusedDay;
-                              });
-                            },
-                            onFormatChanged: (format) {
-                              setState(() {
-                                _calendarFormat = format;
-                              });
-                            },
-                            onPageChanged: (focusedDay) {
-                              _focusedDate = focusedDay;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
 
-                  // スケジュールリストのタイトル
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    sliver: SliverToBoxAdapter(
-                      child: Text(
-                        '${_selectedDate.year}年${_selectedDate.month}月${_selectedDate.day}日のスケジュール',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                                    // 中央に配置するためのSpacer
+                                    const Spacer(),
 
-                  // スケジュールリスト部分
-                  todaySchedules.isEmpty
-                      ? SliverToBoxAdapter(
-                        child: Container(
-                          height: 200,
-                          margin: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                ShaderMask(
-                                  shaderCallback:
-                                      (bounds) => createOrangeYellowGradient()
-                                          .createShader(bounds),
-                                  child: const Icon(
-                                    Icons.event_note,
-                                    size: 48,
+                                    // 右矢印
+                                    IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _focusedDate = DateTime(
+                                            _focusedDate.year,
+                                            _focusedDate.month + 1,
+                                          );
+                                        });
+                                      },
+                                      icon: const Icon(
+                                        Icons.chevron_right,
+                                        color: Colors.white,
+                                      ),
+                                      iconSize: 24,
+                                      splashRadius: 20,
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // TableCalendar（ヘッダー非表示）
+                              TableCalendar<Map<String, dynamic>>(
+                                firstDay: DateTime.utc(2020, 1, 1),
+                                lastDay: DateTime.utc(2030, 12, 31),
+                                focusedDay: _focusedDate,
+                                selectedDayPredicate:
+                                    (day) => isSameDay(_selectedDate, day),
+                                calendarFormat: _calendarFormat,
+                                eventLoader:
+                                    (date) =>
+                                        _getSchedulesForDate(
+                                          date,
+                                          allSchedules,
+                                        ).map((s) => s.toMap()).toList(),
+                                startingDayOfWeek: StartingDayOfWeek.sunday,
+                                headerVisible: false,
+                                calendarStyle: CalendarStyle(
+                                  outsideDaysVisible: true,
+                                  weekendTextStyle: const TextStyle(
                                     color: Colors.white,
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'この日にスケジュールはありません',
-                                  style: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 14,
+                                  defaultTextStyle: const TextStyle(
+                                    color: Colors.white,
                                   ),
+                                  // 前月・次月の日付スタイル（薄いグレー）
+                                  outsideTextStyle: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 16,
+                                  ),
+                                  // 過去の日付も白色で表示（期限切れでも色を変えない）
+                                  todayTextStyle: const TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  selectedTextStyle: const TextStyle(
+                                    color: Colors.white,
+                                  ),
+                                  selectedDecoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  todayDecoration: BoxDecoration(
+                                    gradient: createOrangeYellowGradient(),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  markerDecoration: const BoxDecoration(
+                                    color: Colors.transparent,
+                                  ),
+                                  markersMaxCount: 1,
+                                  markerSize: 0,
                                 ),
-                              ],
+                                calendarBuilders: CalendarBuilders(
+                                  // 曜日ビルダー（日〜土）
+                                  dowBuilder: (context, day) {
+                                    final weekdays = [
+                                      '日',
+                                      '月',
+                                      '火',
+                                      '水',
+                                      '木',
+                                      '金',
+                                      '土',
+                                    ];
+                                    return Center(
+                                      child: Text(
+                                        weekdays[day.weekday % 7],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    );
+                                  },
+
+                                  selectedBuilder: (context, day, focusedDay) {
+                                    final isToday = isSameDay(
+                                      day,
+                                      DateTime.now(),
+                                    );
+
+                                    return Container(
+                                      margin: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        gradient: createOrangeYellowGradient(),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Container(
+                                        margin: const EdgeInsets.all(2),
+                                        decoration: const BoxDecoration(
+                                          color: Color(0xFF3A3A3A), // 背景色に合わせる
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child:
+                                            isToday
+                                                ? Container(
+                                                  margin: const EdgeInsets.all(
+                                                    6,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    gradient:
+                                                        createOrangeYellowGradient(),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      day.day.toString(),
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.w600,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                                : Center(
+                                                  child: Text(
+                                                    day.day.toString(),
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                ),
+                                      ),
+                                    );
+                                  },
+                                  markerBuilder: (context, day, events) {
+                                    final eventCount = events.length;
+                                    if (eventCount > 0) {
+                                      return Positioned(
+                                        right: 1,
+                                        bottom: 1,
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: Colors.green,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          width: 18,
+                                          height: 18,
+                                          child: Center(
+                                            child: Text(
+                                              eventCount > 99
+                                                  ? '99+'
+                                                  : eventCount.toString(),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                onDaySelected: (selectedDay, focusedDay) {
+                                  setState(() {
+                                    _selectedDate = selectedDay;
+                                    _focusedDate = focusedDay;
+                                  });
+                                },
+                                onFormatChanged: (format) {
+                                  setState(() {
+                                    _calendarFormat = format;
+                                  });
+                                },
+                                onPageChanged: (focusedDay) {
+                                  _focusedDate = focusedDay;
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // スケジュールリストのタイトル
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: Text(
+                            '${_selectedDate.year}年${_selectedDate.month}月${_selectedDate.day}日のスケジュール',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
-                      )
-                      : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate((
-                            context,
-                            index,
-                          ) {
-                            final schedule = todaySchedules[index];
-                            final colorHex = schedule.colorHex;
-                            final scheduleColor = Color(
-                              int.parse(colorHex.substring(1), radix: 16) +
-                                  0xFF000000,
-                            );
+                      ),
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3A3A3A),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.grey[700]!),
+                      // スケジュールリスト部分
+                      todaySchedules.isEmpty
+                          ? SliverToBoxAdapter(
+                            child: Container(
+                              height: 200,
+                              margin: const EdgeInsets.symmetric(
+                                horizontal: 16,
                               ),
-                              child: IntrinsicHeight(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      // 色インジケーター（カードの高さに合わせて動的調整）
-                                      Container(
-                                        width: 4,
-                                        height: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: scheduleColor,
-                                          borderRadius: BorderRadius.circular(
-                                            2,
-                                          ),
-                                        ),
+                              child: Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ShaderMask(
+                                      shaderCallback:
+                                          (bounds) =>
+                                              createOrangeYellowGradient()
+                                                  .createShader(bounds),
+                                      child: const Icon(
+                                        Icons.event_note,
+                                        size: 48,
+                                        color: Colors.white,
                                       ),
-                                      const SizedBox(width: 12),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'この日にスケジュールはありません',
+                                      style: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          )
+                          : SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            sliver: SliverList(
+                              delegate: SliverChildBuilderDelegate((
+                                context,
+                                index,
+                              ) {
+                                final schedule = todaySchedules[index];
+                                final colorHex = schedule.colorHex;
+                                final scheduleColor = Color(
+                                  int.parse(colorHex.substring(1), radix: 16) +
+                                      0xFF000000,
+                                );
 
-                                      // メインコンテンツ
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            // タイトル
-                                            Text(
-                                              schedule.title,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF3A3A3A),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.grey[700]!,
+                                    ),
+                                  ),
+                                  child: IntrinsicHeight(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          // 色インジケーター（カードの高さに合わせて動的調整）
+                                          Container(
+                                            width: 4,
+                                            height: double.infinity,
+                                            decoration: BoxDecoration(
+                                              color: scheduleColor,
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
                                             ),
-                                            const SizedBox(height: 6),
+                                          ),
+                                          const SizedBox(width: 12),
 
-                                            // 時間表示
-                                            Row(
+                                          // メインコンテンツ
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
                                               children: [
-                                                Icon(
-                                                  Icons.schedule,
-                                                  size: 14,
-                                                  color: Colors.grey[500],
-                                                ),
-                                                const SizedBox(width: 4),
+                                                // タイトル
                                                 Text(
-                                                  schedule.timeDisplayString,
-                                                  style: TextStyle(
-                                                    color: Colors.grey[500],
-                                                    fontSize: 13,
+                                                  schedule.title,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 ),
-                                              ],
-                                            ),
+                                                const SizedBox(height: 6),
 
-                                            // 場所（あれば）
-                                            if (schedule.location != null &&
-                                                schedule
-                                                    .location!
-                                                    .isNotEmpty) ...[
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.location_on,
-                                                    size: 12,
-                                                    color: Colors.grey[400],
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Expanded(
-                                                    child: Text(
-                                                      schedule.location!,
-                                                      style: TextStyle(
-                                                        color: Colors.grey[400],
-                                                        fontSize: 12,
-                                                      ),
-                                                      maxLines: 1,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
+                                                // 時間表示
+                                                Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.schedule,
+                                                      size: 14,
+                                                      color: Colors.grey[500],
                                                     ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      schedule
+                                                          .timeDisplayString,
+                                                      style: TextStyle(
+                                                        color: Colors.grey[500],
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+
+                                                // 場所（あれば）
+                                                if (schedule.location != null &&
+                                                    schedule
+                                                        .location!
+                                                        .isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  Row(
+                                                    children: [
+                                                      Icon(
+                                                        Icons.location_on,
+                                                        size: 12,
+                                                        color: Colors.grey[400],
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Expanded(
+                                                        child: Text(
+                                                          schedule.location!,
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors
+                                                                    .grey[400],
+                                                            fontSize: 12,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow:
+                                                              TextOverflow
+                                                                  .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ],
-                                              ),
-                                            ],
 
-                                            // 説明文（あれば）
-                                            if (schedule.description != null &&
-                                                schedule
-                                                    .description!
-                                                    .isNotEmpty) ...[
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                schedule.description!,
-                                                style: TextStyle(
-                                                  color: Colors.grey[400],
-                                                  fontSize: 12,
-                                                  height: 1.4,
-                                                ),
-                                                maxLines: 2,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-
-                                      // 削除ボタン（タスクカードと同じスタイル）
-                                      GestureDetector(
-                                        onTap: () => _deleteSchedule(schedule),
-                                        child: Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.red[400]!.withValues(
-                                              alpha: 0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
+                                                // 説明文（あれば）
+                                                if (schedule.description !=
+                                                        null &&
+                                                    schedule
+                                                        .description!
+                                                        .isNotEmpty) ...[
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    schedule.description!,
+                                                    style: TextStyle(
+                                                      color: Colors.grey[400],
+                                                      fontSize: 12,
+                                                      height: 1.4,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ],
                                             ),
                                           ),
-                                          child: Icon(
-                                            Icons.delete_outline,
-                                            color: Colors.red[400],
-                                            size: 20,
+
+                                          // 削除ボタン（タスクカードと同じスタイル）
+                                          GestureDetector(
+                                            onTap:
+                                                () => _deleteSchedule(schedule),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red[400]!
+                                                    .withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.red[400],
+                                                size: 20,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                        ],
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                ),
-                              ),
-                            );
-                          }, childCount: todaySchedules.length),
-                        ),
-                      ),
+                                );
+                              }, childCount: todaySchedules.length),
+                            ),
+                          ),
 
-                  // 最下部の余白
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-                ],
-              ),
+                      // 最下部の余白
+                      const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+                    ],
+                  ),
+        );
+      },
     );
   }
 }

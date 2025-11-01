@@ -55,12 +55,20 @@ class Task {
 
   /// MapからTaskオブジェクトを作成
   factory Task.fromMap(Map<String, dynamic> map) {
+    // is_completedの処理: Supabaseからはbool、SQLiteからはint
+    bool parseCompleted(dynamic completedData) {
+      if (completedData == null) return false;
+      if (completedData is bool) return completedData;
+      if (completedData is int) return completedData == 1;
+      return false;
+    }
+
     return Task(
       id: map['id'] as String,
       userId: map['user_id'] as String,
       title: map['title'] as String,
       description: map['description'] as String?,
-      isCompleted: map['is_completed'] as bool? ?? false,
+      isCompleted: parseCompleted(map['is_completed']),
       priority: TaskPriority.fromValue(map['priority'] as int? ?? 0),
       dueDate:
           map['due_date'] != null

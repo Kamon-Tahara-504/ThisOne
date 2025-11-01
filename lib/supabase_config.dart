@@ -2,30 +2,22 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 
 class SupabaseConfig {
-  // セキュリティ強化: 環境変数から値を取得
+  // Supabase設定（認証専用）
+  // フォールバック値を設定して環境変数がなくても動作するように
   static String get supabaseUrl {
-    const url = String.fromEnvironment('SUPABASE_URL', defaultValue: '');
-
-    if (url.isEmpty) {
-      throw Exception('SUPABASE_URLが設定されていません。環境変数を設定してください。');
-    }
-
+    const url = String.fromEnvironment(
+      'SUPABASE_URL',
+      defaultValue: 'https://gpbyfivahcqkebvvpuuo.supabase.co',
+    );
     return url;
   }
 
   static String get supabaseAnonKey {
-    const key = String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '');
-
-    // 本番環境とデバッグ環境両方で必須チェック
-    if (key.isEmpty) {
-      throw Exception('SUPABASE_ANON_KEYが設定されていません。環境変数を設定してください。');
-    }
-
-    // 本番環境では追加のセキュリティチェック
-    if (kReleaseMode && (key.length < 100 || !key.contains('.'))) {
-      throw Exception('無効なSUPABASE_ANON_KEYです。正しいキーを設定してください。');
-    }
-
+    const key = String.fromEnvironment(
+      'SUPABASE_ANON_KEY',
+      defaultValue:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYnlmaXZhaGNxa2VidnZwdXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMzAwNTUsImV4cCI6MjA2MzkwNjA1NX0.T-NC0Q6ogfDg3-XsAl9zNdx6ShJwoYJyyjQ1wiOrcdA',
+    );
     return key;
   }
 
@@ -52,19 +44,23 @@ class SupabaseConfig {
     }
   }
 
-  /// 設定値の検証
+  /// 設定値の検証（警告のみ、エラーは投げない）
   static void _validateConfiguration() {
     final url = supabaseUrl;
     final key = supabaseAnonKey;
 
-    // URLの基本検証
-    if (!url.startsWith('https://') || !url.contains('supabase.co')) {
-      throw Exception('無効なSupabase URLです。');
+    // URLの基本検証（警告のみ）
+    if (!url.startsWith('https://')) {
+      if (kDebugMode) {
+        print('警告: Supabase URLがhttpsで始まっていません');
+      }
     }
 
-    // キーの基本検証（JWT形式の確認）
+    // キーの基本検証（警告のみ）
     if (!key.contains('.') || key.split('.').length != 3) {
-      throw Exception('無効なSupabaseキーです。');
+      if (kDebugMode) {
+        print('警告: Supabaseキーが正しいJWT形式ではありません');
+      }
     }
   }
 }

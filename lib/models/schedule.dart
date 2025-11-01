@@ -35,6 +35,14 @@ class Schedule {
 
   /// MapからScheduleオブジェクトを作成
   factory Schedule.fromMap(Map<String, dynamic> map) {
+    // is_all_dayの処理: Supabaseからはbool、SQLiteからはint
+    bool parseAllDay(dynamic allDayData) {
+      if (allDayData == null) return false;
+      if (allDayData is bool) return allDayData;
+      if (allDayData is int) return allDayData == 1;
+      return false;
+    }
+
     return Schedule(
       id: map['id'] as String,
       userId: map['user_id'] as String,
@@ -46,7 +54,7 @@ class Schedule {
           map['end_time'] != null
               ? _parseTimeOfDay(map['end_time'] as String)
               : null,
-      isAllDay: map['is_all_day'] as bool? ?? false,
+      isAllDay: parseAllDay(map['is_all_day']),
       location: map['location'] as String?,
       reminderMinutes: map['reminder_minutes'] as int? ?? 0,
       colorHex: map['color_hex'] as String? ?? '#E85A3B',

@@ -180,11 +180,64 @@ class MainDataService extends ChangeNotifier {
     }
   }
 
+  /// スケジュールを追加
+  Future<void> addSchedule({
+    required String title,
+    String? description,
+    required DateTime scheduleDate,
+    required TimeOfDay startTime,
+    TimeOfDay? endTime,
+    bool isAllDay = false,
+    String? location,
+    required int reminderMinutes,
+    String colorHex = '#E85A3B',
+  }) async {
+    if (_isDisposed) return;
+
+    try {
+      final newSchedule = await _localScheduleService.addSchedule(
+        userId: _userId,
+        title: title,
+        description: description,
+        scheduleDate: scheduleDate,
+        startTime: startTime,
+        endTime: endTime,
+        isAllDay: isAllDay,
+        location: location,
+        reminderMinutes: reminderMinutes,
+        colorHex: colorHex,
+      );
+
+      if (!_isDisposed) {
+        _schedules.add(newSchedule);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// 新しく作成されたメモIDをクリア
   void clearNewlyCreatedMemoId() {
     if (_newlyCreatedMemoId != null) {
       _newlyCreatedMemoId = null;
       notifyListeners();
+    }
+  }
+
+  /// スケジュールを削除
+  Future<void> deleteSchedule(String scheduleId) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localScheduleService.deleteSchedule(scheduleId);
+
+      if (!_isDisposed) {
+        _schedules.removeWhere((schedule) => schedule.id == scheduleId);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 
