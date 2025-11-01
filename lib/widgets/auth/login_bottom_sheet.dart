@@ -173,10 +173,15 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // ログイン選択画面は高さを固定、メールログイン画面は可変
+    final initialSize = _showEmailLogin ? 0.8 : 0.35;
+    final minSize = _showEmailLogin ? 0.3 : 0.35; // ログイン選択画面は固定
+    final maxSize = _showEmailLogin ? 0.9 : 0.35; // ログイン選択画面は固定
+
     return DraggableScrollableSheet(
-      initialChildSize: _showEmailLogin ? 0.8 : 0.35,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
+      initialChildSize: initialSize,
+      minChildSize: minSize,
+      maxChildSize: maxSize,
       expand: false,
       builder: (context, scrollController) {
         return Container(
