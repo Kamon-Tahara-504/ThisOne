@@ -156,9 +156,9 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
           Container(
             width: double.infinity,
             height: 24,
-            decoration: BoxDecoration(
-              gradient: createHorizontalOrangeYellowGradient(),
-              borderRadius: const BorderRadius.only(
+            decoration: const BoxDecoration(
+              color: Color(0xFF2B2B2B),
+              borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
@@ -168,7 +168,7 @@ class _AddScheduleBottomSheetState extends State<AddScheduleBottomSheet> {
                 width: 60,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.grey[600],
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

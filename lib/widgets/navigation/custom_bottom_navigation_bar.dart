@@ -191,7 +191,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
   void _showCreateTaskDialog(BuildContext context) {
     showCustomBottomSheet(
       context: context,
-      initialHeight: 0.8,
+      initialHeight: 0.6,
       minHeight: 0.5,
       child: AddTaskBottomSheet(
         onAdd: (taskData) {
