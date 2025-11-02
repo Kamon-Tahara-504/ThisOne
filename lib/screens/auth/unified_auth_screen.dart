@@ -39,6 +39,7 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // キーボード表示時にレイアウトをリサイズしない
       backgroundColor: const Color(0xFF2B2B2B),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(56.0),
