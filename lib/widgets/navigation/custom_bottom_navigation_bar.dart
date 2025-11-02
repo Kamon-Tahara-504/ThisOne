@@ -3,7 +3,6 @@ import '../../gradients.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/color_utils.dart';
 import '../task/add_task_bottom_sheet.dart';
-import '../overlays/custom_bottom_sheet.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -189,15 +188,16 @@ class CustomBottomNavigationBar extends StatelessWidget {
   }
 
   void _showCreateTaskDialog(BuildContext context) {
-    showCustomBottomSheet(
+    showModalBottomSheet(
       context: context,
-      initialHeight: 0.6,
-      minHeight: 0.5,
-      child: AddTaskBottomSheet(
-        onAdd: (taskData) {
-          onTaskCreate(taskData);
-        },
-      ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => AddTaskBottomSheet(
+            onAdd: (taskData) {
+              onTaskCreate(taskData);
+            },
+          ),
     );
   }
 
