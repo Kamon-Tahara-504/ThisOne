@@ -18,15 +18,36 @@ class LoginBottomSheet extends StatefulWidget {
 class _LoginBottomSheetState extends State<LoginBottomSheet> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocusNode = FocusNode();
+  final _passwordFocusNode = FocusNode();
   final _supabaseService = SupabaseService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _showEmailLogin = false;
 
   @override
+  void initState() {
+    super.initState();
+    // フォーカスリスナーを追加（UI更新のため）
+    _emailFocusNode.addListener(_onFocusChange);
+    _passwordFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    // フォーカス変更時にUIを更新
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocusNode.removeListener(_onFocusChange);
+    _passwordFocusNode.removeListener(_onFocusChange);
+    _emailFocusNode.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -173,53 +194,71 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // ログイン選択画面は高さを固定、メールログイン画面は可変
-    final initialSize = _showEmailLogin ? 0.8 : 0.35;
-    final minSize = _showEmailLogin ? 0.3 : 0.35; // ログイン選択画面は固定
-    final maxSize = _showEmailLogin ? 0.9 : 0.35; // ログイン選択画面は固定
+    // キーボードの高さを検知
+    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final screenHeight = MediaQuery.of(context).size.height;
 
-    return DraggableScrollableSheet(
-      initialChildSize: initialSize,
-      minChildSize: minSize,
-      maxChildSize: maxSize,
-      expand: false,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: Color(0xFF2B2B2B),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
+    // フォーカス状態を取得（キーボード表示を予測するため）
+    final hasFocus = _emailFocusNode.hasFocus || _passwordFocusNode.hasFocus;
+
+    // モーダルの高さを計算
+    double modalHeight;
+    if (_showEmailLogin) {
+      // メールログイン画面: フォーカスがあるか、キーボードが表示されている場合は大きくする
+      // フォーカスがある場合はキーボードが表示されることが予測できるので、即座に高さを大きくする
+      if (viewInsets > 0 || hasFocus) {
+        modalHeight = screenHeight * 0.9;
+      } else {
+        modalHeight = screenHeight * 0.55;
+      }
+    } else {
+      // ログイン選択画面: キーボードが表示されている場合は利用可能な高さを考慮
+      // キーボードが表示されていない場合は固定で35%
+      final availableHeight = screenHeight - viewInsets;
+      final desiredHeight = screenHeight * 0.35;
+      // 利用可能な高さを超えないようにする
+      modalHeight =
+          desiredHeight <= availableHeight ? desiredHeight : availableHeight;
+    }
+
+    return AnimatedContainer(
+      duration: const Duration(
+        milliseconds: 150,
+      ), // アニメーション時間を短縮（300ms → 150ms）
+      curve: Curves.easeOut, // easeInOut → easeOutに変更（より早く反応）
+      height: modalHeight,
+      decoration: const BoxDecoration(
+        color: Color(0xFF2B2B2B),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          // ハンドル（視覚的な要素として残すが、ドラッグ機能はなし）
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 12),
+            width: 60,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey[600],
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          child: Column(
-            children: [
-              // ハンドル
-              Container(
-                margin: const EdgeInsets.symmetric(vertical: 12),
-                width: 60,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[600],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
 
-              // コンテンツ
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child:
-                      _showEmailLogin
-                          ? _buildEmailLoginForm()
-                          : _buildLoginOptions(),
-                ),
-              ),
-            ],
+          // コンテンツ
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              child:
+                  _showEmailLogin
+                      ? _buildEmailLoginForm()
+                      : _buildLoginOptions(),
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -331,6 +370,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
           child: TextField(
             controller: _emailController,
+            focusNode: _emailFocusNode,
             style: const TextStyle(color: Colors.white, fontSize: 16),
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(
@@ -362,6 +402,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           ),
           child: TextField(
             controller: _passwordController,
+            focusNode: _passwordFocusNode,
             style: const TextStyle(color: Colors.white, fontSize: 16),
             obscureText: _obscurePassword,
             decoration: InputDecoration(
