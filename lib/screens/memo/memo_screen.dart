@@ -287,6 +287,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // メモリスト（全体に表示）

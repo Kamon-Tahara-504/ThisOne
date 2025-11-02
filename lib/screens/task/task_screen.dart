@@ -139,6 +139,7 @@ class _TaskScreenState extends State<TaskScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           // タスクリスト

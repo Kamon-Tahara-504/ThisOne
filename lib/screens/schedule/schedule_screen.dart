@@ -143,6 +143,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
         return Scaffold(
           backgroundColor: const Color(0xFF2B2B2B),
+          resizeToAvoidBottomInset: false,
           body:
               isLoading
                   ? const Center(
