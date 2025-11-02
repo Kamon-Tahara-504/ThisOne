@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_screen.dart';
 
 /// プライバシー設定画面
 ///
@@ -320,21 +321,20 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     return secondConfirm ?? false;
   }
 
-  /// URLを開く
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('リンクを開けませんでした'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  /// プライバシーポリシー画面を開く
+  void _openPrivacyPolicy() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+    );
+  }
+
+  /// 利用規約画面を開く
+  void _openTerms() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const TermsScreen()),
+    );
   }
 
   @override
@@ -533,17 +533,14 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                               icon: Icons.privacy_tip,
                               title: 'プライバシーポリシー',
                               subtitle: '個人情報の取り扱いについて',
-                              onTap:
-                                  () =>
-                                      _launchUrl('https://example.com/privacy'),
+                              onTap: _openPrivacyPolicy,
                             ),
 
                             _buildLinkCard(
                               icon: Icons.article,
                               title: '利用規約',
                               subtitle: 'サービス利用規約',
-                              onTap:
-                                  () => _launchUrl('https://example.com/terms'),
+                              onTap: _openTerms,
                             ),
 
                             const SizedBox(height: 24),
