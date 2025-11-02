@@ -336,6 +336,7 @@ class _MainScreenState extends State<MainScreen> {
     ];
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           // メインコンテンツ（PageView）- 動的パディング調整
