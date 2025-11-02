@@ -322,13 +322,82 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       '金',
                                       '土',
                                     ];
+                                    // 土曜日は青色、日曜日は赤色
+                                    Color textColor;
+                                    if (day.weekday == 6) {
+                                      textColor = Colors.blue; // 土曜日
+                                    } else if (day.weekday == 7) {
+                                      textColor = Colors.red; // 日曜日
+                                    } else {
+                                      textColor = Colors.white; // 平日
+                                    }
                                     return Center(
                                       child: Text(
                                         weekdays[day.weekday % 7],
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                                        style: TextStyle(
+                                          color: textColor,
                                           fontWeight: FontWeight.w500,
                                         ),
+                                      ),
+                                    );
+                                  },
+
+                                  // 通常の日付ビルダー（土曜日と日曜日の色を変更）
+                                  defaultBuilder: (context, day, focusedDay) {
+                                    Color textColor;
+                                    if (day.weekday == 6) {
+                                      textColor = Colors.blue; // 土曜日
+                                    } else if (day.weekday == 7) {
+                                      textColor = Colors.red; // 日曜日
+                                    } else {
+                                      textColor = Colors.white; // 平日
+                                    }
+                                    return Center(
+                                      child: Text(
+                                        day.day.toString(),
+                                        style: TextStyle(color: textColor),
+                                      ),
+                                    );
+                                  },
+
+                                  // 今日の日付ビルダー
+                                  todayBuilder: (context, day, focusedDay) {
+                                    return Container(
+                                      margin: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        gradient: createOrangeYellowGradient(),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          day.day.toString(),
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+
+                                  // 前月・次月の日付ビルダー
+                                  outsideBuilder: (context, day, focusedDay) {
+                                    Color textColor;
+                                    if (day.weekday == 6) {
+                                      textColor = Colors.blue.withValues(
+                                        alpha: 0.4,
+                                      ); // 土曜日
+                                    } else if (day.weekday == 7) {
+                                      textColor = Colors.red.withValues(
+                                        alpha: 0.4,
+                                      ); // 日曜日
+                                    } else {
+                                      textColor = Colors.grey[600]!; // 平日
+                                    }
+                                    return Center(
+                                      child: Text(
+                                        day.day.toString(),
+                                        style: TextStyle(color: textColor),
                                       ),
                                     );
                                   },
