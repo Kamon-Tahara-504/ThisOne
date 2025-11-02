@@ -276,9 +276,6 @@ class _MainScreenState extends State<MainScreen> {
 
     try {
       await _dataService.addTaskWithDetails(taskData);
-      if (!_dataService.tasks.any((task) => task.userId == 'local')) {
-        AppErrorHandler.showInfo(context, 'ログインしていないため、タスクはローカルに保存されました');
-      }
     } catch (e) {
       if (!_isDisposed && mounted) {
         AppErrorHandler.handleError(
@@ -445,9 +442,6 @@ class _MainScreenState extends State<MainScreen> {
 
     try {
       await _dataService.createMemo(title, mode, colorHex);
-      if (mounted) {
-        AppErrorHandler.showInfo(context, 'ログインしていないため、メモはローカルに保存されました');
-      }
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(

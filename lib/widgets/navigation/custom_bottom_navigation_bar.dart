@@ -334,9 +334,9 @@ class _CreateMemoBottomSheetState extends State<_CreateMemoBottomSheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // タイトル
-                    Row(
+                    const Row(
                       children: [
-                        const Text(
+                        Text(
                           'メモを作成',
                           style: TextStyle(
                             color: Colors.white,
@@ -344,15 +344,6 @@ class _CreateMemoBottomSheetState extends State<_CreateMemoBottomSheet> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const Spacer(),
-                        if (widget.supabaseService.getCurrentUser() == null)
-                          Text(
-                            'ローカルに保存',
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                            ),
-                          ),
                       ],
                     ),
                     const SizedBox(height: 32),
