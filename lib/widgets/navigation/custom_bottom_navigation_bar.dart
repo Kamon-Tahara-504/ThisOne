@@ -298,305 +298,315 @@ class _CreateMemoBottomSheetState extends State<_CreateMemoBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: MediaQuery.of(context).size.height * 0.75,
-      decoration: const BoxDecoration(
-        color: Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        children: [
-          // ハンドル
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            width: 60,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[600],
-              borderRadius: BorderRadius.circular(2),
-            ),
+    return GestureDetector(
+      onTap: () {
+        // 入力欄以外をタップした時にキーボードを格納
+        FocusScope.of(context).unfocus();
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: const BoxDecoration(
+          color: Color(0xFF2B2B2B),
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // タイトル
-                  Row(
-                    children: [
-                      const Text(
-                        'メモを作成',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (widget.supabaseService.getCurrentUser() == null)
-                        Text(
-                          'ローカルに保存',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // タイトル入力
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'タイトル',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF3A3A3A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.grey[600]!,
-                            width: 1,
-                          ),
-                        ),
-                        child: TextField(
-                          controller: _titleController,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                          decoration: const InputDecoration(
-                            hintText: 'メモのタイトルを入力...',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                            contentPadding: EdgeInsets.all(16),
-                          ),
-                          autofocus: false,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // モード選択
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'メモの種類',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap:
-                                  () => setState(() => _selectedMode = 'memo'),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient:
-                                      _selectedMode == 'memo'
-                                          ? createHorizontalOrangeYellowGradient()
-                                          : null,
-                                  color:
-                                      _selectedMode == 'memo'
-                                          ? null
-                                          : const Color(0xFF3A3A3A),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        _selectedMode == 'memo'
-                                            ? Colors.transparent
-                                            : Colors.grey[600]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Column(
-                                  children: [
-                                    Icon(
-                                      Icons.edit_note,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      'メモ',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap:
-                                  () => setState(
-                                    () => _selectedMode = 'calculator',
-                                  ),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  gradient:
-                                      _selectedMode == 'calculator'
-                                          ? createHorizontalOrangeYellowGradient()
-                                          : null,
-                                  color:
-                                      _selectedMode == 'calculator'
-                                          ? null
-                                          : const Color(0xFF3A3A3A),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color:
-                                        _selectedMode == 'calculator'
-                                            ? Colors.transparent
-                                            : Colors.grey[600]!,
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Column(
-                                  children: [
-                                    Icon(
-                                      Icons.calculate,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      '計算機',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // 色選択
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '色ラベル',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // カラーパレット（2行5列のグリッド）
-                      Column(
-                        children: [
-                          for (int row = 0; row < 2; row++)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  for (int col = 0; col < 5; col++)
-                                    if (row * 5 + col <
-                                        ColorUtils.colorLabelPalette.length)
-                                      _buildEnhancedColorOption(
-                                        ColorUtils.colorLabelPalette[row * 5 +
-                                            col],
-                                        _selectedColorHex,
-                                        (colorHex) => setState(
-                                          () => _selectedColorHex = colorHex,
-                                        ),
-                                      ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-
-                  const Spacer(),
-
-                  // 作成ボタン
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: createHorizontalOrangeYellowGradient(),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final title =
-                            _titleController.text.trim().isNotEmpty
-                                ? _titleController.text.trim()
-                                : '無題';
-                        Navigator.pop(context);
-                        await widget.onMemoCreated(
-                          title,
-                          _selectedMode,
-                          _selectedColorHex,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: const Text(
-                        'メモを作成',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+        ),
+        child: Column(
+          children: [
+            // ハンドル
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 60,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[600],
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-          ),
-        ],
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // タイトル
+                    Row(
+                      children: [
+                        const Text(
+                          'メモを作成',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (widget.supabaseService.getCurrentUser() == null)
+                          Text(
+                            'ローカルに保存',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // タイトル入力
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'タイトル',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3A3A3A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.grey[600]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: _titleController,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                            decoration: const InputDecoration(
+                              hintText: 'メモのタイトルを入力...',
+                              hintStyle: TextStyle(color: Colors.grey),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.all(16),
+                            ),
+                            autofocus: false,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // モード選択
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'メモの種類',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap:
+                                    () =>
+                                        setState(() => _selectedMode = 'memo'),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient:
+                                        _selectedMode == 'memo'
+                                            ? createHorizontalOrangeYellowGradient()
+                                            : null,
+                                    color:
+                                        _selectedMode == 'memo'
+                                            ? null
+                                            : const Color(0xFF3A3A3A),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          _selectedMode == 'memo'
+                                              ? Colors.transparent
+                                              : Colors.grey[600]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Column(
+                                    children: [
+                                      Icon(
+                                        Icons.edit_note,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        'メモ',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap:
+                                    () => setState(
+                                      () => _selectedMode = 'calculator',
+                                    ),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient:
+                                        _selectedMode == 'calculator'
+                                            ? createHorizontalOrangeYellowGradient()
+                                            : null,
+                                    color:
+                                        _selectedMode == 'calculator'
+                                            ? null
+                                            : const Color(0xFF3A3A3A),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color:
+                                          _selectedMode == 'calculator'
+                                              ? Colors.transparent
+                                              : Colors.grey[600]!,
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Column(
+                                    children: [
+                                      Icon(
+                                        Icons.calculate,
+                                        color: Colors.white,
+                                        size: 24,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        '計算機',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // 色選択
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '色ラベル',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // カラーパレット（2行5列のグリッド）
+                        Column(
+                          children: [
+                            for (int row = 0; row < 2; row++)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    for (int col = 0; col < 5; col++)
+                                      if (row * 5 + col <
+                                          ColorUtils.colorLabelPalette.length)
+                                        _buildEnhancedColorOption(
+                                          ColorUtils.colorLabelPalette[row * 5 +
+                                              col],
+                                          _selectedColorHex,
+                                          (colorHex) => setState(
+                                            () => _selectedColorHex = colorHex,
+                                          ),
+                                        ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // 作成ボタン
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: createHorizontalOrangeYellowGradient(),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          final title =
+                              _titleController.text.trim().isNotEmpty
+                                  ? _titleController.text.trim()
+                                  : '無題';
+                          Navigator.pop(context);
+                          await widget.onMemoCreated(
+                            title,
+                            _selectedMode,
+                            _selectedColorHex,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: const Text(
+                          'メモを作成',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
