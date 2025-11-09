@@ -299,9 +299,7 @@ class _MainScreenState extends State<MainScreen> {
           )
           : TaskScreen(
             tasks: _dataService.tasks,
-            onTasksChanged: (updatedTasks) {
-              _dataService.updateTasks(updatedTasks);
-            },
+            dataService: _dataService,
             scrollController: _scrollControllerManager.getScrollController(0),
           ),
       // 1: カレンダー画面
@@ -317,6 +315,7 @@ class _MainScreenState extends State<MainScreen> {
           )
           : MemoScreen(
             memos: _dataService.memos,
+            dataService: _dataService,
             onMemosChanged: (updatedMemos) {
               _dataService.updateMemos(updatedMemos);
             },

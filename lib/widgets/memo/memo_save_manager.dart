@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'dart:convert';
 import 'dart:async';
-import '../../services/supabase_service.dart';
+import '../../models/memo.dart';
+import '../../services/main_data_service.dart';
 
 /// メモの保存状態を表すクラス
 class MemoSaveState {
@@ -35,10 +36,9 @@ class MemoSaveState {
 
 /// メモの保存管理を行うクラス
 class MemoSaveManager {
-  final String memoId;
   final TextEditingController titleController;
   final QuillController quillController;
-  final SupabaseService _supabaseService = SupabaseService();
+  final MainDataService dataService;
   final ValueChanged<MemoSaveState> onStateChanged;
   final Duration debounceDuration;
 
@@ -49,17 +49,20 @@ class MemoSaveManager {
   late String _initialTitle;
   late String _initialContent;
   late String _initialRichContent;
+  late Memo _currentMemo;
 
   bool _isInitialized = false;
 
   MemoSaveManager({
-    required this.memoId,
     required this.titleController,
     required this.quillController,
+    required this.dataService,
+    required Memo memo,
     required this.onStateChanged,
     this.debounceDuration = const Duration(seconds: 1),
     DateTime? initialLastUpdated,
   }) {
+    _currentMemo = memo;
     _state = MemoSaveState(lastUpdated: initialLastUpdated);
     // 初期状態を即座に通知
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -139,30 +142,32 @@ class MemoSaveManager {
       final richContentMap = {
         'ops': quillController.document.toDelta().toJson(),
       };
-
-      await _supabaseService.updateMemo(
-        memoId: memoId,
-        title:
-            titleController.text.trim().isEmpty
-                ? '無題'
-                : titleController.text.trim(),
-        content: plainText,
-        richContent: richContentMap,
-      );
-
-      // 保存成功時に初期値を更新
-      _initialTitle =
+      final richContentString = jsonEncode(richContentMap);
+      final normalizedTitle =
           titleController.text.trim().isEmpty
               ? '無題'
               : titleController.text.trim();
+
+      final updatedMemo = _currentMemo.copyWith(
+        title: normalizedTitle,
+        content: plainText,
+        richContent: richContentString,
+      );
+
+      await dataService.updateMemo(updatedMemo);
+
+      // 保存成功時に初期値を更新
+      final now = DateTime.now();
+      _currentMemo = updatedMemo.copyWith(updatedAt: now);
+      _initialTitle = normalizedTitle;
       _initialContent = plainText;
-      _initialRichContent = jsonEncode(richContentMap);
+      _initialRichContent = richContentString;
 
       _updateState(
         _state.copyWith(
           hasChanges: false,
           isSaving: false,
-          lastUpdated: DateTime.now(),
+          lastUpdated: now,
           errorMessage: null,
         ),
       );

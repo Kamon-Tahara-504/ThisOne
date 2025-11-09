@@ -72,7 +72,7 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '最終更新日: 2025年1月',
+                        '最終更新日: 2025年11月',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                       SizedBox(height: 24),
@@ -85,7 +85,7 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '本規約は、本アプリケーション「ThisOne」（以下「本アプリ」といいます）の利用に関する条件を定めるものです。ユーザーは、本アプリをダウンロードまたは利用することにより、本規約に同意したものとみなされます。',
+                        '本規約は、本アプリケーション「ThisOne」（以下「本アプリ」といいます）の利用条件を定めるものです。ユーザーは、本アプリをダウンロードまたは利用することにより、本規約に同意したものとみなされます。',
                       ),
                       SizedBox(height: 16),
                       Text(
@@ -96,12 +96,9 @@ class TermsScreen extends StatelessWidget {
                         ),
                       ),
                       SizedBox(height: 8),
-                      Text('本アプリは、以下の機能を提供します：'),
-                      SizedBox(height: 8),
-                      Text('1. タスク管理機能'),
-                      Text('2. スケジュール管理機能'),
-                      Text('3. メモ作成・管理機能'),
-                      Text('4. データのローカル保存およびエクスポート機能'),
+                      Text(
+                        '本アプリは、タスク管理・スケジュール管理・メモ作成等の機能を提供し、これらのデータを端末内のローカルデータベースに保存します。認証にはSupabaseを利用し、認証に必要な情報のみをクラウドで取り扱います。',
+                      ),
                       SizedBox(height: 16),
                       Text(
                         '第3条（アカウント）',
@@ -112,59 +109,59 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'ユーザーは、アカウント登録を行うことで、より多くの機能を利用できます。アカウント情報の管理はユーザー自身の責任で行うものとします。',
+                        'ユーザーは、メールアドレス等を登録することで本アプリのアカウントを作成できます。アカウント管理および認証情報の保護はユーザー自身の責任で行うものとします。',
                       ),
                       SizedBox(height: 16),
                       Text(
-                        '第4条（禁止事項）',
+                        '第4条（データの取り扱い）',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       SizedBox(height: 8),
-                      Text('本アプリの利用にあたり、以下の行為を禁止します：'),
+                      Text(
+                        '1. 本アプリで作成・保存されたタスク、スケジュール、メモ等のデータはユーザーの端末内に保存されます。',
+                      ),
+                      Text(
+                        '2. ユーザーはデータのバックアップやエクスポートを自己の責任で行うものとし、端末紛失・故障等によるデータ消失について、運営は責任を負いません。',
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '第5条（禁止事項）',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       SizedBox(height: 8),
-                      Text('1. 法令または公序良俗に違反する行為'),
+                      Text('ユーザーは、本アプリの利用にあたり、以下の行為を行ってはなりません。'),
+                      Text('1. 法令または公序良俗に反する行為'),
                       Text('2. 犯罪行為に関連する行為'),
                       Text('3. 本アプリの運営を妨害する行為'),
                       Text('4. 他のユーザーに対する迷惑行為'),
-                      Text('5. 不正アクセスまたはこれを試みる行為'),
+                      Text('5. 不正アクセスまたはそれを試みる行為'),
                       Text('6. 本アプリを逆コンパイル、逆アセンブル、リバースエンジニアリングする行為'),
                       Text('7. その他、運営が不適切と判断する行為'),
                       SizedBox(height: 16),
                       Text(
-                        '第5条（免責事項）',
+                        '第6条（免責事項）',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       SizedBox(height: 8),
+                      Text('1. 運営は、本アプリを現状有姿で提供し、その完全性・正確性・有用性等について保証しません。'),
                       Text(
-                        '1. 本アプリは現状有姿で提供され、運営は本アプリの完全性、正確性、確実性、有用性等について、いかなる保証も行いません。',
+                        '2. ユーザーの端末環境、通信環境、バックアップ状況等に起因して生じた損害（データ消失、端末故障等を含む）について、運営は責任を負いません。',
                       ),
-                      SizedBox(height: 8),
                       Text(
-                        '2. 運営は、本アプリの利用により生じたいかなる損害（データの消失、端末の故障等を含みますがこれらに限りません）についても、一切の責任を負いません。',
-                      ),
-                      SizedBox(height: 8),
-                      Text('3. ユーザーは、定期的にデータのバックアップを行うことを推奨します。'),
-                      SizedBox(height: 16),
-                      Text(
-                        '第6条（サービスの変更・停止）',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '運営は、事前の通知なく本アプリの内容を変更、または提供を停止することがあります。これによりユーザーに生じた損害について、運営は一切の責任を負いません。',
+                        '3. 運営の故意または重過失による場合を除き、運営は本アプリの利用によりユーザーに生じた損害について責任を負いません。',
                       ),
                       SizedBox(height: 16),
                       Text(
-                        '第7条（知的財産権）',
+                        '第7条（サービスの変更・停止）',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -172,11 +169,11 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '本アプリに関する知的財産権は、すべて運営または正当な権利者に帰属します。ユーザーは、本アプリの利用許諾を受けるものであり、所有権を取得するものではありません。',
+                        '運営は、ユーザーへ事前に通知することなく、本アプリの内容の全部または一部を変更、停止または終了することができます。これによりユーザーに生じた損害について、運営は責任を負いません。',
                       ),
                       SizedBox(height: 16),
                       Text(
-                        '第8条（規約の変更）',
+                        '第8条（知的財産権）',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -184,11 +181,11 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '運営は、必要に応じて本規約を変更することができます。変更後の規約は、本アプリ内での掲示により効力を生じるものとします。',
+                        '本アプリに関する知的財産権は、運営または正当な権利者に帰属します。ユーザーは、本アプリに関し許諾された範囲内で利用することができます。',
                       ),
                       SizedBox(height: 16),
                       Text(
-                        '第9条（準拠法および管轄裁判所）',
+                        '第9条（規約の変更）',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -196,7 +193,31 @@ class TermsScreen extends StatelessWidget {
                       ),
                       SizedBox(height: 8),
                       Text(
-                        '本規約の解釈にあたっては、日本法を準拠法とします。本アプリに関して紛争が生じた場合には、運営の所在地を管轄する裁判所を専属的合意管轄とします。',
+                        '運営は、必要と判断した場合、本規約を変更することができます。変更後の規約は、本アプリ内への掲示その他運営が適切と判断する方法で通知した時点から効力を生じます。',
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '第10条（準拠法および管轄）',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '本規約の解釈には日本法を準拠法とします。本アプリに関してユーザーと運営の間で紛争が生じた場合、運営所在地を管轄する裁判所を第一審の専属的合意管轄裁判所とします。',
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '第11条（お問い合わせ先）',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        '本アプリおよび本規約に関するお問い合わせは、taharacomeon.0504@gmail.com までご連絡ください（担当：田原果門）。',
                       ),
                       SizedBox(height: 32),
                     ],

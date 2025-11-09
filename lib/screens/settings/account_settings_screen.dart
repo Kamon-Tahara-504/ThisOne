@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
+import '../../services/local_user_profile_service.dart';
 import '../../widgets/account/not_logged_in_view.dart';
 import '../../widgets/account/logged_in_view.dart';
 
@@ -13,6 +14,8 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final SupabaseService _supabaseService = SupabaseService();
+  final LocalUserProfileService _localUserProfileService =
+      LocalUserProfileService();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
@@ -35,7 +38,25 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final profile = await _supabaseService.getUserProfile();
+      final user = _supabaseService.getCurrentUser();
+      if (user == null) {
+        setState(() {
+          _userProfile = null;
+          _displayNameController.clear();
+          _phoneController.clear();
+          _isLoading = false;
+        });
+        return;
+      }
+
+      var profile = await _localUserProfileService.getUserProfile(user.id);
+
+      // プロフィールが存在しない場合は初期レコードを作成
+      if (profile == null) {
+        await _localUserProfileService.upsertUserProfile(userId: user.id);
+        profile = await _localUserProfileService.getUserProfile(user.id);
+      }
+
       setState(() {
         _userProfile = profile;
         _displayNameController.text = profile?['display_name'] ?? '';
@@ -53,13 +74,27 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     if (!_isEditing) return;
 
     try {
-      await _supabaseService.updateUserProfile(
-        displayName: _displayNameController.text.trim(),
-        phoneNumber: _phoneController.text.trim(),
+      final user = _supabaseService.getCurrentUser();
+      if (user == null) {
+        return;
+      }
+
+      final displayName = _displayNameController.text.trim();
+      final phoneNumber = _phoneController.text.trim();
+
+      await _localUserProfileService.upsertUserProfile(
+        userId: user.id,
+        displayName: displayName,
+        phoneNumber: phoneNumber,
       );
 
       setState(() {
         _isEditing = false;
+        _userProfile = {
+          'user_id': user.id,
+          'display_name': displayName,
+          'phone_number': phoneNumber,
+        };
       });
 
       if (mounted) {
