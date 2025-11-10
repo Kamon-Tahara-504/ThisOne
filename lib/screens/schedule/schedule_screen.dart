@@ -274,7 +274,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                           date,
                                           allSchedules,
                                         ).map((s) => s.toMap()).toList(),
-                                startingDayOfWeek: StartingDayOfWeek.sunday,
+                                startingDayOfWeek: StartingDayOfWeek.monday,
                                 headerVisible: false,
                                 calendarStyle: CalendarStyle(
                                   outsideDaysVisible: true,
@@ -314,13 +314,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   // 曜日ビルダー（日〜土）
                                   dowBuilder: (context, day) {
                                     final weekdays = [
-                                      '日',
                                       '月',
                                       '火',
                                       '水',
                                       '木',
                                       '金',
                                       '土',
+                                      '日',
                                     ];
                                     // 土曜日は青色、日曜日は赤色
                                     Color textColor;
@@ -333,7 +333,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                     }
                                     return Center(
                                       child: Text(
-                                        weekdays[day.weekday % 7],
+                                        weekdays[day.weekday - 1],
                                         style: TextStyle(
                                           color: textColor,
                                           fontWeight: FontWeight.w500,
