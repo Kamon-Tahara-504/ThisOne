@@ -166,8 +166,9 @@ class _MainScreenState extends State<MainScreen> {
     final controller = _scrollControllerManager.getScrollController(pageIndex);
     if (controller == null ||
         !controller.hasClients ||
-        controller.hasClients == false)
+        controller.hasClients == false) {
       return;
+    }
 
     // 現在のページのみ監視
     final currentPageIndex = _appPageController.getCurrentPageIndex();

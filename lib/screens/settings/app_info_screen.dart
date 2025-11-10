@@ -261,7 +261,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                                         BoxShadow(
                                           color: const Color(
                                             0xFFE85A3B,
-                                          ).withOpacity(0.3),
+                                          ).withValues(alpha: 0.3),
                                           blurRadius: 20,
                                           spreadRadius: 2,
                                         ),

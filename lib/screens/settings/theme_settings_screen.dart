@@ -248,10 +248,10 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
+                                color: Colors.blue.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.blue.withOpacity(0.3),
+                                  color: Colors.blue.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(
@@ -363,18 +363,9 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           isEnabled ? subtitle : '未実装です（今後対応予定）',
           style: TextStyle(color: Colors.grey[500], fontSize: 14),
         ),
-        trailing: Radio<String>(
-          value: mode,
-          groupValue: _themeMode,
-          onChanged:
-              isEnabled
-                  ? (value) {
-                    if (value != null) {
-                      _updateThemeMode(value);
-                    }
-                  }
-                  : null,
-          activeColor: const Color(0xFFE85A3B),
+        trailing: Icon(
+          isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+          color: isSelected ? const Color(0xFFE85A3B) : Colors.grey[600],
         ),
         onTap: isEnabled ? () => _updateThemeMode(mode) : null,
       ),

@@ -152,7 +152,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       isDangerous: true,
     );
 
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
 
     setState(() {
       _isClearingCache = true;
@@ -210,31 +210,32 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     try {
       final result = await _exportService.exportAllData();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message),
-            backgroundColor:
-                result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-            duration: Duration(seconds: result.success ? 3 : 5),
-            action:
-                result.success && result.counts != null
-                    ? SnackBarAction(
-                      label: '詳細',
-                      textColor: Colors.white,
-                      onPressed: () => _showExportDetails(result.counts!),
-                    )
-                    : null,
-          ),
-        );
+      if (!mounted) return;
 
-        // 成功した場合はデータ統計を更新
-        if (result.success) {
-          final newDataCounts = await _exportService.getDataCounts();
-          setState(() {
-            _dataCounts = newDataCounts;
-          });
-        }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor:
+              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
+          duration: Duration(seconds: result.success ? 3 : 5),
+          action:
+              result.success && result.counts != null
+                  ? SnackBarAction(
+                    label: '詳細',
+                    textColor: Colors.white,
+                    onPressed: () => _showExportDetails(result.counts!),
+                  )
+                  : null,
+        ),
+      );
+
+      // 成功した場合はデータ統計を更新
+      if (result.success) {
+        final newDataCounts = await _exportService.getDataCounts();
+        if (!mounted) return;
+        setState(() {
+          _dataCounts = newDataCounts;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -264,7 +265,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       isDangerous: false,
     );
 
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
 
     setState(() {
       _isImporting = true;
@@ -338,25 +339,26 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
         },
       );
 
+      if (!mounted) return;
+
       // 進行状況ダイアログを閉じる
-      if (mounted) Navigator.pop(context);
+      Navigator.pop(context);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message),
-            backgroundColor:
-                result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-          ),
-        );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message),
+          backgroundColor:
+              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
+        ),
+      );
 
-        // 成功した場合はデータ統計を更新
-        if (result.success) {
-          final newDataCounts = await _exportService.getDataCounts();
-          setState(() {
-            _dataCounts = newDataCounts;
-          });
-        }
+      // 成功した場合はデータ統計を更新
+      if (result.success) {
+        final newDataCounts = await _exportService.getDataCounts();
+        if (!mounted) return;
+        setState(() {
+          _dataCounts = newDataCounts;
+        });
       }
     } catch (e) {
       // 進行状況ダイアログを閉じる

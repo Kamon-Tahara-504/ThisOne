@@ -110,6 +110,7 @@ class AppPageController extends ChangeNotifier {
   }
 
   /// ページコントローラーを解放
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();

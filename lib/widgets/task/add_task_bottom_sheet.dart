@@ -54,7 +54,9 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
               surface: Color(0xFF3A3A3A),
               onSurface: Colors.white,
             ),
-            dialogBackgroundColor: const Color(0xFF2B2B2B),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF2B2B2B),
+            ),
           ),
           child: child!,
         );
