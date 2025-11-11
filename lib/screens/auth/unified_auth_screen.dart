@@ -27,10 +27,9 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
       isDismissible: true,
       useSafeArea: true,
       builder:
-          (context) => LoginBottomSheet(
+          (sheetContext) => LoginBottomSheet(
             onLoginSuccess: () {
-              Navigator.pop(context); // ボトムシートを閉じる
-              Navigator.pop(context, true); // 認証画面を閉じて結果を返す
+              Navigator.pop(sheetContext); // ボトムシートを閉じる
             },
           ),
     );
