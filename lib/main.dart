@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'widgets/app_bars/collapsible_app_bar.dart';
@@ -14,6 +15,7 @@ import 'controllers/scroll_controller_manager.dart';
 import 'controllers/header_controller.dart';
 import 'controllers/page_controller.dart';
 import 'services/main_data_service.dart';
+import 'screens/auth/unified_auth_screen.dart';
 
 // カスタムScrollPhysics for スワイプアニメーション速度調整
 class CustomPageScrollPhysics extends ScrollPhysics {
@@ -89,7 +91,37 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
         useMaterial3: true,
       ),
-      home: const MainScreen(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final supabaseService = SupabaseService();
+
+    return StreamBuilder<AuthState>(
+      stream: supabaseService.authStateChanges,
+      builder: (context, snapshot) {
+        final user = supabaseService.getCurrentUser();
+
+        if (user != null) {
+          return const MainScreen();
+        }
+
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
+            ),
+          );
+        }
+
+        return const UnifiedAuthScreen();
+      },
     );
   }
 }
