@@ -51,7 +51,7 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               alignment: Alignment.centerLeft,
               child: const Text(
-                'インストールありがとう...🫠',
+                'インストールありがとう!!',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
