@@ -65,10 +65,18 @@ class SettingsToggleItem extends StatelessWidget {
         trailing: Switch(
           value: value,
           onChanged: enabled ? onChanged : null,
-          activeColor: const Color(0xFFE85A3B),
-          activeTrackColor: const Color(0xFFE85A3B).withValues(alpha: 0.3),
-          inactiveThumbColor: Colors.grey[400],
-          inactiveTrackColor: Colors.grey[700],
+          thumbColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFE85A3B);
+            }
+            return Colors.grey[400];
+          }),
+          trackColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFFE85A3B).withValues(alpha: 0.3);
+            }
+            return Colors.grey[700];
+          }),
         ),
         onTap: enabled ? () => onChanged(!value) : null,
       ),

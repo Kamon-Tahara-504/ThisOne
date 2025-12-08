@@ -152,6 +152,70 @@ class MainDataService extends ChangeNotifier {
     }
   }
 
+  /// タスクの完了状態を切り替え
+  Future<void> toggleTaskCompletion({
+    required String taskId,
+    required bool isCompleted,
+  }) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localTaskService.toggleComplete(taskId, isCompleted);
+
+      if (_isDisposed) return;
+
+      final index = _tasks.indexWhere((task) => task.id == taskId);
+      if (index != -1) {
+        final now = DateTime.now();
+        _tasks[index] = _tasks[index].copyWith(
+          isCompleted: isCompleted,
+          completedAt: isCompleted ? now : null,
+          updatedAt: now,
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// タスクを更新
+  Future<void> updateTask(Task updatedTask) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localTaskService.updateTask(updatedTask);
+
+      if (_isDisposed) return;
+
+      final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
+      if (index != -1) {
+        _tasks[index] = updatedTask.copyWith(
+          updatedAt: DateTime.now(),
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// タスクを削除
+  Future<void> deleteTask(String taskId) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localTaskService.deleteTask(taskId);
+
+      if (_isDisposed) return;
+
+      _tasks.removeWhere((task) => task.id == taskId);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// メモを作成
   Future<void> createMemo(String title, String mode, String colorHex) async {
     if (_isDisposed) return;
@@ -174,6 +238,66 @@ class MainDataService extends ChangeNotifier {
 
         // メモリストを再読み込み
         await loadMemos();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// メモを削除
+  Future<void> deleteMemo(String memoId) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localMemoService.deleteMemo(memoId);
+
+      if (_isDisposed) return;
+
+      _memos.removeWhere((memo) => memo.id == memoId);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// メモのピン留め状態を更新
+  Future<void> toggleMemoPin({
+    required String memoId,
+    required bool isPinned,
+  }) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localMemoService.togglePin(memoId, isPinned);
+
+      if (_isDisposed) return;
+
+      final index = _memos.indexWhere((memo) => memo.id == memoId);
+      if (index != -1) {
+        _memos[index] = _memos[index].copyWith(
+          isPinned: isPinned,
+          updatedAt: DateTime.now(),
+        );
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// メモを更新
+  Future<void> updateMemo(Memo memo) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localMemoService.updateMemo(memo);
+
+      if (_isDisposed) return;
+
+      final index = _memos.indexWhere((item) => item.id == memo.id);
+      if (index != -1) {
+        _memos[index] = memo.copyWith(updatedAt: DateTime.now());
+        notifyListeners();
       }
     } catch (e) {
       rethrow;
@@ -234,6 +358,25 @@ class MainDataService extends ChangeNotifier {
 
       if (!_isDisposed) {
         _schedules.removeWhere((schedule) => schedule.id == scheduleId);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// スケジュールを更新
+  Future<void> updateSchedule(Schedule schedule) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localScheduleService.updateSchedule(schedule);
+
+      if (_isDisposed) return;
+
+      final index = _schedules.indexWhere((item) => item.id == schedule.id);
+      if (index != -1) {
+        _schedules[index] = schedule.copyWith(updatedAt: DateTime.now());
         notifyListeners();
       }
     } catch (e) {

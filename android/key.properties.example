@@ -1,0 +1,15 @@
+# Android リリース署名設定
+# このファイルをコピーして key.properties として使用してください
+# 
+# 1. このファイルを key.properties にコピー:
+#    cp key.properties.example key.properties
+#
+# 2. 以下の値を実際の値に置き換える
+#
+# 注意: key.properties は .gitignore に含まれており、Gitにコミットされません
+
+storePassword=ここにキーストアのパスワードを入力
+keyPassword=ここにキーのパスワードを入力（通常は storePassword と同じ）
+keyAlias=thisone
+storeFile=/Users/kt/thisone-release-key.jks
+

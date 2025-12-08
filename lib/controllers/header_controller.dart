@@ -109,9 +109,4 @@ class HeaderController extends ChangeNotifier {
     _isScrollingDown = false;
     notifyListeners();
   }
-
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

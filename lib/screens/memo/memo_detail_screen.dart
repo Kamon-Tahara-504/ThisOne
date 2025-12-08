@@ -7,11 +7,17 @@ import '../../widgets/quill_rich_editor.dart';
 import '../../widgets/memo/memo_save_manager.dart';
 import '../../utils/calculator_utils.dart';
 import '../../models/memo.dart';
+import '../../services/main_data_service.dart';
 
 class MemoDetailScreen extends StatefulWidget {
   final Memo memo; // 型安全なMemoモデルに変更
+  final MainDataService dataService;
 
-  const MemoDetailScreen({super.key, required this.memo});
+  const MemoDetailScreen({
+    super.key,
+    required this.memo,
+    required this.dataService,
+  });
 
   @override
   State<MemoDetailScreen> createState() => _MemoDetailScreenState();
@@ -75,9 +81,10 @@ class _MemoDetailScreenState extends State<MemoDetailScreen>
 
     // MemoSaveManagerを初期化
     _saveManager = MemoSaveManager(
-      memoId: widget.memo.id,
       titleController: _titleController,
       quillController: _quillController,
+      dataService: widget.dataService,
+      memo: widget.memo,
       onStateChanged: _onSaveStateChanged,
       initialLastUpdated: widget.memo.updatedAt,
     );

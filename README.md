@@ -66,7 +66,6 @@ lib/
 │   ├── schedule_screen.dart           # スケジュール管理画面
 │   ├── memo_screen.dart               # メモ一覧画面
 │   ├── memo_detail_screen.dart        # メモ詳細・編集画面
-│   ├── auth_screen.dart               # 認証画面（レガシー）
 │   ├── unified_auth_screen.dart       # 統合認証画面
 │   ├── account_screen.dart            # アカウント管理画面
 │   ├── settings_screen.dart           # 設定画面

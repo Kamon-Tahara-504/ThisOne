@@ -22,9 +22,6 @@ class HelpScreen extends StatefulWidget {
 }
 
 class _HelpScreenState extends State<HelpScreen> {
-  final TextEditingController _feedbackController = TextEditingController();
-  bool _isSendingFeedback = false;
-
   // FAQ項目
   final List<Map<String, String>> _faqItems = [
     {
@@ -40,11 +37,12 @@ class _HelpScreenState extends State<HelpScreen> {
     {
       'question': 'データはどこに保存されますか？',
       'answer':
-          'データはSupabaseのクラウドサーバーに安全に保存されます。ログインすることで、複数のデバイス間でデータを同期できます。',
+          'メモやタスク、スケジュールなどのデータは、ユーザーの端末内（ローカルデータベース）に保存されます。認証に必要な最低限の情報のみ、利用しているクラウド認証基盤で安全に管理します。',
     },
     {
       'question': 'オフラインでも使えますか？',
-      'answer': 'はい。オフラインでもメモ、スケジュール、タスクの閲覧と編集が可能です。インターネット接続が回復すると自動的に同期されます。',
+      'answer':
+          'はい。オフラインでもメモ、スケジュール、タスクの閲覧と編集が可能です。データは端末内に保存されるため、同期処理は行われません。',
     },
     {
       'question': '削除したデータは復元できますか？',
@@ -66,67 +64,16 @@ class _HelpScreenState extends State<HelpScreen> {
     },
   ];
 
-  @override
-  void dispose() {
-    _feedbackController.dispose();
-    super.dispose();
-  }
-
-  /// フィードバックを送信
-  Future<void> _sendFeedback() async {
-    if (_feedbackController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('フィードバック内容を入力してください'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSendingFeedback = true;
-    });
-
-    try {
-      // TODO: 実際のフィードバック送信処理を実装
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('フィードバックを送信しました。ありがとうございます！'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
-        _feedbackController.clear();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('送信に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isSendingFeedback = false;
-      });
-    }
-  }
-
   /// お問い合わせメールを起動
   Future<void> _launchEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@example.com',
+      path: 'taharacomeon.0504@gmail.com',
       query: 'subject=ThisOneアプリについてのお問い合わせ',
     );
 
     if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -280,135 +227,6 @@ class _HelpScreenState extends State<HelpScreen> {
 
                     const SizedBox(height: 24),
 
-                    // フィードバックセクション
-                    _buildSectionHeader('フィードバック'),
-                    const SizedBox(height: 12),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF3A3A3A),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[700]!),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  gradient: createOrangeYellowGradient(),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.feedback,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'ご意見・ご要望',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'アプリの改善に役立てるため、ご意見やご要望をお聞かせください。',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          TextField(
-                            controller: _feedbackController,
-                            maxLines: 5,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'ご意見・ご要望をご記入ください...',
-                              hintStyle: TextStyle(
-                                color: Colors.grey[600],
-                                fontSize: 14,
-                              ),
-                              filled: true,
-                              fillColor: const Color(0xFF2B2B2B),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[700]!,
-                                ),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[700]!,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFFE85A3B),
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              onPressed:
-                                  _isSendingFeedback ? null : _sendFeedback,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFFE85A3B),
-                                disabledBackgroundColor: Colors.grey[700],
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child:
-                                  _isSendingFeedback
-                                      ? const SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                      : const Text(
-                                        '送信',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
                     // お問い合わせセクション
                     _buildSectionHeader('お問い合わせ'),
                     const SizedBox(height: 12),
@@ -441,7 +259,7 @@ class _HelpScreenState extends State<HelpScreen> {
                           ),
                         ),
                         subtitle: Text(
-                          'support@example.com',
+                          'taharacomeon.0504@gmail.com',
                           style: TextStyle(
                             color: Colors.grey[400],
                             fontSize: 14,
@@ -462,9 +280,11 @@ class _HelpScreenState extends State<HelpScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.1),
+                        color: Colors.blue.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                        border: Border.all(
+                          color: Colors.blue.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,

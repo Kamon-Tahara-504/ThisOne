@@ -58,6 +58,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
         await _settingsService.getAutoDeleteCompletedTasks();
     final autoArchiveOldMemos = await _settingsService.getAutoArchiveOldMemos();
 
+    if (!mounted) return;
+
     setState(() {
       _autoDeleteCompletedTasks = autoDeleteCompletedTasks;
       _autoArchiveOldMemos = autoArchiveOldMemos;
@@ -74,15 +76,15 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     try {
       await _settingsService.setAutoDeleteCompletedTasks(value);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('設定を変更しました'),
-            backgroundColor: Color(0xFFE85A3B),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('設定を変更しました'),
+          backgroundColor: Color(0xFFE85A3B),
+          duration: Duration(seconds: 1),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -104,15 +106,15 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     try {
       await _settingsService.setAutoArchiveOldMemos(value);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('設定を変更しました'),
-            backgroundColor: Color(0xFFE85A3B),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('設定を変更しました'),
+          backgroundColor: Color(0xFFE85A3B),
+          duration: Duration(seconds: 1),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,7 +136,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       requireDoubleConfirm: true,
     );
 
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
 
     setState(() {
       _isDeletingData = true;
@@ -144,14 +146,14 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       // TODO: 実際のデータ削除処理を実装
       await Future.delayed(const Duration(seconds: 2));
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('全データを削除しました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('全データを削除しました'),
+          backgroundColor: Color(0xFFE85A3B),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -177,7 +179,7 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       requireDoubleConfirm: true,
     );
 
-    if (!confirmed) return;
+    if (!mounted || !confirmed) return;
 
     setState(() {
       _isDeletingAccount = true;
@@ -187,16 +189,17 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
       // TODO: 実際のアカウント削除処理を実装
       await Future.delayed(const Duration(seconds: 2));
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('アカウントを削除しました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
-        // アカウント削除後はログイン画面に遷移
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('アカウントを削除しました'),
+          backgroundColor: Color(0xFFE85A3B),
+        ),
+      );
+      // アカウント削除後はログイン画面に遷移
+      if (!mounted) return;
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -272,6 +275,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
     if (firstConfirm != true || !requireDoubleConfirm) {
       return firstConfirm ?? false;
+    }
+
+    if (!mounted) {
+      return false;
     }
 
     // 2段階目の確認
@@ -445,36 +452,46 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                       horizontal: 16,
                                       vertical: 8,
                                     ),
-                                    child: Column(
-                                      children:
-                                          _deleteOptions
-                                              .map(
-                                                (
-                                                  option,
-                                                ) => RadioListTile<String>(
-                                                  value: option['value']!,
-                                                  groupValue:
-                                                      _autoDeleteCompletedTasks,
-                                                  onChanged: (value) {
-                                                    if (value != null) {
-                                                      _updateAutoDeleteSetting(
-                                                        value,
-                                                      );
-                                                    }
-                                                  },
-                                                  title: Text(
-                                                    option['label']!,
-                                                    style: TextStyle(
-                                                      color: Colors.grey[300],
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                  activeColor: const Color(
-                                                    0xFFE85A3B,
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2B2B2B),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.grey[700]!,
+                                        ),
+                                      ),
+                                      child: DropdownButton<String>(
+                                        value: _autoDeleteCompletedTasks,
+                                        isExpanded: true,
+                                        dropdownColor: const Color(0xFF2B2B2B),
+                                        iconEnabledColor: Colors.white,
+                                        underline: const SizedBox.shrink(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                        items:
+                                            _deleteOptions
+                                                .map(
+                                                  (option) =>
+                                                      DropdownMenuItem<String>(
+                                                        value: option['value']!,
+                                                        child: Text(
+                                                          option['label']!,
+                                                        ),
+                                                      ),
+                                                )
+                                                .toList(),
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            _updateAutoDeleteSetting(value);
+                                          }
+                                        },
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -519,7 +536,24 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                 ),
                                 value: _autoArchiveOldMemos,
                                 onChanged: _updateAutoArchiveSetting,
-                                activeColor: const Color(0xFFE85A3B),
+                                thumbColor: WidgetStateProperty.resolveWith((
+                                  states,
+                                ) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return const Color(0xFFE85A3B);
+                                  }
+                                  return Colors.grey[400];
+                                }),
+                                trackColor: WidgetStateProperty.resolveWith((
+                                  states,
+                                ) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return const Color(
+                                      0xFFE85A3B,
+                                    ).withValues(alpha: 0.3);
+                                  }
+                                  return Colors.grey[700];
+                                }),
                               ),
                             ),
 
@@ -573,10 +607,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
+                                color: Colors.red.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: Colors.red.withOpacity(0.3),
+                                  color: Colors.red.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(

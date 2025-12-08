@@ -27,10 +27,9 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
       isDismissible: true,
       useSafeArea: true,
       builder:
-          (context) => LoginBottomSheet(
+          (sheetContext) => LoginBottomSheet(
             onLoginSuccess: () {
-              Navigator.pop(context); // ボトムシートを閉じる
-              Navigator.pop(context, true); // 認証画面を閉じて結果を返す
+              Navigator.pop(sheetContext); // ボトムシートを閉じる
             },
           ),
     );
@@ -50,35 +49,15 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
             child: Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Row(
-                children: [
-                  // 戻るボタン
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    padding: const EdgeInsets.all(4),
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    icon: const Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // タイトル
-                  const Text(
-                    'アカウント',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const Spacer(),
-                ],
+              alignment: Alignment.centerLeft,
+              child: const Text(
+                'インストールありがとう!!',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),

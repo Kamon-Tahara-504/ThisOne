@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 class LocalDatabaseService {
   static Database? _database;
   static const String _databaseName = 'thisone.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
 
   /// データベースインスタンスを取得
   ///
@@ -44,14 +44,16 @@ class LocalDatabaseService {
     await _createMemosTable(db);
     await _createTasksTable(db);
     await _createSchedulesTable(db);
+    await _createUserProfilesTable(db);
   }
 
   /// データベースアップグレード時の処理
   ///
   /// バージョンアップ時にテーブル構造を変更
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 将来のバージョンアップ時に使用
-    // 例: if (oldVersion < 2) { ... }
+    if (oldVersion < 2) {
+      await _createUserProfilesTable(db);
+    }
   }
 
   /// メモテーブルを作成
@@ -80,6 +82,26 @@ class LocalDatabaseService {
     await db.execute('CREATE INDEX idx_memos_user_id ON memos(user_id)');
     await db.execute('CREATE INDEX idx_memos_updated_at ON memos(updated_at)');
     await db.execute('CREATE INDEX idx_memos_is_deleted ON memos(is_deleted)');
+  }
+
+  /// ユーザープロフィールテーブルを作成
+  ///
+  /// アカウント情報を保存するテーブル
+  Future<void> _createUserProfilesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS user_profiles (
+        user_id TEXT PRIMARY KEY,
+        display_name TEXT,
+        phone_number TEXT,
+        avatar_url TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_user_profiles_phone ON user_profiles(phone_number)',
+    );
   }
 
   /// タスクテーブルを作成

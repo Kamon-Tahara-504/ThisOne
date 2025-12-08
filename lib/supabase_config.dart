@@ -3,12 +3,25 @@ import 'package:flutter/foundation.dart';
 
 class SupabaseConfig {
   // Supabase設定（認証専用）
-  // フォールバック値を設定して環境変数がなくても動作するように
+  // 開発モード: フォールバック値を使用（利便性のため）
+  // リリースモード: 環境変数必須（セキュリティのため）
   static String get supabaseUrl {
     const url = String.fromEnvironment(
       'SUPABASE_URL',
-      defaultValue: 'https://gpbyfivahcqkebvvpuuo.supabase.co',
+      defaultValue:
+          kReleaseMode
+              ? '' // リリースモードではデフォルト値なし
+              : 'https://gpbyfivahcqkebvvpuuo.supabase.co', // 開発用
     );
+
+    // リリースモードで環境変数が設定されていない場合はエラー
+    if (kReleaseMode && url.isEmpty) {
+      throw Exception(
+        'SUPABASE_URL環境変数が設定されていません。\n'
+        'リリースビルド時は --dart-define=SUPABASE_URL=... を指定してください。',
+      );
+    }
+
     return url;
   }
 
@@ -16,8 +29,19 @@ class SupabaseConfig {
     const key = String.fromEnvironment(
       'SUPABASE_ANON_KEY',
       defaultValue:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYnlmaXZhaGNxa2VidnZwdXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMzAwNTUsImV4cCI6MjA2MzkwNjA1NX0.T-NC0Q6ogfDg3-XsAl9zNdx6ShJwoYJyyjQ1wiOrcdA',
+          kReleaseMode
+              ? '' // リリースモードではデフォルト値なし
+              : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdwYnlmaXZhaGNxa2VidnZwdXVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgzMzAwNTUsImV4cCI6MjA2MzkwNjA1NX0.T-NC0Q6ogfDg3-XsAl9zNdx6ShJwoYJyyjQ1wiOrcdA', // 開発用
     );
+
+    // リリースモードで環境変数が設定されていない場合はエラー
+    if (kReleaseMode && key.isEmpty) {
+      throw Exception(
+        'SUPABASE_ANON_KEY環境変数が設定されていません。\n'
+        'リリースビルド時は --dart-define=SUPABASE_ANON_KEY=... を指定してください。',
+      );
+    }
+
     return key;
   }
 
@@ -65,5 +89,13 @@ class SupabaseConfig {
   }
 }
 
-// Supabaseクライアントへの簡単なアクセス
-final supabase = Supabase.instance.client;
+// Supabaseクライアントへの簡単なアクセス（遅延初期化）
+SupabaseClient get supabase {
+  try {
+    return Supabase.instance.client;
+  } catch (e) {
+    throw StateError(
+      'Supabaseが初期化されていません。SupabaseConfig.initialize()を先に呼び出してください。',
+    );
+  }
+}

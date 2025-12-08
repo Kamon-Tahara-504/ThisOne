@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/supabase_service.dart';
+import '../../services/main_data_service.dart';
 import '../../gradients.dart';
 import '../../widgets/memo/memo_item_card.dart';
 import '../../widgets/memo/memo_filter.dart';
@@ -12,6 +12,7 @@ import 'memo_detail_screen.dart';
 class MemoScreen extends StatefulWidget {
   final List<Memo> memos; // 型安全なMemoモデルに変更
   final Function(List<Memo>) onMemosChanged; // 型安全なコールバックに変更
+  final MainDataService dataService;
   final String? newlyCreatedMemoId; // 新しく作成されたメモのID
   final VoidCallback? onPopAnimationComplete; // ポップアニメーション完了時のコールバック
   final ScrollController? scrollController;
@@ -20,6 +21,7 @@ class MemoScreen extends StatefulWidget {
     super.key,
     required this.memos,
     required this.onMemosChanged,
+    required this.dataService,
     this.newlyCreatedMemoId,
     this.onPopAnimationComplete,
     this.scrollController,
@@ -30,7 +32,6 @@ class MemoScreen extends StatefulWidget {
 }
 
 class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
-  final SupabaseService _supabaseService = SupabaseService();
   late AnimationController _popAnimationController;
   late Animation<double> _popAnimation;
   String? _animatingMemoId; // アニメーション中のメモID
@@ -126,11 +127,11 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
     );
   }
 
-  // Supabaseからメモを再読み込み（型安全版）
+  // メモを再読み込み（ローカルデータベース）
   Future<void> _loadMemos() async {
     try {
-      final memos = await _supabaseService.getUserMemosTyped();
-      widget.onMemosChanged(memos);
+      await widget.dataService.loadMemos();
+      widget.onMemosChanged(widget.dataService.memos);
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
@@ -150,6 +151,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
         pageBuilder:
             (context, animation, secondaryAnimation) => MemoDetailScreen(
               memo: memo, // 型安全なMemoオブジェクトを渡す
+              dataService: widget.dataService,
             ),
         transitionDuration: const Duration(milliseconds: 300),
         reverseTransitionDuration: const Duration(milliseconds: 300),
@@ -230,8 +232,8 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
     if (shouldDelete) {
       try {
-        await _supabaseService.deleteMemoTyped(memo.id);
-        _loadMemos(); // リストを再読み込み
+        await widget.dataService.deleteMemo(memo.id);
+        await _loadMemos(); // リストを再読み込み
       } catch (e) {
         if (mounted) {
           AppErrorHandler.handleError(
@@ -250,13 +252,13 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
     final newPinStatus = !memo.isPinned;
 
     try {
-      await _supabaseService.updateMemoPinStatusTyped(
+      await widget.dataService.toggleMemoPin(
         memoId: memo.id,
         isPinned: newPinStatus,
       );
 
       // 成功した場合はリストを再読み込み
-      _loadMemos();
+      await _loadMemos();
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
@@ -277,7 +279,11 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
       isScrollControlled: true,
       builder:
           (context) =>
-              _EditMemoBottomSheet(memo: memo, onMemoUpdated: _loadMemos),
+              _EditMemoBottomSheet(
+                memo: memo,
+                onMemoUpdated: _loadMemos,
+                dataService: widget.dataService,
+              ),
     );
   }
 
@@ -449,15 +455,19 @@ class _ColorFilterBottomSheet extends StatelessWidget {
 class _EditMemoBottomSheet extends StatefulWidget {
   final Memo memo;
   final VoidCallback onMemoUpdated;
+  final MainDataService dataService;
 
-  const _EditMemoBottomSheet({required this.memo, required this.onMemoUpdated});
+  const _EditMemoBottomSheet({
+    required this.memo,
+    required this.onMemoUpdated,
+    required this.dataService,
+  });
 
   @override
   State<_EditMemoBottomSheet> createState() => _EditMemoBottomSheetState();
 }
 
 class _EditMemoBottomSheetState extends State<_EditMemoBottomSheet> {
-  final SupabaseService _supabaseService = SupabaseService();
   late MemoMode _selectedMode;
   late String _selectedColorHex;
   bool _isLoading = false;
@@ -475,11 +485,12 @@ class _EditMemoBottomSheetState extends State<_EditMemoBottomSheet> {
     });
 
     try {
-      await _supabaseService.updateMemoSettingsTyped(
-        memoId: widget.memo.id,
+      final updatedMemo = widget.memo.copyWith(
         mode: _selectedMode,
-        colorHex: _selectedColorHex,
+        colorTag: _selectedColorHex,
       );
+
+      await widget.dataService.updateMemo(updatedMemo);
 
       if (mounted) {
         Navigator.pop(context);
