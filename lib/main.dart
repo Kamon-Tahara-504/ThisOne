@@ -1,3 +1,5 @@
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -45,10 +47,31 @@ class CustomPageScrollPhysics extends ScrollPhysics {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Supabaseを初期化
-  await SupabaseConfig.initialize();
+  // グローバルエラーハンドリングを設定
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // 本番環境ではエラーログを記録
+    if (kReleaseMode) {
+      debugPrint('Flutter Error: ${details.exception}');
+      debugPrint('Stack trace: ${details.stack}');
+    }
+  };
 
-  runApp(const MyApp());
+  // 非同期エラーのハンドリング
+  PlatformDispatcher.instance.onError = (error, stack) {
+    debugPrint('Uncaught error: $error');
+    debugPrint('Stack trace: $stack');
+    return true;
+  };
+
+  try {
+    // Supabaseを初期化
+    await SupabaseConfig.initialize();
+    runApp(const MyApp());
+  } catch (e, stackTrace) {
+    // 初期化エラーが発生した場合、エラー画面を表示
+    runApp(ErrorApp(error: e, stackTrace: stackTrace));
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -101,28 +124,47 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final supabaseService = SupabaseService();
+    try {
+      final supabaseService = SupabaseService();
 
-    return StreamBuilder<AuthState>(
-      stream: supabaseService.authStateChanges,
-      builder: (context, snapshot) {
-        final user = supabaseService.getCurrentUser();
+      return StreamBuilder<AuthState>(
+        stream: supabaseService.authStateChanges,
+        builder: (context, snapshot) {
+          // エラーが発生した場合
+          if (snapshot.hasError) {
+            debugPrint('AuthGate StreamBuilder error: ${snapshot.error}');
+            // エラーが発生しても認証画面を表示（オフライン対応）
+            return const UnifiedAuthScreen();
+          }
 
-        if (user != null) {
-          return const MainScreen();
-        }
+          try {
+            final user = supabaseService.getCurrentUser();
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
-            ),
-          );
-        }
+            if (user != null) {
+              return const MainScreen();
+            }
 
-        return const UnifiedAuthScreen();
-      },
-    );
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
+                ),
+              );
+            }
+
+            return const UnifiedAuthScreen();
+          } catch (e) {
+            debugPrint('AuthGate error: $e');
+            // エラーが発生しても認証画面を表示
+            return const UnifiedAuthScreen();
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint('AuthGate initialization error: $e');
+      // 初期化エラーが発生した場合でも認証画面を表示
+      return const UnifiedAuthScreen();
+    }
   }
 }
 
@@ -149,46 +191,60 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
 
-    // コントローラーを初期化
-    _appPageController = AppPageController();
-    _appPageController.initializePageController(initialPage: 0);
+    try {
+      // コントローラーを初期化
+      _appPageController = AppPageController();
+      _appPageController.initializePageController(initialPage: 0);
 
-    _scrollControllerManager = ScrollControllerManager();
-    _headerController = HeaderController();
-    _dataService = MainDataService();
+      _scrollControllerManager = ScrollControllerManager();
+      _headerController = HeaderController();
+      _dataService = MainDataService();
 
-    // ヘッダーコントローラーの変更を監視
-    _headerController.addListener(() {
-      if (mounted) {
-        setState(() {});
+      // ヘッダーコントローラーの変更を監視
+      _headerController.addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+
+      // ページコントローラーの変更を監視
+      _appPageController.addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+
+      // データサービスの変更を監視
+      _dataService.addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
+
+      // ScrollControllersを初期化
+      _scrollControllerManager.initializeScrollControllers(
+        pageCount: 4, // タスク、スケジュール、メモ、設定
+        onScroll: _onScroll,
+      );
+
+      // データを読み込み（エラーが発生しても続行）
+      _loadData().catchError((error) {
+        debugPrint('MainScreen初期化時のデータ読み込みエラー: $error');
+        // エラーが発生してもアプリは続行可能
+      });
+
+      // 認証状態の変更を監視
+      try {
+        _dataService.startAuthStateListener();
+      } catch (e) {
+        debugPrint('認証状態リスナーの開始エラー: $e');
+        // エラーが発生してもアプリは続行可能
       }
-    });
-
-    // ページコントローラーの変更を監視
-    _appPageController.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-
-    // データサービスの変更を監視
-    _dataService.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
-
-    // ScrollControllersを初期化
-    _scrollControllerManager.initializeScrollControllers(
-      pageCount: 4, // タスク、スケジュール、メモ、設定
-      onScroll: _onScroll,
-    );
-
-    // データを読み込み
-    _loadData();
-
-    // 認証状態の変更を監視
-    _dataService.startAuthStateListener();
+    } catch (e, stackTrace) {
+      debugPrint('MainScreen初期化エラー: $e');
+      debugPrint('Stack trace: $stackTrace');
+      // エラーが発生してもアプリは続行可能（空のデータで表示）
+    }
   }
 
   // スクロール制御（メモリリーク対策）
@@ -484,5 +540,93 @@ class _MainScreenState extends State<MainScreen> {
         );
       }
     }
+  }
+}
+
+/// 初期化エラー時に表示するエラー画面
+class ErrorApp extends StatelessWidget {
+  final Object error;
+  final StackTrace stackTrace;
+
+  const ErrorApp({super.key, required this.error, required this.stackTrace});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'ThisOne',
+      theme: ThemeData(
+        colorScheme: ColorScheme.dark(
+          primary: const Color(0xFFE85A3B),
+          surface: const Color(0xFF2B2B2B),
+          onSurface: Colors.white,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF2B2B2B),
+        useMaterial3: true,
+      ),
+      home: Scaffold(
+        backgroundColor: const Color(0xFF2B2B2B),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Color(0xFFE85A3B),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'アプリの起動に失敗しました',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'アプリを再起動してください。\n問題が続く場合は、アプリを再インストールしてください。',
+                  style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 32),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'エラー詳細（デバッグモード）:',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          error.toString(),
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

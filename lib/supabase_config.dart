@@ -89,5 +89,13 @@ class SupabaseConfig {
   }
 }
 
-// Supabaseクライアントへの簡単なアクセス
-final supabase = Supabase.instance.client;
+// Supabaseクライアントへの簡単なアクセス（遅延初期化）
+SupabaseClient get supabase {
+  try {
+    return Supabase.instance.client;
+  } catch (e) {
+    throw StateError(
+      'Supabaseが初期化されていません。SupabaseConfig.initialize()を先に呼び出してください。',
+    );
+  }
+}
