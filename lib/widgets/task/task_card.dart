@@ -6,12 +6,16 @@ class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback onToggleComplete;
   final VoidCallback onDelete;
+  final bool isAnimating;
+  final Animation<double>? popAnimation;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.onToggleComplete,
     required this.onDelete,
+    this.isAnimating = false,
+    this.popAnimation,
   });
 
   Color _getDueDateColor() {
@@ -35,7 +39,7 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    Widget taskCard = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF3A3A3A),
@@ -46,6 +50,17 @@ class TaskCard extends StatelessWidget {
                   ? const Color(0xFFE85A3B).withValues(alpha: 0.3)
                   : Colors.grey[700]!,
         ),
+        // アニメーション中は特別な装飾を追加
+        boxShadow:
+            isAnimating
+                ? [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+                : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -174,5 +189,28 @@ class TaskCard extends StatelessWidget {
         ),
       ),
     );
+
+    // アニメーション中の場合は、スケールとバウンス効果を適用
+    if (isAnimating && popAnimation != null) {
+      return Material(
+        color: Colors.transparent,
+        child: AnimatedBuilder(
+          animation: popAnimation!,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 0.8 + (popAnimation!.value * 0.2),
+              child: Transform.translate(
+                offset: Offset(0, -10 * (1 - popAnimation!.value)),
+                child: child,
+              ),
+            );
+          },
+          child: taskCard,
+        ),
+      );
+    }
+
+    // 通常状態
+    return Material(color: Colors.transparent, child: taskCard);
   }
 }

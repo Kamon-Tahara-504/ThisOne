@@ -390,12 +390,20 @@ class _MainScreenState extends State<MainScreen> {
             tasks: _dataService.tasks,
             dataService: _dataService,
             scrollController: _scrollControllerManager.getScrollController(0),
+            newlyCreatedTaskId: _dataService.newlyCreatedTaskId,
+            onPopAnimationComplete: () {
+              _dataService.clearNewlyCreatedTaskId();
+            },
           ),
       // 1: カレンダー画面
       ScheduleScreen(
         key: _scheduleScreenKey,
         scrollController: _scrollControllerManager.getScrollController(1),
         dataService: _dataService,
+        newlyCreatedScheduleId: _dataService.newlyCreatedScheduleId,
+        onPopAnimationComplete: () {
+          _dataService.clearNewlyCreatedScheduleId();
+        },
       ),
       // 2: メモ画面
       _dataService.isLoadingMemos
