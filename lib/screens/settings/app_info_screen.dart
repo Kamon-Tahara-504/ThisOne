@@ -6,6 +6,7 @@ import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 import 'terms_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'license_screen.dart';
 
 /// アプリ情報画面
 ///
@@ -60,19 +61,9 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
 
   /// ライセンス情報を表示
   void _showLicenses() {
-    showLicensePage(
-      context: context,
-      applicationName: 'ThisOne',
-      applicationVersion: _packageInfo?.version ?? '不明',
-      applicationIcon: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Image.asset(
-          'assets/icons/app_icon.png',
-          width: 64,
-          height: 64,
-          fit: BoxFit.cover,
-        ),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LicenseScreen()),
     );
   }
 
