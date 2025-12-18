@@ -238,39 +238,32 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
           ),
         ],
       ),
-      floatingActionButton:
-          sortedTasks.isNotEmpty
-              ? Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: createOrangeYellowGradient(),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: _showSortOverlay,
-                    customBorder: const CircleBorder(),
-                    child: const Center(
-                      child: Icon(
-                        Icons.sort,
-                        color: Color(0xFF2B2B2B),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
-              )
-              : null,
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: createOrangeYellowGradient(),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: _showSortOverlay,
+            customBorder: const CircleBorder(),
+            child: const Center(
+              child: Icon(Icons.sort, color: Color(0xFF2B2B2B), size: 24),
+            ),
+          ),
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
