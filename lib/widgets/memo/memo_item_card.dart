@@ -28,6 +28,24 @@ class MemoItemCard extends StatelessWidget {
     final updatedAt = memo.updatedAt;
     final isPinned = memo.isPinned;
 
+    Widget _actionButton({
+      required VoidCallback onTap,
+      required Widget icon,
+      required Color backgroundColor,
+    }) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: icon,
+        ),
+      );
+    }
+
     Widget memoCard = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -126,33 +144,57 @@ class MemoItemCard extends StatelessWidget {
                             ),
                           ),
                           // ピン留めボタン
-                          IconButton(
-                            onPressed: onTogglePin,
-                            icon: Icon(
-                              isPinned
-                                  ? Icons.push_pin
-                                  : Icons.push_pin_outlined,
-                              color:
-                                  isPinned
-                                      ? const Color(0xFFE85A3B)
-                                      : Colors.grey[500],
-                              size: 20,
+                          _actionButton(
+                            onTap: onTogglePin,
+                            backgroundColor:
+                                isPinned
+                                    ? const Color(
+                                      0xFFE85A3B,
+                                    ).withValues(alpha: 0.15)
+                                    : Colors.grey[600]!.withValues(alpha: 0.2),
+                            icon: ShaderMask(
+                              shaderCallback:
+                                  (bounds) =>
+                                      isPinned
+                                          ? createOrangeYellowGradient()
+                                              .createShader(bounds)
+                                          : LinearGradient(
+                                            colors: [
+                                              Colors.grey[400]!,
+                                              Colors.grey[400]!,
+                                            ],
+                                          ).createShader(bounds),
+                              child: Icon(
+                                isPinned
+                                    ? Icons.push_pin
+                                    : Icons.push_pin_outlined,
+                                color:
+                                    isPinned ? Colors.white : Colors.grey[300],
+                                size: 18,
+                              ),
                             ),
                           ),
-                          // 編集ボタン
-                          IconButton(
-                            onPressed: onEditMemo,
+                          const SizedBox(width: 8),
+                          _actionButton(
+                            onTap: onEditMemo,
+                            backgroundColor: Colors.grey[600]!.withValues(
+                              alpha: 0.2,
+                            ),
                             icon: Icon(
                               Icons.edit_outlined,
-                              color: Colors.grey[500],
-                              size: 20,
+                              color: Colors.white70,
+                              size: 18,
                             ),
                           ),
-                          IconButton(
-                            onPressed: onDelete,
+                          const SizedBox(width: 8),
+                          _actionButton(
+                            onTap: onDelete,
+                            backgroundColor: Colors.red[400]!.withValues(
+                              alpha: 0.1,
+                            ),
                             icon: Icon(
                               Icons.delete_outline,
-                              color: Colors.grey[500],
+                              color: Colors.red[400],
                               size: 20,
                             ),
                           ),
