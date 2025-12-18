@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/app_error.dart';
 import 'network_utils.dart';
+import '../widgets/error/error_banner.dart';
 
 /// アプリケーション全体で使用する統一エラーハンドリングクラス
 class AppErrorHandler {
@@ -19,7 +20,7 @@ class AppErrorHandler {
     NetworkUtils.logError(error, operation: operation);
 
     if (showSnackBar && context.mounted) {
-      _showErrorSnackBar(context, appError, onRetry);
+      showErrorBanner(context, appError, onRetry: onRetry);
     }
   }
 
@@ -117,78 +118,6 @@ class AppErrorHandler {
     return 'エラーが発生しました。しばらく時間をおいてから再試行してください。';
   }
 
-  /// エラースナックバーを表示
-  static void _showErrorSnackBar(
-    BuildContext context,
-    AppError error,
-    VoidCallback? onRetry,
-  ) {
-    final errorLevel = getErrorLevel(error);
-
-    Color backgroundColor;
-    Duration duration;
-
-    switch (errorLevel) {
-      case ErrorLevel.info:
-        backgroundColor = Colors.blue[600]!;
-        duration = const Duration(seconds: 3);
-        break;
-      case ErrorLevel.warning:
-        backgroundColor = Colors.orange[600]!;
-        duration = const Duration(seconds: 4);
-        break;
-      case ErrorLevel.error:
-        backgroundColor = Colors.red[600]!;
-        duration = const Duration(seconds: 5);
-        break;
-      case ErrorLevel.critical:
-        backgroundColor = Colors.red[800]!;
-        duration = const Duration(seconds: 7);
-        break;
-    }
-
-    final snackBar = SnackBar(
-      content: Row(
-        children: [
-          Icon(_getErrorIcon(errorLevel), color: Colors.white, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              error.message,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: backgroundColor,
-      duration: duration,
-      action:
-          onRetry != null
-              ? SnackBarAction(
-                label: '再試行',
-                textColor: Colors.white,
-                onPressed: onRetry,
-              )
-              : null,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  /// エラーレベルに応じたアイコンを取得
-  static IconData _getErrorIcon(ErrorLevel level) {
-    switch (level) {
-      case ErrorLevel.info:
-        return Icons.info_outline;
-      case ErrorLevel.warning:
-        return Icons.warning_outlined;
-      case ErrorLevel.error:
-        return Icons.error_outline;
-      case ErrorLevel.critical:
-        return Icons.error;
-    }
-  }
-
   /// 成功メッセージを表示
   static void showSuccess(
     BuildContext context,
@@ -196,26 +125,7 @@ class AppErrorHandler {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(
-              Icons.check_circle_outline,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(message, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.green[600],
-        duration: duration,
-      ),
-    );
+    showSuccessBanner(context, message, duration: duration);
   }
 
   /// 情報メッセージを表示
@@ -225,21 +135,6 @@ class AppErrorHandler {
     Duration duration = const Duration(seconds: 3),
   }) {
     if (!context.mounted) return;
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.info_outline, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(message, style: const TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.blue[600],
-        duration: duration,
-      ),
-    );
+    showInfoBanner(context, message, duration: duration);
   }
 }

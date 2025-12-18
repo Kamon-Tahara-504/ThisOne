@@ -3,6 +3,7 @@ import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../services/data_export_service.dart';
 import '../../services/data_import_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_toggle_item.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
@@ -91,12 +92,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: '設定の保存');
       }
     }
   }
@@ -120,21 +116,11 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('同期が完了しました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
+        AppErrorHandler.showSuccess(context, '同期が完了しました');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('同期に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: '同期');
       }
     } finally {
       setState(() {
@@ -163,21 +149,11 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('キャッシュをクリアしました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
+        AppErrorHandler.showSuccess(context, 'キャッシュをクリアしました');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('キャッシュのクリアに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'キャッシュのクリア');
       }
     } finally {
       setState(() {
@@ -212,22 +188,23 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor:
-              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-          duration: Duration(seconds: result.success ? 3 : 5),
-          action:
-              result.success && result.counts != null
-                  ? SnackBarAction(
-                    label: '詳細',
-                    textColor: Colors.white,
-                    onPressed: () => _showExportDetails(result.counts!),
-                  )
-                  : null,
-        ),
-      );
+      if (result.success) {
+        AppErrorHandler.showSuccess(context, result.message);
+        // 詳細情報がある場合は表示
+        if (result.counts != null) {
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) {
+              _showExportDetails(result.counts!);
+            }
+          });
+        }
+      } else {
+        AppErrorHandler.handleError(
+          context,
+          result.message,
+          operation: 'エクスポート',
+        );
+      }
 
       // 成功した場合はデータ統計を更新
       if (result.success) {
@@ -239,13 +216,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エクスポート中に予期しないエラーが発生しました'),
-            backgroundColor: Colors.red[700],
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'エクスポート');
       }
     } finally {
       setState(() {
@@ -344,13 +315,15 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       // 進行状況ダイアログを閉じる
       Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor:
-              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-        ),
-      );
+      if (result.success) {
+        AppErrorHandler.showSuccess(context, result.message);
+      } else {
+        AppErrorHandler.handleError(
+          context,
+          result.message,
+          operation: 'インポート',
+        );
+      }
 
       // 成功した場合はデータ統計を更新
       if (result.success) {
@@ -365,12 +338,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('インポートに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'インポート');
       }
     } finally {
       setState(() {

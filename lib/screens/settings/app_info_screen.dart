@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 // 外部ブラウザは使用せず、アプリ内で表示する
 import '../../gradients.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 import 'terms_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -52,12 +53,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('アプリ情報の読み込みに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'アプリ情報の読み込み');
       }
     }
   }
@@ -68,14 +64,14 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
       context: context,
       applicationName: 'ThisOne',
       applicationVersion: _packageInfo?.version ?? '不明',
-      applicationIcon: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          gradient: createOrangeYellowGradient(),
-          borderRadius: BorderRadius.circular(16),
+      applicationIcon: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Image.asset(
+          'assets/icons/app_icon.png',
+          width: 64,
+          height: 64,
+          fit: BoxFit.cover,
         ),
-        child: const Icon(Icons.apps, color: Colors.white, size: 32),
       ),
     );
   }
@@ -251,26 +247,26 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  Container(
-                                    width: 100,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      gradient: createOrangeYellowGradient(),
-                                      borderRadius: BorderRadius.circular(24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFFE85A3B,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 20,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.apps,
-                                      color: Colors.white,
-                                      size: 50,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(
+                                              0xFFE85A3B,
+                                            ).withValues(alpha: 0.3),
+                                            blurRadius: 20,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Image.asset(
+                                        'assets/icons/app_icon.png',
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),

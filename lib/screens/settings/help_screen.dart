@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// ヘルプ画面
@@ -76,11 +77,10 @@ class _HelpScreenState extends State<HelpScreen> {
       await launchUrl(emailUri, mode: LaunchMode.externalApplication);
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メールアプリを起動できませんでした'),
-            backgroundColor: Colors.red,
-          ),
+        AppErrorHandler.handleError(
+          context,
+          'メールアプリを起動できませんでした',
+          operation: 'メール送信',
         );
       }
     }
