@@ -3,6 +3,10 @@ import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../services/data_export_service.dart';
 import '../../services/data_import_service.dart';
+import '../../services/local_task_service.dart';
+import '../../services/local_memo_service.dart';
+import '../../services/local_schedule_service.dart';
+import '../../services/supabase_service.dart';
 import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
@@ -10,11 +14,12 @@ import '../../widgets/app_bars/static_header_guideline.dart';
 /// データ管理画面
 ///
 /// 機能:
-/// - キャッシュクリア機能
 /// - データバックアップ（エクスポート/インポート）
+/// - データ一括削除（タスク、メモ、スケジュール）
 ///
 /// 画面構成:
-/// - データ管理セクション（データ統計、エクスポート、インポート、キャッシュクリア）
+/// - データ管理セクション（データ統計、エクスポート、インポート）
+/// - データ削除セクション（タスク、メモ、スケジュールの一括削除）
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
 
@@ -26,13 +31,19 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   final SettingsService _settingsService = SettingsService();
   final DataExportService _exportService = DataExportService();
   final DataImportService _importService = DataImportService();
+  final LocalTaskService _taskService = LocalTaskService();
+  final LocalMemoService _memoService = LocalMemoService();
+  final LocalScheduleService _scheduleService = LocalScheduleService();
+  final SupabaseService _supabaseService = SupabaseService();
 
   Map<String, int> _dataCounts = {};
 
   bool _isLoading = true;
-  bool _isClearingCache = false;
   bool _isExporting = false;
   bool _isImporting = false;
+  bool _isDeletingTasks = false;
+  bool _isDeletingMemos = false;
+  bool _isDeletingSchedules = false;
 
   @override
   void initState() {
@@ -52,35 +63,155 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     });
   }
 
-  /// キャッシュをクリア
-  Future<void> _clearCache() async {
+  /// 現在のユーザーIDを取得
+  String _getUserId() {
+    final user = _supabaseService.getCurrentUser();
+    return user?.id ?? 'local';
+  }
+
+  /// すべてのタスクを削除
+  Future<void> _deleteAllTasks() async {
+    final taskCount = _dataCounts['tasks'] ?? 0;
+    if (taskCount == 0) {
+      if (mounted) {
+        AppErrorHandler.showInfo(context, '削除するタスクがありません');
+      }
+      return;
+    }
+
     final confirmed = await _showConfirmDialog(
-      title: 'キャッシュをクリア',
-      message: 'ローカルのキャッシュデータを削除します。\nこの操作は元に戻せません。',
-      confirmText: 'クリア',
+      title: 'すべてのタスクを削除',
+      message: 'すべてのタスク（$taskCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
       isDangerous: true,
     );
 
     if (!mounted || !confirmed) return;
 
     setState(() {
-      _isClearingCache = true;
+      _isDeletingTasks = true;
     });
 
     try {
-      // TODO: 実際のキャッシュクリア処理を実装
-      await Future.delayed(const Duration(seconds: 1));
+      final userId = _getUserId();
+      await _taskService.deleteAllTasks(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
 
       if (mounted) {
-        AppErrorHandler.showSuccess(context, 'キャッシュをクリアしました');
+        AppErrorHandler.showSuccess(context, 'すべてのタスクを削除しました');
       }
     } catch (e) {
       if (mounted) {
-        AppErrorHandler.handleError(context, e, operation: 'キャッシュのクリア');
+        AppErrorHandler.handleError(context, e, operation: 'タスクの削除');
       }
     } finally {
       setState(() {
-        _isClearingCache = false;
+        _isDeletingTasks = false;
+      });
+    }
+  }
+
+  /// すべてのメモを削除
+  Future<void> _deleteAllMemos() async {
+    final memoCount = _dataCounts['memos'] ?? 0;
+    if (memoCount == 0) {
+      if (mounted) {
+        AppErrorHandler.showInfo(context, '削除するメモがありません');
+      }
+      return;
+    }
+
+    final confirmed = await _showConfirmDialog(
+      title: 'すべてのメモを削除',
+      message: 'すべてのメモ（$memoCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
+      isDangerous: true,
+    );
+
+    if (!mounted || !confirmed) return;
+
+    setState(() {
+      _isDeletingMemos = true;
+    });
+
+    try {
+      final userId = _getUserId();
+      await _memoService.deleteAllMemos(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
+
+      if (mounted) {
+        AppErrorHandler.showSuccess(context, 'すべてのメモを削除しました');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(context, e, operation: 'メモの削除');
+      }
+    } finally {
+      setState(() {
+        _isDeletingMemos = false;
+      });
+    }
+  }
+
+  /// すべてのスケジュールを削除
+  Future<void> _deleteAllSchedules() async {
+    final scheduleCount = _dataCounts['schedules'] ?? 0;
+    if (scheduleCount == 0) {
+      if (mounted) {
+        AppErrorHandler.showInfo(context, '削除するスケジュールがありません');
+      }
+      return;
+    }
+
+    final confirmed = await _showConfirmDialog(
+      title: 'すべてのスケジュールを削除',
+      message: 'すべてのスケジュール（$scheduleCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
+      isDangerous: true,
+    );
+
+    if (!mounted || !confirmed) return;
+
+    setState(() {
+      _isDeletingSchedules = true;
+    });
+
+    try {
+      final userId = _getUserId();
+      await _scheduleService.deleteAllSchedules(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
+
+      if (mounted) {
+        AppErrorHandler.showSuccess(context, 'すべてのスケジュールを削除しました');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(context, e, operation: 'スケジュールの削除');
+      }
+    } finally {
+      setState(() {
+        _isDeletingSchedules = false;
       });
     }
   }
@@ -463,13 +594,38 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               onTap: _importData,
                             ),
 
+                            const SizedBox(height: 24),
+
+                            // データ削除セクション
+                            _buildSectionHeader('データ削除'),
+                            const SizedBox(height: 12),
+
                             SettingsActionItem(
-                              icon: Icons.delete_sweep,
-                              title: 'キャッシュをクリア',
-                              subtitle: 'ローカルのキャッシュデータを削除',
-                              isLoading: _isClearingCache,
+                              icon: Icons.task_alt,
+                              title: 'すべてのタスクを削除',
+                              subtitle: 'タスク: ${_dataCounts['tasks'] ?? 0}件',
+                              isLoading: _isDeletingTasks,
                               isDangerous: true,
-                              onTap: _clearCache,
+                              onTap: _deleteAllTasks,
+                            ),
+
+                            SettingsActionItem(
+                              icon: Icons.note,
+                              title: 'すべてのメモを削除',
+                              subtitle: 'メモ: ${_dataCounts['memos'] ?? 0}件',
+                              isLoading: _isDeletingMemos,
+                              isDangerous: true,
+                              onTap: _deleteAllMemos,
+                            ),
+
+                            SettingsActionItem(
+                              icon: Icons.calendar_today,
+                              title: 'すべてのスケジュールを削除',
+                              subtitle:
+                                  'スケジュール: ${_dataCounts['schedules'] ?? 0}件',
+                              isLoading: _isDeletingSchedules,
+                              isDangerous: true,
+                              onTap: _deleteAllSchedules,
                             ),
                           ],
                         ),
