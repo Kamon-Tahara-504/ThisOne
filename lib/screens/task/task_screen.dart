@@ -10,27 +10,57 @@ class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更
   final MainDataService dataService;
   final ScrollController? scrollController;
+  final String? newlyCreatedTaskId;
+  final VoidCallback? onPopAnimationComplete;
 
   const TaskScreen({
     super.key,
     this.tasks,
     required this.dataService,
     this.scrollController,
+    this.newlyCreatedTaskId,
+    this.onPopAnimationComplete,
   });
 
   @override
   State<TaskScreen> createState() => _TaskScreenState();
 }
 
-class _TaskScreenState extends State<TaskScreen> {
+class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
   late List<Task> _tasks; // 型安全なTaskモデルに変更
   TaskSortOrder _currentSortOrder = TaskSortOrder.createdAt;
   SortOverlay? _sortOverlay;
+  late AnimationController _popAnimationController;
+  late Animation<double> _popAnimation;
+  String? _animatingTaskId;
 
   @override
   void initState() {
     super.initState();
     _tasks = widget.tasks != null ? List.from(widget.tasks!) : [];
+
+    // ポップアニメーションコントローラー
+    _popAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _popAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _popAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    // アニメーション完了時のリスナー
+    _popAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _animatingTaskId = null;
+        });
+        widget.onPopAnimationComplete?.call();
+      }
+    });
   }
 
   @override
@@ -43,12 +73,26 @@ class _TaskScreenState extends State<TaskScreen> {
         _applySorting();
       });
     }
+
+    // 新しいタスクが作成された場合にアニメーションを開始
+    if (widget.newlyCreatedTaskId != null &&
+        widget.newlyCreatedTaskId != oldWidget.newlyCreatedTaskId) {
+      _startPopAnimation(widget.newlyCreatedTaskId!);
+    }
   }
 
   @override
   void dispose() {
     _sortOverlay?.dispose();
+    _popAnimationController.dispose();
     super.dispose();
+  }
+
+  void _startPopAnimation(String taskId) {
+    setState(() {
+      _animatingTaskId = taskId;
+    });
+    _popAnimationController.forward(from: 0.0);
   }
 
   void _applySorting() {
@@ -181,10 +225,13 @@ class _TaskScreenState extends State<TaskScreen> {
                       itemBuilder: (context, index) {
                         final task = sortedTasks[index];
                         final originalIndex = _tasks.indexOf(task);
+                        final isAnimating = _animatingTaskId == task.id;
                         return TaskCard(
                           task: task,
                           onToggleComplete: () => _toggleTask(originalIndex),
                           onDelete: () => _deleteTask(originalIndex),
+                          isAnimating: isAnimating,
+                          popAnimation: isAnimating ? _popAnimation : null,
                         );
                       },
                     ),

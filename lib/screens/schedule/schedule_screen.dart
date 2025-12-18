@@ -10,21 +10,81 @@ import '../../models/schedule.dart';
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;
   final MainDataService dataService;
+  final String? newlyCreatedScheduleId;
+  final VoidCallback? onPopAnimationComplete;
 
   const ScheduleScreen({
     super.key,
     this.scrollController,
     required this.dataService,
+    this.newlyCreatedScheduleId,
+    this.onPopAnimationComplete,
   });
 
   @override
   State<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleScreenState extends State<ScheduleScreen>
+    with TickerProviderStateMixin {
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  late AnimationController _popAnimationController;
+  late Animation<double> _popAnimation;
+  String? _animatingScheduleId;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // ポップアニメーションコントローラー
+    _popAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _popAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _popAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    // アニメーション完了時のリスナー
+    _popAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _animatingScheduleId = null;
+        });
+        widget.onPopAnimationComplete?.call();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _popAnimationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(ScheduleScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // 新しいスケジュールが作成された場合にアニメーションを開始
+    if (widget.newlyCreatedScheduleId != null &&
+        widget.newlyCreatedScheduleId != oldWidget.newlyCreatedScheduleId) {
+      _startPopAnimation(widget.newlyCreatedScheduleId!);
+    }
+  }
+
+  void _startPopAnimation(String scheduleId) {
+    setState(() {
+      _animatingScheduleId = scheduleId;
+    });
+    _popAnimationController.forward(from: 0.0);
+  }
 
   /// スケジュールを削除（データベースからも削除）
   Future<void> _deleteSchedule(Schedule schedule) async {
@@ -573,8 +633,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   int.parse(colorHex.substring(1), radix: 16) +
                                       0xFF000000,
                                 );
+                                final isAnimating =
+                                    _animatingScheduleId == schedule.id;
 
-                                return Container(
+                                Widget scheduleCard = Container(
                                   margin: const EdgeInsets.only(bottom: 12),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF3A3A3A),
@@ -582,6 +644,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                     border: Border.all(
                                       color: Colors.grey[700]!,
                                     ),
+                                    // アニメーション中は特別な装飾を追加
+                                    boxShadow:
+                                        isAnimating
+                                            ? [
+                                              BoxShadow(
+                                                color: Colors.white.withValues(
+                                                  alpha: 0.6,
+                                                ),
+                                                blurRadius: 20,
+                                                offset: const Offset(0, 5),
+                                              ),
+                                            ]
+                                            : null,
                                   ),
                                   child: IntrinsicHeight(
                                     child: Padding(
@@ -720,6 +795,36 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                       ),
                                     ),
                                   ),
+                                );
+
+                                // アニメーション中の場合は、スケールとバウンス効果を適用
+                                if (isAnimating) {
+                                  return Material(
+                                    color: Colors.transparent,
+                                    child: AnimatedBuilder(
+                                      animation: _popAnimation,
+                                      builder: (context, child) {
+                                        return Transform.scale(
+                                          scale:
+                                              0.8 + (_popAnimation.value * 0.2),
+                                          child: Transform.translate(
+                                            offset: Offset(
+                                              0,
+                                              -10 * (1 - _popAnimation.value),
+                                            ),
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: scheduleCard,
+                                    ),
+                                  );
+                                }
+
+                                // 通常状態
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: scheduleCard,
                                 );
                               }, childCount: todaySchedules.length),
                             ),

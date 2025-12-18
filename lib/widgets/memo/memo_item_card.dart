@@ -39,7 +39,7 @@ class MemoItemCard extends StatelessWidget {
             isAnimating
                 ? [
                   BoxShadow(
-                    color: const Color(0xFFE85A3B).withValues(alpha: 0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     blurRadius: 20,
                     offset: const Offset(0, 5),
                   ),

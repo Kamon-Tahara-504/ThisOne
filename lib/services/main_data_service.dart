@@ -28,6 +28,8 @@ class MainDataService extends ChangeNotifier {
   bool _isLoadingMemos = true;
   bool _isLoadingSchedules = true;
   String? _newlyCreatedMemoId;
+  String? _newlyCreatedTaskId;
+  String? _newlyCreatedScheduleId;
   bool _isDisposed = false;
 
   // ゲッター
@@ -38,6 +40,8 @@ class MainDataService extends ChangeNotifier {
   bool get isLoadingMemos => _isLoadingMemos;
   bool get isLoadingSchedules => _isLoadingSchedules;
   String? get newlyCreatedMemoId => _newlyCreatedMemoId;
+  String? get newlyCreatedTaskId => _newlyCreatedTaskId;
+  String? get newlyCreatedScheduleId => _newlyCreatedScheduleId;
 
   /// 現在のユーザーIDを取得
   ///
@@ -122,6 +126,8 @@ class MainDataService extends ChangeNotifier {
       );
 
       if (!_isDisposed) {
+        // 新しく作成されたタスクのIDを設定
+        _newlyCreatedTaskId = newTask.id;
         _tasks.add(newTask);
         notifyListeners();
       }
@@ -190,9 +196,7 @@ class MainDataService extends ChangeNotifier {
 
       final index = _tasks.indexWhere((task) => task.id == updatedTask.id);
       if (index != -1) {
-        _tasks[index] = updatedTask.copyWith(
-          updatedAt: DateTime.now(),
-        );
+        _tasks[index] = updatedTask.copyWith(updatedAt: DateTime.now());
         notifyListeners();
       }
     } catch (e) {
@@ -333,6 +337,8 @@ class MainDataService extends ChangeNotifier {
       );
 
       if (!_isDisposed) {
+        // 新しく作成されたスケジュールのIDを設定
+        _newlyCreatedScheduleId = newSchedule.id;
         _schedules.add(newSchedule);
         notifyListeners();
       }
@@ -345,6 +351,22 @@ class MainDataService extends ChangeNotifier {
   void clearNewlyCreatedMemoId() {
     if (_newlyCreatedMemoId != null) {
       _newlyCreatedMemoId = null;
+      notifyListeners();
+    }
+  }
+
+  /// 新しく作成されたタスクIDをクリア
+  void clearNewlyCreatedTaskId() {
+    if (_newlyCreatedTaskId != null) {
+      _newlyCreatedTaskId = null;
+      notifyListeners();
+    }
+  }
+
+  /// 新しく作成されたスケジュールIDをクリア
+  void clearNewlyCreatedScheduleId() {
+    if (_newlyCreatedScheduleId != null) {
+      _newlyCreatedScheduleId = null;
       notifyListeners();
     }
   }
