@@ -6,6 +6,7 @@ import '../../widgets/memo/memo_back_header.dart';
 import '../../widgets/quill_rich_editor.dart';
 import '../../widgets/memo/memo_save_manager.dart';
 import '../../utils/calculator_utils.dart';
+import '../../utils/error_handler.dart';
 import '../../models/memo.dart';
 import '../../services/main_data_service.dart';
 
@@ -126,11 +127,10 @@ class _MemoDetailScreenState extends State<MemoDetailScreen>
     });
 
     if (state.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('保存に失敗しました: ${state.errorMessage}'),
-          backgroundColor: Colors.red[600],
-        ),
+      AppErrorHandler.handleError(
+        context,
+        state.errorMessage!,
+        operation: '保存',
       );
     }
   }

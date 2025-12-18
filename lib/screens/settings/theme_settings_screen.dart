@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// テーマ設定画面
@@ -52,22 +53,15 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
       await _settingsService.setThemeMode(mode);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('テーマモードを変更しました'),
-            backgroundColor: Color(0xFFE85A3B),
-            duration: Duration(seconds: 1),
-          ),
+        AppErrorHandler.showSuccess(
+          context,
+          'テーマモードを変更しました',
+          duration: const Duration(seconds: 1),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: '設定の保存');
       }
     }
   }
@@ -82,21 +76,11 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
       await _loadSettings();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('テーマ設定をリセットしました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
+        AppErrorHandler.showSuccess(context, 'テーマ設定をリセットしました');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('リセットに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'リセット');
       }
     }
   }

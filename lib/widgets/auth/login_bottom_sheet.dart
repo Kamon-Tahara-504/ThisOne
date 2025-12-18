@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../gradients.dart';
+import '../../utils/error_handler.dart';
 import 'google_signin_button.dart';
 import 'x_signin_button.dart';
 import 'disabled_auth_button.dart';
@@ -63,41 +63,12 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('ログインしました！')));
+        AppErrorHandler.showSuccess(context, 'ログインしました！');
         widget.onLoginSuccess?.call();
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        String errorMessage;
-        switch (error.message) {
-          case 'Email not confirmed':
-            errorMessage = 'メールアドレスが確認されていません。メールボックスを確認してください。';
-            break;
-          case 'Invalid login credentials':
-            errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
-            break;
-          default:
-            errorMessage = 'エラー: ${error.message}';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('予期しないエラーが発生しました: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'ログイン');
       }
     } finally {
       if (mounted) {
@@ -119,27 +90,15 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
       final success = await _supabaseService.signInWithGoogle();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Googleでログインしました！')));
+          AppErrorHandler.showSuccess(context, 'Googleでログインしました！');
           widget.onLoginSuccess?.call();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Google認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          AppErrorHandler.showInfo(context, 'Google認証がキャンセルされました');
         }
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'Google認証');
       }
     } finally {
       if (mounted) {
@@ -161,27 +120,15 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
       final success = await _supabaseService.signInWithTwitter();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Xでログインしました！')));
+          AppErrorHandler.showSuccess(context, 'Xでログインしました！');
           widget.onLoginSuccess?.call();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('X認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          AppErrorHandler.showInfo(context, 'X認証がキャンセルされました');
         }
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('X認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'X認証');
       }
     } finally {
       if (mounted) {
@@ -466,12 +413,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           child: TextButton(
             onPressed: () {
               // パスワードリセット機能の実装
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('パスワードリセット機能は準備中です'),
-                  backgroundColor: Colors.blue,
-                ),
-              );
+              AppErrorHandler.showInfo(context, 'パスワードリセット機能は準備中です');
             },
             child: Text(
               'パスワードを忘れた方',

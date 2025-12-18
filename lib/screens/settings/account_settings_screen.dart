@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
 import '../../services/local_user_profile_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/account/not_logged_in_view.dart';
 import '../../widgets/account/logged_in_view.dart';
 
@@ -98,17 +99,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('プロフィールを更新しました')));
+        AppErrorHandler.showSuccess(context, 'プロフィールを更新しました');
       }
 
       await _loadUserProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('プロフィールの更新に失敗しました: $e')));
+        AppErrorHandler.handleError(context, e, operation: 'プロフィールの更新');
       }
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../gradients.dart';
+import '../../utils/error_handler.dart';
 import 'google_signin_button.dart';
 import 'x_signin_button.dart';
 import 'disabled_auth_button.dart';
@@ -32,11 +32,10 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<void> _signUpWithEmail() async {
     if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('パスワードが一致しません'),
-          backgroundColor: Colors.red,
-        ),
+      AppErrorHandler.handleError(
+        context,
+        'パスワードが一致しません',
+        operation: 'パスワード確認',
       );
       return;
     }
@@ -53,49 +52,19 @@ class _SignupPageState extends State<SignupPage> {
 
       if (mounted) {
         if (response.user != null && response.user!.emailConfirmedAt == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('サインアップが完了しました！メールを確認してアカウントを有効化してください。'),
-              duration: Duration(seconds: 5),
-            ),
+          AppErrorHandler.showSuccess(
+            context,
+            'サインアップが完了しました！メールを確認してアカウントを有効化してください。',
+            duration: const Duration(seconds: 5),
           );
         } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('サインアップが完了しました！')));
+          AppErrorHandler.showSuccess(context, 'サインアップが完了しました！');
         }
         Navigator.pop(context, true);
       }
-    } on AuthException catch (error) {
-      if (mounted) {
-        String errorMessage;
-        switch (error.message) {
-          case 'User already registered':
-            errorMessage = 'このメールアドレスは既に登録されています。';
-            break;
-          case 'Password should be at least 6 characters':
-            errorMessage = 'パスワードは6文字以上で入力してください。';
-            break;
-          default:
-            errorMessage = 'エラー: ${error.message}';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('予期しないエラーが発生しました: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'サインアップ');
       }
     } finally {
       if (mounted) {
@@ -117,27 +86,15 @@ class _SignupPageState extends State<SignupPage> {
       final success = await _supabaseService.signInWithGoogle();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Googleで登録しました！')));
+          AppErrorHandler.showSuccess(context, 'Googleで登録しました！');
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Google認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          AppErrorHandler.showInfo(context, 'Google認証がキャンセルされました');
         }
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'Google認証');
       }
     } finally {
       if (mounted) {
@@ -159,27 +116,15 @@ class _SignupPageState extends State<SignupPage> {
       final success = await _supabaseService.signInWithTwitter();
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Xで登録しました！')));
+          AppErrorHandler.showSuccess(context, 'Xで登録しました！');
           Navigator.pop(context, true);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('X認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
+          AppErrorHandler.showInfo(context, 'X認証がキャンセルされました');
         }
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('X認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppErrorHandler.handleError(context, error, operation: 'X認証');
       }
     } finally {
       if (mounted) {

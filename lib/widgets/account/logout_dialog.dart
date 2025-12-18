@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
 
 Future<void> showLogoutDialog({
   required BuildContext context,
@@ -29,18 +30,15 @@ Future<void> showLogoutDialog({
               child: TextButton(
                 onPressed: () async {
                   final navigator = Navigator.of(context);
-                  final scaffoldMessenger = ScaffoldMessenger.of(context);
                   navigator.pop();
                   try {
                     await supabaseService.signOut();
-                    scaffoldMessenger.showSnackBar(
-                      const SnackBar(content: Text('ログアウトしました')),
-                    );
+                    if (!context.mounted) return;
+                    AppErrorHandler.showSuccess(context, 'ログアウトしました');
                     onLogoutSuccess();
                   } catch (e) {
-                    scaffoldMessenger.showSnackBar(
-                      SnackBar(content: Text('ログアウトに失敗しました: $e')),
-                    );
+                    if (!context.mounted) return;
+                    AppErrorHandler.handleError(context, e, operation: 'ログアウト');
                   }
                 },
                 child: const Text(

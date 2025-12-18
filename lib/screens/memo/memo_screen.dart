@@ -278,12 +278,11 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) =>
-              _EditMemoBottomSheet(
-                memo: memo,
-                onMemoUpdated: _loadMemos,
-                dataService: widget.dataService,
-              ),
+          (context) => _EditMemoBottomSheet(
+            memo: memo,
+            onMemoUpdated: _loadMemos,
+            dataService: widget.dataService,
+          ),
     );
   }
 
@@ -495,15 +494,11 @@ class _EditMemoBottomSheetState extends State<_EditMemoBottomSheet> {
       if (mounted) {
         Navigator.pop(context);
         widget.onMemoUpdated();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('メモ設定を更新しました')));
+        AppErrorHandler.showSuccess(context, 'メモ設定を更新しました');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('設定の更新に失敗しました: $e')));
+        AppErrorHandler.handleError(context, e, operation: '設定の更新');
       }
     } finally {
       if (mounted) {

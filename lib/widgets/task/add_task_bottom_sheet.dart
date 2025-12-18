@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../models/task.dart';
+import '../../utils/error_handler.dart';
 
 class AddTaskBottomSheet extends StatefulWidget {
   final Function(Map<String, dynamic>) onAdd;
@@ -79,12 +80,7 @@ class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
       });
       Navigator.pop(context);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('タイトルを入力してください'),
-          backgroundColor: Color(0xFFF44336),
-        ),
-      );
+      AppErrorHandler.handleError(context, 'タイトルを入力してください', operation: 'タスク追加');
     }
   }
 
