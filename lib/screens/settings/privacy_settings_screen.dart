@@ -3,8 +3,6 @@ import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_screen.dart';
 
 /// プライバシー設定画面
 ///
@@ -13,12 +11,9 @@ import 'terms_screen.dart';
 /// - 古いメモを自動アーカイブ（有効/無効）
 /// - 全データを削除
 /// - アカウントを完全に削除
-/// - プライバシーポリシーへのリンク
-/// - 利用規約へのリンク
 ///
 /// 画面構成:
 /// - 自動削除設定セクション
-/// - リンクセクション
 /// - 危険な操作セクション（削除系）
 class PrivacySettingsScreen extends StatefulWidget {
   const PrivacySettingsScreen({super.key});
@@ -328,22 +323,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     return secondConfirm ?? false;
   }
 
-  /// プライバシーポリシー画面を開く
-  void _openPrivacyPolicy() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-    );
-  }
-
-  /// 利用規約画面を開く
-  void _openTerms() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TermsScreen()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -559,26 +538,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
                             const SizedBox(height: 24),
 
-                            // リンクセクション
-                            _buildSectionHeader('法的情報'),
-                            const SizedBox(height: 12),
-
-                            _buildLinkCard(
-                              icon: Icons.privacy_tip,
-                              title: 'プライバシーポリシー',
-                              subtitle: '個人情報の取り扱いについて',
-                              onTap: _openPrivacyPolicy,
-                            ),
-
-                            _buildLinkCard(
-                              icon: Icons.article,
-                              title: '利用規約',
-                              subtitle: 'サービス利用規約',
-                              onTap: _openTerms,
-                            ),
-
-                            const SizedBox(height: 24),
-
                             // 危険な操作セクション
                             _buildSectionHeader('危険な操作'),
                             const SizedBox(height: 12),
@@ -665,52 +624,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  /// リンクカードを構築
-  ///
-  /// [icon] アイコン
-  /// [title] タイトル
-  /// [subtitle] 説明文
-  /// [onTap] タップ時の処理
-  Widget _buildLinkCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            gradient: createOrangeYellowGradient(),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[400], fontSize: 14),
-        ),
-        trailing: Icon(Icons.open_in_new, color: Colors.grey[500], size: 16),
-        onTap: onTap,
-      ),
     );
   }
 }

@@ -28,7 +28,7 @@ class MemoItemCard extends StatelessWidget {
     final updatedAt = memo.updatedAt;
     final isPinned = memo.isPinned;
 
-    Widget _actionButton({
+    Widget actionButton({
       required VoidCallback onTap,
       required Widget icon,
       required Color backgroundColor,
@@ -144,7 +144,7 @@ class MemoItemCard extends StatelessWidget {
                             ),
                           ),
                           // ピン留めボタン
-                          _actionButton(
+                          actionButton(
                             onTap: onTogglePin,
                             backgroundColor:
                                 isPinned
@@ -175,7 +175,7 @@ class MemoItemCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _actionButton(
+                          actionButton(
                             onTap: onEditMemo,
                             backgroundColor: Colors.grey[600]!.withValues(
                               alpha: 0.2,
@@ -187,7 +187,7 @@ class MemoItemCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          _actionButton(
+                          actionButton(
                             onTap: onDelete,
                             backgroundColor: Colors.red[400]!.withValues(
                               alpha: 0.1,
