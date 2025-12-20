@@ -272,8 +272,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
                                           () => _showLicenseDetail(entry.key),
                                     ),
                                   );
-                                })
-                                .toList(),
+                                }),
                           ],
                         ),
                       ),
