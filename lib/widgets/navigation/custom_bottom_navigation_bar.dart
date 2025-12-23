@@ -188,13 +188,13 @@ class CustomBottomNavigationBar extends StatelessWidget {
   }
 
   void _showCreateTaskDialog(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
       builder:
           (context) => AddTaskBottomSheet(
             onAdd: (taskData) {
+              Navigator.pop(context); // ダイアログを閉じる
               onTaskCreate(taskData);
             },
           ),
