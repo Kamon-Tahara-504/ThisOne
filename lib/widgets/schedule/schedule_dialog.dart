@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
-import '../../widgets/task/due_date_picker_bottom_sheet.dart';
+import '../common/due_date_picker_bottom_sheet.dart';
 import 'notification_settings.dart';
 import 'schedule_form_header.dart';
 import 'schedule_time_selector.dart';
