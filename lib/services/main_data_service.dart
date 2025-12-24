@@ -114,28 +114,6 @@ class MainDataService extends ChangeNotifier {
     }
   }
 
-  /// タスクを追加
-  Future<void> addTask(String title) async {
-    if (_isDisposed || title.trim().isEmpty) return;
-
-    try {
-      final newTask = await _localTaskService.addTask(
-        userId: _userId,
-        title: title.trim(),
-        priority: TaskPriority.low,
-      );
-
-      if (!_isDisposed) {
-        // 新しく作成されたタスクのIDを設定
-        _newlyCreatedTaskId = newTask.id;
-        _tasks.add(newTask);
-        notifyListeners();
-      }
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   /// タスクを詳細情報付きで追加
   Future<void> addTaskWithDetails(Map<String, dynamic> taskData) async {
     if (_isDisposed || taskData['title'].toString().trim().isEmpty) return;
@@ -150,6 +128,8 @@ class MainDataService extends ChangeNotifier {
       );
 
       if (!_isDisposed) {
+        // 新しく作成されたタスクのIDを設定（アニメーション用）
+        _newlyCreatedTaskId = newTask.id;
         _tasks.add(newTask);
         notifyListeners();
       }
