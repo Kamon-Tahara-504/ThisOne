@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
 import '../../utils/color_utils.dart';
-import '../task/add_task_bottom_sheet.dart';
+import '../task/task_dialog.dart';
 
 class CustomBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
@@ -192,7 +192,7 @@ class CustomBottomNavigationBar extends StatelessWidget {
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
       builder:
-          (context) => AddTaskBottomSheet(
+          (context) => TaskDialog(
             onAdd: (taskData) {
               Navigator.pop(context); // ダイアログを閉じる
               onTaskCreate(taskData);

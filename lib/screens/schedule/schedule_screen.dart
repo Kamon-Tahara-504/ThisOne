@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../gradients.dart';
-import '../../widgets/schedule/add_schedule_bottom_sheet.dart';
-import '../../widgets/overlays/custom_bottom_sheet.dart';
+import '../../widgets/schedule/schedule_dialog.dart';
 import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/schedule.dart';
@@ -175,17 +174,17 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
   // 外部（MainScreenなど）から呼び出すためのpublicメソッド
   void addScheduleFromExternal() {
-    showCustomBottomSheet(
+    showDialog(
       context: context,
-      initialHeight: 0.95, // ガイドラインまで引き上げ
-      minHeight: 0.3,
-      maxHeight: 0.95,
-      enableDrag: true,
-      snapToInitial: true,
-      child: AddScheduleBottomSheet(
-        selectedDate: _selectedDate,
-        onAdd: _addSchedule,
-      ),
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => ScheduleDialog(
+            selectedDate: _selectedDate,
+            onAdd: (schedule) {
+              Navigator.pop(context); // ダイアログを閉じる
+              _addSchedule(schedule);
+            },
+          ),
     );
   }
 

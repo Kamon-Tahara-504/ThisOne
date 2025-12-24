@@ -4,16 +4,16 @@ import '../../models/task.dart';
 import '../../utils/error_handler.dart';
 import 'due_date_picker_bottom_sheet.dart';
 
-class AddTaskBottomSheet extends StatefulWidget {
+class TaskDialog extends StatefulWidget {
   final Function(Map<String, dynamic>) onAdd;
 
-  const AddTaskBottomSheet({super.key, required this.onAdd});
+  const TaskDialog({super.key, required this.onAdd});
 
   @override
-  State<AddTaskBottomSheet> createState() => _AddTaskBottomSheetState();
+  State<TaskDialog> createState() => _TaskDialogState();
 }
 
-class _AddTaskBottomSheetState extends State<AddTaskBottomSheet> {
+class _TaskDialogState extends State<TaskDialog> {
   final _titleController = TextEditingController();
   final _titleFocusNode = FocusNode();
   TaskPriority _selectedPriority = TaskPriority.low;
