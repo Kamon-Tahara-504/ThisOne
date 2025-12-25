@@ -104,7 +104,7 @@ lib/
     │   ├── memo_item_card.dart         # メモアイテムカード
     │   └── memo_save_manager.dart      # メモ自動保存管理
     ├── navigation/
-    │   └── custom_bottom_navigation_bar.dart # カスタムボトムナビゲーション
+    │   └── bottom_navigation_bar.dart # カスタムボトムナビゲーション
     ├── overlays/
     │   ├── account_info_overlay.dart   # アカウント情報オーバーレイ
     │   └── custom_bottom_sheet.dart    # カスタムボトムシート

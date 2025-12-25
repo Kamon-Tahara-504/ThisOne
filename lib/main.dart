@@ -1,13 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide BottomNavigationBar;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'widgets/app_bars/collapsible_app_bar.dart';
 import 'widgets/overlays/account_info_overlay.dart';
-import 'widgets/navigation/custom_bottom_navigation_bar.dart';
+import 'widgets/navigation/bottom_navigation_bar.dart';
 import 'screens/task/task_screen.dart';
 import 'screens/schedule/schedule_screen.dart';
 import 'screens/memo/memo_screen.dart';
@@ -507,7 +507,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: AnimatedBuilder(
         animation: _appPageController,
         builder: (context, child) {
-          return CustomBottomNavigationBar(
+          return BottomNavigationBar(
             currentIndex: _appPageController.currentIndex,
             onTabChanged: (index) => _appPageController.navigateToTab(index),
             pageController: _appPageController.pageController,

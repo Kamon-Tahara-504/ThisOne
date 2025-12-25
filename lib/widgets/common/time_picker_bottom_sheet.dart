@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../gradients.dart';
 
 /// 日時選択用ボトムシート
 /// 月・日・時・分を個別に操作できるドラム式ピッカーを横一列に配置
@@ -13,8 +14,7 @@ class TimePickerBottomSheet extends StatefulWidget {
   });
 
   @override
-  State<TimePickerBottomSheet> createState() =>
-      _TimePickerBottomSheetState();
+  State<TimePickerBottomSheet> createState() => _TimePickerBottomSheetState();
 }
 
 class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
@@ -314,24 +314,39 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
     final screenHeight = MediaQuery.of(context).size.height;
     final maxHeight = screenHeight * 0.33;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.zero,
-      child: Container(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2B2B2B),
-          borderRadius: BorderRadius.circular(20),
+    return Container(
+      constraints: BoxConstraints(maxHeight: maxHeight),
+      decoration: const BoxDecoration(
+        color: Color(0xFF2B2B2B),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ヘッダー（年の表示と閉じるボタン）
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: Row(
-                children: [
-                  Text(
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // ヘッダー（オレンジグラデーション適用）
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
+              children: [
+                ShaderMask(
+                  shaderCallback:
+                      (bounds) =>
+                          createOrangeYellowGradient().createShader(bounds),
+                  child: const Icon(
+                    Icons.access_time,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                ShaderMask(
+                  shaderCallback:
+                      (bounds) =>
+                          createOrangeYellowGradient().createShader(bounds),
+                  child: Text(
                     '$_selectedYear年',
                     style: const TextStyle(
                       color: Colors.white,
@@ -339,78 +354,77 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-
-            // ピッカーエリア（横一列）
-            Expanded(
-              child: Container(
-                decoration: const BoxDecoration(color: Color(0xFF1E1E1E)),
-                child: Row(
-                  children: [
-                    // 月のピッカー
-                    _buildDrumPicker(
-                      label: '月',
-                      options: _monthOptions,
-                      controller: _monthController,
-                      selectedValue: _selectedMonth,
-                      onChanged: _onMonthChanged,
-                      toLogicalIndex: _toMonthLogicalIndex,
-                      totalItems: _monthTotalItems,
-                      baseCycle: _monthBaseCycle,
-                    ),
-
-                    // 日のピッカー
-                    Builder(
-                      key: _dayPickerKey,
-                      builder:
-                          (context) => _buildDrumPicker(
-                            label: '日',
-                            options: _getDayOptions(),
-                            controller: _dayController,
-                            selectedValue: _selectedDay,
-                            onChanged: _onDayChanged,
-                            toLogicalIndex: _toDayLogicalIndex,
-                            totalItems: _dayTotalItems,
-                            baseCycle: _calculateDayBaseCycle(),
-                          ),
-                    ),
-
-                    // 時のピッカー
-                    _buildDrumPicker(
-                      label: '時',
-                      options: _hourOptions,
-                      controller: _hourController,
-                      selectedValue: _selectedHour,
-                      onChanged: _onHourChanged,
-                      toLogicalIndex: _toHourLogicalIndex,
-                      totalItems: _hourTotalItems,
-                      baseCycle: _hourBaseCycle,
-                    ),
-
-                    // 分のピッカー
-                    _buildDrumPicker(
-                      label: '分',
-                      options: _minuteOptions,
-                      controller: _minuteController,
-                      selectedValue: _selectedMinute,
-                      onChanged: _onMinuteChanged,
-                      toLogicalIndex: _toMinuteLogicalIndex,
-                      totalItems: _minuteTotalItems,
-                      baseCycle: _minuteBaseCycle,
-                    ),
-                  ],
                 ),
-              ),
+                const Spacer(),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.white),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+
+          // ピッカーエリア（横一列）
+          Container(
+            height: maxHeight * 0.7,
+            decoration: const BoxDecoration(color: Color(0xFF1E1E1E)),
+            child: Row(
+              children: [
+                // 月のピッカー
+                _buildDrumPicker(
+                  label: '月',
+                  options: _monthOptions,
+                  controller: _monthController,
+                  selectedValue: _selectedMonth,
+                  onChanged: _onMonthChanged,
+                  toLogicalIndex: _toMonthLogicalIndex,
+                  totalItems: _monthTotalItems,
+                  baseCycle: _monthBaseCycle,
+                ),
+
+                // 日のピッカー
+                Builder(
+                  key: _dayPickerKey,
+                  builder:
+                      (context) => _buildDrumPicker(
+                        label: '日',
+                        options: _getDayOptions(),
+                        controller: _dayController,
+                        selectedValue: _selectedDay,
+                        onChanged: _onDayChanged,
+                        toLogicalIndex: _toDayLogicalIndex,
+                        totalItems: _dayTotalItems,
+                        baseCycle: _calculateDayBaseCycle(),
+                      ),
+                ),
+
+                // 時のピッカー
+                _buildDrumPicker(
+                  label: '時',
+                  options: _hourOptions,
+                  controller: _hourController,
+                  selectedValue: _selectedHour,
+                  onChanged: _onHourChanged,
+                  toLogicalIndex: _toHourLogicalIndex,
+                  totalItems: _hourTotalItems,
+                  baseCycle: _hourBaseCycle,
+                ),
+
+                // 分のピッカー
+                _buildDrumPicker(
+                  label: '分',
+                  options: _minuteOptions,
+                  controller: _minuteController,
+                  selectedValue: _selectedMinute,
+                  onChanged: _onMinuteChanged,
+                  toLogicalIndex: _toMinuteLogicalIndex,
+                  totalItems: _minuteTotalItems,
+                  baseCycle: _minuteBaseCycle,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
