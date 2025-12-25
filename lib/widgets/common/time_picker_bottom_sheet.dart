@@ -223,7 +223,7 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.33,
+      height: MediaQuery.of(context).size.height * 0.42,
       decoration: const BoxDecoration(
         color: Color(0xFF2B2B2B),
         borderRadius: BorderRadius.only(
@@ -231,12 +231,12 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: Column(
-        children: [
-          // ヘッダー（年の表示と閉じるボタン）
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
+            // ヘッダー（年の表示と閉じるボタン）
+            Row(
               children: [
                 Text(
                   '$_selectedYear年',
@@ -253,69 +253,73 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
                 ),
               ],
             ),
-          ),
-          // 月・日・時・分ピッカー
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3A3A3A),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[700]!),
-                ),
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    _DrumPicker(
-                      controller: _monthController,
-                      options: _monthOptions,
-                      totalItems: _monthTotalItems,
-                      baseCycle: _monthBaseCycle,
-                      toLogicalIndex: _toMonthLogicalIndex,
-                      formatLabel: (value) => '$value月',
-                      label: '月',
-                    ),
-                    const SizedBox(width: 8),
-                    _DrumPicker(
-                      key: _dayPickerKey,
-                      controller: _dayController,
-                      options: List.generate(
-                        _getMaxDaysInMonth(),
-                        (index) => index + 1,
+            const SizedBox(height: 24),
+            // 月・日・時・分ピッカー
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3A3A3A),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[700]!),
+                  ),
+                  padding: const EdgeInsets.all(6),
+                  child: Row(
+                    children: [
+                      _DrumPicker(
+                        controller: _monthController,
+                        options: _monthOptions,
+                        totalItems: _monthTotalItems,
+                        baseCycle: _monthBaseCycle,
+                        toLogicalIndex: _toMonthLogicalIndex,
+                        formatLabel: (value) => '$value月',
+                        label: '月',
                       ),
-                      totalItems: _getDayTotalItems(),
-                      baseCycle: _dayBaseCycle,
-                      toLogicalIndex: _toDayLogicalIndex,
-                      formatLabel: (value) => '$value日',
-                      label: '日',
-                    ),
-                    const SizedBox(width: 8),
-                    _DrumPicker(
-                      controller: _hourController,
-                      options: _hourOptions,
-                      totalItems: _hourTotalItems,
-                      baseCycle: _hourBaseCycle,
-                      toLogicalIndex: _toHourLogicalIndex,
-                      formatLabel: (value) => value.toString().padLeft(2, '0'),
-                      label: '時',
-                    ),
-                    const SizedBox(width: 8),
-                    _DrumPicker(
-                      controller: _minuteController,
-                      options: _minuteOptions,
-                      totalItems: _minuteTotalItems,
-                      baseCycle: _minuteBaseCycle,
-                      toLogicalIndex: _toMinuteLogicalIndex,
-                      formatLabel: (value) => value.toString().padLeft(2, '0'),
-                      label: '分',
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      _DrumPicker(
+                        key: _dayPickerKey,
+                        controller: _dayController,
+                        options: List.generate(
+                          _getMaxDaysInMonth(),
+                          (index) => index + 1,
+                        ),
+                        totalItems: _getDayTotalItems(),
+                        baseCycle: _dayBaseCycle,
+                        toLogicalIndex: _toDayLogicalIndex,
+                        formatLabel: (value) => '$value日',
+                        label: '日',
+                      ),
+                      const SizedBox(width: 8),
+                      _DrumPicker(
+                        controller: _hourController,
+                        options: _hourOptions,
+                        totalItems: _hourTotalItems,
+                        baseCycle: _hourBaseCycle,
+                        toLogicalIndex: _toHourLogicalIndex,
+                        formatLabel:
+                            (value) => value.toString().padLeft(2, '0'),
+                        label: '時',
+                      ),
+                      const SizedBox(width: 8),
+                      _DrumPicker(
+                        controller: _minuteController,
+                        options: _minuteOptions,
+                        totalItems: _minuteTotalItems,
+                        baseCycle: _minuteBaseCycle,
+                        toLogicalIndex: _toMinuteLogicalIndex,
+                        formatLabel:
+                            (value) => value.toString().padLeft(2, '0'),
+                        label: '分',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

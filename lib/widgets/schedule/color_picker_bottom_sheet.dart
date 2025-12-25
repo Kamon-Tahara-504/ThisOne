@@ -93,27 +93,35 @@ class ColorPickerBottomSheet extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             // カラーパレット（2行5列のグリッド）
-            Column(
-              children: [
-                for (int row = 0; row < 2; row++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        for (int col = 0; col < 5; col++)
-                          if (row * 5 + col <
-                              ColorUtils.colorLabelPalette.length)
-                            _buildEnhancedColorOption(
-                              context,
-                              ColorUtils.colorLabelPalette[row * 5 + col],
-                              selectedColorHex,
-                              onColorSelected,
-                            ),
-                      ],
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A3A3A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[600]!),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  for (int row = 0; row < 2; row++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          for (int col = 0; col < 5; col++)
+                            if (row * 5 + col <
+                                ColorUtils.colorLabelPalette.length)
+                              _buildEnhancedColorOption(
+                                context,
+                                ColorUtils.colorLabelPalette[row * 5 + col],
+                                selectedColorHex,
+                                onColorSelected,
+                              ),
+                        ],
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(height: 24),
           ],
