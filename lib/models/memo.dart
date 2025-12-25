@@ -284,3 +284,48 @@ class MemoFilter {
     return true;
   }
 }
+
+extension MemoListExtension on List<Memo> {
+  /// ソートを適用
+  List<Memo> applySort(MemoSortOrder sortOrder) {
+    switch (sortOrder) {
+      case MemoSortOrder.createdAt:
+        return _sortByCreatedAt();
+      case MemoSortOrder.updatedAt:
+        return _sortByUpdatedAt();
+      case MemoSortOrder.title:
+        return _sortByTitle();
+      case MemoSortOrder.pinnedFirst:
+        return _sortByPinnedFirst();
+    }
+  }
+
+  List<Memo> _sortByCreatedAt() {
+    final sorted = List<Memo>.from(this);
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt)); // 新しい順
+    return sorted;
+  }
+
+  List<Memo> _sortByUpdatedAt() {
+    final sorted = List<Memo>.from(this);
+    sorted.sort((a, b) => b.updatedAt.compareTo(a.updatedAt)); // 新しい順
+    return sorted;
+  }
+
+  List<Memo> _sortByTitle() {
+    final sorted = List<Memo>.from(this);
+    sorted.sort((a, b) => a.title.compareTo(b.title)); // タイトル順
+    return sorted;
+  }
+
+  List<Memo> _sortByPinnedFirst() {
+    final sorted = List<Memo>.from(this);
+    sorted.sort((a, b) {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // ピン留め状態が同じ場合は更新日時でソート（新しい順）
+      return b.updatedAt.compareTo(a.updatedAt);
+    });
+    return sorted;
+  }
+}
