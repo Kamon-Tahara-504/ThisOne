@@ -217,8 +217,8 @@ class BottomNavigationBar extends StatelessWidget {
             onMemoCreated: (title, mode, colorHex) {
               Navigator.pop(context); // ダイアログを閉じる
               onMemoCreated(title, mode, colorHex);
-            },
-          ),
+                        },
+      ),
     );
   }
 }
