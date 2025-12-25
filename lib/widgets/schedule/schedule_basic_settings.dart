@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/color_utils.dart';
+import 'color_picker_bottom_sheet.dart';
 
 class ScheduleBasicSettings extends StatelessWidget {
   final TextEditingController titleController;
@@ -14,34 +15,6 @@ class ScheduleBasicSettings extends StatelessWidget {
     required this.selectedColorHex,
     required this.onColorChanged,
   });
-
-  Widget _buildColorOption(Map<String, dynamic> colorOption) {
-    final isSelected = selectedColorHex == colorOption['hex'];
-    final colorHex = colorOption['hex'] as String;
-    final isGradient = colorOption['isGradient'] as bool;
-
-    return GestureDetector(
-      onTap: () => onColorChanged(colorHex),
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          gradient: isGradient ? ColorUtils.getGradientFromHex(colorHex) : null,
-          color: isGradient ? null : ColorUtils.getColorFromHex(colorHex),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? Colors.white : Colors.transparent,
-            width: 3,
-          ),
-          boxShadow: null,
-        ),
-        child:
-            isSelected
-                ? const Icon(Icons.check, color: Colors.white, size: 14)
-                : null,
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,36 +103,58 @@ class ScheduleBasicSettings extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF3A3A3A),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[600]!),
-              ),
+            GestureDetector(
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) => ColorPickerBottomSheet(
+                        selectedColorHex: selectedColorHex,
+                        onColorSelected: onColorChanged,
+                      ),
+                );
+              },
               child: Container(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A3A3A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[600]!),
+                ),
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    // カラーパレット（横スクロール一列）
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 8), // 左端の余白
-                          for (
-                            int i = 0;
-                            i < ColorUtils.colorLabelPalette.length;
-                            i++
-                          ) ...[
-                            _buildColorOption(ColorUtils.colorLabelPalette[i]),
-                            if (i < ColorUtils.colorLabelPalette.length - 1)
-                              const SizedBox(width: 12), // アイテム間の間隔
-                          ],
-                          const SizedBox(width: 8), // 右端の余白
-                        ],
+                    // 選択中の色のプレビュー
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        gradient:
+                            ColorUtils.isGradientColor(selectedColorHex)
+                                ? ColorUtils.getGradientFromHex(
+                                  selectedColorHex,
+                                )
+                                : null,
+                        color:
+                            ColorUtils.isGradientColor(selectedColorHex)
+                                ? null
+                                : ColorUtils.getColorFromHex(selectedColorHex),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 2,
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    // ラベルテキスト
+                    const Expanded(
+                      child: Text(
+                        '色ラベルを選択',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: Colors.grey),
                   ],
                 ),
               ),
