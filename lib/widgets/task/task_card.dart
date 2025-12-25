@@ -121,50 +121,46 @@ class TaskCard extends StatelessWidget {
                           task.isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  if (task.dueDate != null) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule,
-                          size: 14,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, size: 14, color: _getDueDateColor()),
+                      const SizedBox(width: 4),
+                      Text(
+                        task.dueDate != null
+                            ? task.dueDateDisplayString
+                            : 'To Do設定',
+                        style: TextStyle(
                           color: _getDueDateColor(),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          task.dueDateDisplayString,
-                          style: TextStyle(
-                            color: _getDueDateColor(),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                      ),
+                      if (task.dueDate != null && task.isOverdue) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFF44336,
+                            ).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '期限切れ',
+                            style: TextStyle(
+                              color: Color(0xFFF44336),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        if (task.isOverdue) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFF44336,
-                              ).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '期限切れ',
-                              style: TextStyle(
-                                color: Color(0xFFF44336),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),

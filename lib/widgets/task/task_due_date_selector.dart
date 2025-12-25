@@ -85,7 +85,7 @@ class TaskDueDateSelector extends StatelessWidget {
                   child: Text(
                     selectedDueDate != null
                         ? _formatDueDate(selectedDueDate!)
-                        : '期限を設定（任意）',
+                        : 'To Do設定',
                     style: TextStyle(
                       color:
                           selectedDueDate != null
