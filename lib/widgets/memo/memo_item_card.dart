@@ -165,14 +165,14 @@ class MemoItemCard extends StatelessWidget {
                                             ],
                                           ).createShader(bounds),
                               child: Icon(
-                                isPinned
-                                    ? Icons.push_pin
-                                    : Icons.push_pin_outlined,
-                                color:
+                              isPinned
+                                  ? Icons.push_pin
+                                  : Icons.push_pin_outlined,
+                              color:
                                     isPinned ? Colors.white : Colors.grey[300],
                                 size: 18,
-                              ),
                             ),
+                          ),
                           ),
                           const SizedBox(width: 8),
                           actionButton(
