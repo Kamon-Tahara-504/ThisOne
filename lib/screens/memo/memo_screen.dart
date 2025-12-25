@@ -7,6 +7,7 @@ import '../../widgets/memo/empty_memo_state.dart';
 import '../../widgets/color_palette.dart';
 import '../../utils/error_handler.dart';
 import '../../models/memo.dart';
+import '../../widgets/overlays/memo_sort_overlay.dart';
 import 'memo_detail_screen.dart';
 
 class MemoScreen extends StatefulWidget {
@@ -35,9 +36,12 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
   late AnimationController _popAnimationController;
   late Animation<double> _popAnimation;
   String? _animatingMemoId; // アニメーション中のメモID
+  MemoSortOverlay? _sortOverlay;
 
   // 型安全なフィルター管理
-  MemoFilter _currentFilter = const MemoFilter();
+  MemoFilter _currentFilter = const MemoFilter(
+    sortOrder: MemoSortOrder.pinnedFirst,
+  );
 
   @override
   void initState() {
@@ -69,6 +73,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _sortOverlay?.dispose();
     _popAnimationController.dispose();
     super.dispose();
   }
@@ -93,7 +98,8 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
   // フィルタリングされたメモを取得（型安全版）
   List<Memo> get _filteredMemos {
-    return widget.memos.where(_currentFilter.matches).toList();
+    final filtered = widget.memos.where(_currentFilter.matches).toList();
+    return filtered.applySort(_currentFilter.sortOrder);
   }
 
   // 色フィルタリングを設定
@@ -109,7 +115,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
   // 色フィルタリングをクリア
   void _clearColorFilter() {
     setState(() {
-      _currentFilter = const MemoFilter();
+      _currentFilter = const MemoFilter(sortOrder: MemoSortOrder.pinnedFirst);
     });
   }
 
@@ -125,6 +131,27 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
             onColorSelected: _setColorFilter,
           ),
     );
+  }
+
+  // 並び替えオーバーレイを表示
+  void _showSortOverlay() {
+    _sortOverlay?.dispose();
+    _sortOverlay = MemoSortOverlay(
+      context: context,
+      currentSortOrder: _currentFilter.sortOrder,
+      onSortChanged: (sortOrder) {
+        setState(() {
+          _currentFilter = MemoFilter(
+            mode: _currentFilter.mode,
+            colorTag: _currentFilter.colorTag,
+            isPinned: _currentFilter.isPinned,
+            searchQuery: _currentFilter.searchQuery,
+            sortOrder: sortOrder,
+          );
+        });
+      },
+    );
+    _sortOverlay!.toggle();
   }
 
   // メモを再読み込み（ローカルデータベース）
@@ -360,14 +387,45 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
               ),
             ),
           ),
-          // 色フィルタリングボタン（右下）
+          // 色フィルタリングボタン（sortボタンの上）
           Positioned(
-            bottom: 16,
+            bottom: 80, // sortボタン（56px）+ 間隔（16px）+ マージン（8px）
             right: 16,
             child: MemoFilterWidget(
               selectedColorFilter: _currentFilter.colorTag,
               onShowColorFilterBottomSheet: _showColorFilterBottomSheet,
               onClearColorFilter: _clearColorFilter,
+            ),
+          ),
+          // sortボタン（右下）
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: createOrangeYellowGradient(),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: _showSortOverlay,
+                  customBorder: const CircleBorder(),
+                  child: const Center(
+                    child: Icon(Icons.sort, color: Color(0xFF2B2B2B), size: 24),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
