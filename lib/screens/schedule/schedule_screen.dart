@@ -168,6 +168,53 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     }
   }
 
+  /// スケジュールを編集
+  void _editSchedule(Schedule schedule) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => ScheduleDialog(
+            selectedDate: schedule.scheduleDate,
+            schedule: schedule,
+            onUpdate: (scheduleData) {
+              Navigator.pop(context);
+              _updateSchedule(schedule, scheduleData);
+            },
+          ),
+    );
+  }
+
+  /// スケジュールを更新（データベースにも保存）
+  Future<void> _updateSchedule(
+    Schedule originalSchedule,
+    Map<String, dynamic> scheduleData,
+  ) async {
+    try {
+      final updatedSchedule = originalSchedule.copyWith(
+        title: scheduleData['title'],
+        description: scheduleData['description'],
+        scheduleDate: scheduleData['date'],
+        startTime: scheduleData['startTime'],
+        endTime: scheduleData['endTime'],
+        isAllDay: scheduleData['isAllDay'] ?? false,
+        reminderMinutes: scheduleData['reminderMinutes'],
+        colorHex: scheduleData['colorHex'] ?? '#E85A3B',
+        updatedAt: DateTime.now(),
+      );
+      await widget.dataService.updateSchedule(updatedSchedule);
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(
+          context,
+          e,
+          operation: 'スケジュールの更新',
+          onRetry: () => _updateSchedule(originalSchedule, scheduleData),
+        );
+      }
+    }
+  }
+
   // 外部（MainScreenなど）から呼び出すためのpublicメソッド
   void addScheduleFromExternal() {
     showDialog(
@@ -311,6 +358,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
 
                                 return ScheduleCard(
                                   schedule: schedule,
+                                  onEdit: () => _editSchedule(schedule),
                                   onDelete: () => _deleteSchedule(schedule),
                                   isAnimating: isAnimating,
                                   popAnimation:

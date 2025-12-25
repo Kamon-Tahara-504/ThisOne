@@ -4,11 +4,13 @@ import '../../gradients.dart';
 class ScheduleFormHeader extends StatelessWidget {
   final DateTime selectedDate;
   final VoidCallback onClose;
+  final bool isEditMode;
 
   const ScheduleFormHeader({
     super.key,
     required this.selectedDate,
     required this.onClose,
+    this.isEditMode = false,
   });
 
   @override
@@ -27,9 +29,9 @@ class ScheduleFormHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'スケジュール作成',
-                  style: TextStyle(
+                Text(
+                  isEditMode ? 'スケジュール編集' : 'スケジュール作成',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
