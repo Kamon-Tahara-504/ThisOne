@@ -330,37 +330,46 @@ class _MemoDialogState extends State<MemoDialog> {
                               ),
                               const SizedBox(height: 16),
                               // カラーパレット（2行5列のグリッド）
-                              Column(
-                                children: [
-                                  for (int row = 0; row < 2; row++)
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 8,
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceEvenly,
-                                        children: [
-                                          for (int col = 0; col < 5; col++)
-                                            if (row * 5 + col <
-                                                ColorUtils
-                                                    .colorLabelPalette
-                                                    .length)
-                                              _buildEnhancedColorOption(
-                                                ColorUtils
-                                                    .colorLabelPalette[row * 5 +
-                                                    col],
-                                                _selectedColorHex,
-                                                (colorHex) => setState(
-                                                  () =>
-                                                      _selectedColorHex =
-                                                          colorHex,
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF3A3A3A),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey[600]!),
+                                ),
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    for (int row = 0; row < 2; row++)
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 8,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            for (int col = 0; col < 5; col++)
+                                              if (row * 5 + col <
+                                                  ColorUtils
+                                                      .colorLabelPalette
+                                                      .length)
+                                                _buildEnhancedColorOption(
+                                                  ColorUtils
+                                                      .colorLabelPalette[row *
+                                                          5 +
+                                                      col],
+                                                  _selectedColorHex,
+                                                  (colorHex) => setState(
+                                                    () =>
+                                                        _selectedColorHex =
+                                                            colorHex,
+                                                  ),
                                                 ),
-                                              ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ],
                           ),
