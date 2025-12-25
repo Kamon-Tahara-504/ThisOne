@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../common/due_date_picker_bottom_sheet.dart';
+import '../common/time_picker_bottom_sheet.dart';
 
 class TaskDueDateSelector extends StatelessWidget {
   final DateTime? selectedDueDate;
@@ -39,7 +39,7 @@ class TaskDueDateSelector extends StatelessWidget {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) => DueDatePickerBottomSheet(
+          (context) => TimePickerBottomSheet(
             initialDate: selectedDueDate,
             onDateChanged: onDateChanged,
           ),

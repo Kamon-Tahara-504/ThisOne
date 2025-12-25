@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
-import '../common/due_date_picker_bottom_sheet.dart';
+import '../common/time_picker_bottom_sheet.dart';
 import 'notification_settings.dart';
 import 'schedule_form_header.dart';
 import 'schedule_time_selector.dart';
@@ -146,7 +146,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) => DueDatePickerBottomSheet(
+          (context) => TimePickerBottomSheet(
             initialDate: _startDateTime,
             onDateChanged: (newDateTime) {
               setState(() {
@@ -163,7 +163,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) => DueDatePickerBottomSheet(
+          (context) => TimePickerBottomSheet(
             initialDate: _endDateTime,
             onDateChanged: (newDateTime) {
               setState(() {
