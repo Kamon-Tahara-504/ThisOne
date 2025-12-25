@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../gradients.dart';
 
 /// 日時選択用ボトムシート
@@ -59,16 +60,24 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
   @override
   void initState() {
     super.initState();
+
+    // 初期値の設定
     final now = DateTime.now();
-    final initial = widget.initialDate ?? now;
+    if (widget.initialDate != null) {
+      _selectedYear = widget.initialDate!.year;
+      _selectedMonth = widget.initialDate!.month;
+      _selectedDay = widget.initialDate!.day;
+      _selectedHour = widget.initialDate!.hour;
+      _selectedMinute = widget.initialDate!.minute;
+    } else {
+      _selectedYear = now.year;
+      _selectedMonth = now.month;
+      _selectedDay = now.day;
+      _selectedHour = now.hour;
+      _selectedMinute = now.minute;
+    }
 
-    _selectedYear = initial.year;
-    _selectedMonth = initial.month;
-    _selectedDay = initial.day;
-    _selectedHour = initial.hour;
-    _selectedMinute = initial.minute;
-
-    // コントローラーの初期化（無限スクロール用の中央位置に設定）
+    // コントローラーの初期化
     _monthController = FixedExtentScrollController(
       initialItem:
           _monthBaseCycle * _monthOptionsLength +
@@ -77,23 +86,28 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
     _dayPickerKey = UniqueKey();
     _dayController = FixedExtentScrollController(
       initialItem:
-          _calculateDayBaseCycle() * _getDayOptionsLength() +
-          _getDayOptions().indexOf(_selectedDay),
+          _dayBaseCycle * _getMaxDaysInMonth() +
+          (_selectedDay - 1).clamp(0, _getMaxDaysInMonth() - 1),
     );
     _hourController = FixedExtentScrollController(
-      initialItem:
-          _hourBaseCycle * _hourOptionsLength +
-          _hourOptions.indexOf(_selectedHour),
+      initialItem: _hourBaseCycle * _hourOptionsLength + _selectedHour,
     );
     _minuteController = FixedExtentScrollController(
-      initialItem:
-          _minuteBaseCycle * _minuteOptionsLength +
-          _minuteOptions.indexOf(_selectedMinute),
+      initialItem: _minuteBaseCycle * _minuteOptionsLength + _selectedMinute,
     );
+
+    _monthController.addListener(_onMonthChanged);
+    _dayController.addListener(_onDayChanged);
+    _hourController.addListener(_onHourChanged);
+    _minuteController.addListener(_onMinuteChanged);
   }
 
   @override
   void dispose() {
+    _monthController.removeListener(_onMonthChanged);
+    _dayController.removeListener(_onDayChanged);
+    _hourController.removeListener(_onHourChanged);
+    _minuteController.removeListener(_onMinuteChanged);
     _monthController.dispose();
     _dayController.dispose();
     _hourController.dispose();
@@ -101,15 +115,13 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
     super.dispose();
   }
 
-  // 選択された月と年から、その月の日数を取得
-  List<int> _getDayOptions() {
-    final daysInMonth = DateTime(_selectedYear, _selectedMonth + 1, 0).day;
-    return List.generate(daysInMonth, (index) => index + 1);
+  int _getMaxDaysInMonth() {
+    return DateTime(_selectedYear, _selectedMonth + 1, 0).day;
   }
 
-  int _getDayOptionsLength() => _getDayOptions().length;
-  int _calculateDayBaseCycle() => _loopingMultiplier ~/ 2;
-  int get _dayTotalItems => _getDayOptionsLength() * _loopingMultiplier;
+  int get _dayBaseCycle => _loopingMultiplier ~/ 2;
+  int _getDayOptionsLength() => _getMaxDaysInMonth();
+  int _getDayTotalItems() => _getDayOptionsLength() * _loopingMultiplier;
   int _toDayLogicalIndex(int index) => index % _getDayOptionsLength();
 
   void _onMonthChanged() {
@@ -119,6 +131,7 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
     final newMonth = _monthOptions[logicalIndex];
     if (newMonth != _selectedMonth) {
       final oldMonth = _selectedMonth; // 変更前の月を保存
+      final oldMaxDays = DateTime(_selectedYear, _selectedMonth + 1, 0).day;
 
       setState(() {
         _selectedMonth = newMonth;
@@ -132,26 +145,24 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
           _selectedYear--;
         }
 
-        // 日数の調整（例：31日→30日に変更された場合）
-        final newMaxDays = DateTime(_selectedYear, _selectedMonth + 1, 0).day;
+        final newMaxDays = _getMaxDaysInMonth();
+
+        // 日の範囲を調整
         if (_selectedDay > newMaxDays) {
           _selectedDay = newMaxDays;
         }
 
-        // 日のピッカーを再構築
-        _dayPickerKey = UniqueKey();
-      });
-
-      // 日のコントローラーを再設定
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _dayController.hasClients) {
-          final newDayOptions = _getDayOptions();
-          final dayIndex = newDayOptions.indexOf(_selectedDay);
-          if (dayIndex >= 0) {
-            final targetIndex =
-                _calculateDayBaseCycle() * newDayOptions.length + dayIndex;
-            _dayController.jumpToItem(targetIndex);
-          }
+        // 日数が変わった場合はコントローラーを再作成
+        if (oldMaxDays != newMaxDays) {
+          _dayController.removeListener(_onDayChanged);
+          _dayController.dispose();
+          _dayController = FixedExtentScrollController(
+            initialItem:
+                _dayBaseCycle * _getDayOptionsLength() +
+                (_selectedDay - 1).clamp(0, _getDayOptionsLength() - 1),
+          );
+          _dayController.addListener(_onDayChanged);
+          _dayPickerKey = UniqueKey();
         }
       });
       _notifyDateChanged();
@@ -162,7 +173,7 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
     if (!mounted || !_dayController.hasClients) return;
     final currentIndex = (_dayController.offset / _itemExtent).round();
     final logicalIndex = _toDayLogicalIndex(currentIndex);
-    final newDay = _getDayOptions()[logicalIndex];
+    final newDay = logicalIndex + 1; // 1ベース
     if (newDay != _selectedDay) {
       setState(() {
         _selectedDay = newDay;
@@ -198,124 +209,21 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
   }
 
   void _notifyDateChanged() {
-    final newDate = DateTime(
+    final selectedDateTime = DateTime(
       _selectedYear,
       _selectedMonth,
       _selectedDay,
       _selectedHour,
       _selectedMinute,
     );
-    widget.onDateChanged(newDate);
-  }
-
-  Widget _buildDrumPicker({
-    required String label,
-    required List<int> options,
-    required FixedExtentScrollController controller,
-    required int selectedValue,
-    required VoidCallback onChanged,
-    required int Function(int) toLogicalIndex,
-    required int totalItems,
-    required int baseCycle,
-  }) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Stack(
-              children: [
-                // スクロール可能なピッカー
-                ListWheelScrollView.useDelegate(
-                  controller: controller,
-                  itemExtent: _itemExtent,
-                  physics: const FixedExtentScrollPhysics(),
-                  onSelectedItemChanged: (index) => onChanged(),
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    childCount: totalItems,
-                    builder: (context, index) {
-                      final logicalIndex = toLogicalIndex(index);
-                      final value = options[logicalIndex];
-                      final isSelected = value == selectedValue;
-
-                      return Container(
-                        alignment: Alignment.center,
-                        child: Text(
-                          value.toString().padLeft(2, '0'),
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.grey[600],
-                            fontSize: isSelected ? 20 : 16,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                // 中央の選択エリアを強調（グラデーションオーバーレイ）
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            const Color(0xFF2B2B2B).withValues(alpha: 0.8),
-                            Colors.transparent,
-                            Colors.transparent,
-                            const Color(0xFF2B2B2B).withValues(alpha: 0.8),
-                          ],
-                          stops: const [0.0, 0.2, 0.8, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 中央の選択ライン
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: Center(
-                      child: Container(
-                        height: _itemExtent,
-                        decoration: BoxDecoration(
-                          border: Border.symmetric(
-                            horizontal: BorderSide(
-                              color: Colors.grey[700]!,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+    widget.onDateChanged(selectedDateTime);
+    HapticFeedback.selectionClick();
   }
 
   @override
   Widget build(BuildContext context) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.33;
-
     return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
+      height: MediaQuery.of(context).size.height * 0.33,
       decoration: const BoxDecoration(
         color: Color(0xFF2B2B2B),
         borderRadius: BorderRadius.only(
@@ -324,35 +232,18 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
         ),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          // ヘッダー（オレンジグラデーション適用）
+          // ヘッダー（年の表示と閉じるボタン）
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Row(
               children: [
-                ShaderMask(
-                  shaderCallback:
-                      (bounds) =>
-                          createOrangeYellowGradient().createShader(bounds),
-                  child: const Icon(
-                    Icons.access_time,
+                Text(
+                  '$_selectedYear年',
+                  style: const TextStyle(
                     color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                ShaderMask(
-                  shaderCallback:
-                      (bounds) =>
-                          createOrangeYellowGradient().createShader(bounds),
-                  child: Text(
-                    '$_selectedYear年',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
@@ -363,63 +254,258 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
               ],
             ),
           ),
-
-          // ピッカーエリア（横一列）
-          Container(
-            height: maxHeight * 0.7,
-            decoration: const BoxDecoration(color: Color(0xFF1E1E1E)),
-            child: Row(
-              children: [
-                // 月のピッカー
-                _buildDrumPicker(
-                  label: '月',
-                  options: _monthOptions,
-                  controller: _monthController,
-                  selectedValue: _selectedMonth,
-                  onChanged: _onMonthChanged,
-                  toLogicalIndex: _toMonthLogicalIndex,
-                  totalItems: _monthTotalItems,
-                  baseCycle: _monthBaseCycle,
+          // 月・日・時・分ピッカー
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF3A3A3A),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[700]!),
                 ),
-
-                // 日のピッカー
-                Builder(
-                  key: _dayPickerKey,
-                  builder:
-                      (context) => _buildDrumPicker(
-                        label: '日',
-                        options: _getDayOptions(),
-                        controller: _dayController,
-                        selectedValue: _selectedDay,
-                        onChanged: _onDayChanged,
-                        toLogicalIndex: _toDayLogicalIndex,
-                        totalItems: _dayTotalItems,
-                        baseCycle: _calculateDayBaseCycle(),
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    _DrumPicker(
+                      controller: _monthController,
+                      options: _monthOptions,
+                      totalItems: _monthTotalItems,
+                      baseCycle: _monthBaseCycle,
+                      toLogicalIndex: _toMonthLogicalIndex,
+                      formatLabel: (value) => '$value月',
+                      label: '月',
+                    ),
+                    const SizedBox(width: 8),
+                    _DrumPicker(
+                      key: _dayPickerKey,
+                      controller: _dayController,
+                      options: List.generate(
+                        _getMaxDaysInMonth(),
+                        (index) => index + 1,
                       ),
+                      totalItems: _getDayTotalItems(),
+                      baseCycle: _dayBaseCycle,
+                      toLogicalIndex: _toDayLogicalIndex,
+                      formatLabel: (value) => '$value日',
+                      label: '日',
+                    ),
+                    const SizedBox(width: 8),
+                    _DrumPicker(
+                      controller: _hourController,
+                      options: _hourOptions,
+                      totalItems: _hourTotalItems,
+                      baseCycle: _hourBaseCycle,
+                      toLogicalIndex: _toHourLogicalIndex,
+                      formatLabel: (value) => value.toString().padLeft(2, '0'),
+                      label: '時',
+                    ),
+                    const SizedBox(width: 8),
+                    _DrumPicker(
+                      controller: _minuteController,
+                      options: _minuteOptions,
+                      totalItems: _minuteTotalItems,
+                      baseCycle: _minuteBaseCycle,
+                      toLogicalIndex: _toMinuteLogicalIndex,
+                      formatLabel: (value) => value.toString().padLeft(2, '0'),
+                      label: '分',
+                    ),
+                  ],
                 ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
-                // 時のピッカー
-                _buildDrumPicker(
-                  label: '時',
-                  options: _hourOptions,
-                  controller: _hourController,
-                  selectedValue: _selectedHour,
-                  onChanged: _onHourChanged,
-                  toLogicalIndex: _toHourLogicalIndex,
-                  totalItems: _hourTotalItems,
-                  baseCycle: _hourBaseCycle,
+// ドラム式ピッカーのウィジェット
+class _DrumPicker extends StatefulWidget {
+  final FixedExtentScrollController controller;
+  final List<int> options;
+  final int totalItems;
+  final int baseCycle;
+  final int Function(int) toLogicalIndex;
+  final String Function(int) formatLabel;
+  final String label;
+
+  const _DrumPicker({
+    super.key,
+    required this.controller,
+    required this.options,
+    required this.totalItems,
+    required this.baseCycle,
+    required this.toLogicalIndex,
+    required this.formatLabel,
+    required this.label,
+  });
+
+  @override
+  State<_DrumPicker> createState() => _DrumPickerState();
+}
+
+class _DrumPickerState extends State<_DrumPicker> {
+  static const double _itemExtent = 40.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            widget.label,
+            style: TextStyle(
+              color: Colors.grey[400],
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Stack(
+              children: [
+                NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification is ScrollEndNotification) {
+                      final currentOffset = widget.controller.offset;
+                      final finalIndex = (currentOffset / _itemExtent).round();
+
+                      // ループ安定化
+                      final optionsLength = widget.options.length;
+                      if (finalIndex < optionsLength ||
+                          finalIndex > widget.totalItems - optionsLength) {
+                        final logicalIndex = widget.toLogicalIndex(finalIndex);
+                        final centered =
+                            widget.baseCycle * optionsLength + logicalIndex;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted && widget.controller.hasClients) {
+                            widget.controller.jumpToItem(centered);
+                          }
+                        });
+                      }
+                    }
+                    return false;
+                  },
+                  child: ListWheelScrollView.useDelegate(
+                    controller: widget.controller,
+                    itemExtent: _itemExtent,
+                    perspective: 0.003,
+                    diameterRatio: 2.5,
+                    physics: const SmoothListWheelScrollPhysics(
+                      parent: AlwaysScrollableScrollPhysics(),
+                    ),
+                    childDelegate: ListWheelChildBuilderDelegate(
+                      childCount: widget.totalItems,
+                      builder: (context, index) {
+                        final logicalIndex = widget.toLogicalIndex(index);
+                        final currentCenter =
+                            widget.controller.hasClients
+                                ? (widget.controller.offset / _itemExtent)
+                                    .round()
+                                : 0;
+                        final distance = (index - currentCenter).abs();
+
+                        double opacity;
+                        double scale = 1.0;
+
+                        if (distance < 0.1) {
+                          opacity = 0.0;
+                          scale = 1.0;
+                        } else if (distance <= 1.0) {
+                          opacity = 0.8 - (distance - 0.1) * 0.2;
+                          scale = 1.0 - distance * 0.1;
+                        } else if (distance <= 2.0) {
+                          opacity = 0.4 - (distance - 1.0) * 0.2;
+                          scale = 0.9 - (distance - 1.0) * 0.1;
+                        } else {
+                          opacity = 0.1;
+                          scale = 0.8;
+                        }
+
+                        return Transform.scale(
+                          scale: scale,
+                          child: Container(
+                            height: _itemExtent,
+                            alignment: Alignment.center,
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 120),
+                              curve: Curves.easeOut,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: opacity),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              child: Text(
+                                widget.formatLabel(
+                                  widget.options[logicalIndex],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
-
-                // 分のピッカー
-                _buildDrumPicker(
-                  label: '分',
-                  options: _minuteOptions,
-                  controller: _minuteController,
-                  selectedValue: _selectedMinute,
-                  onChanged: _onMinuteChanged,
-                  toLogicalIndex: _toMinuteLogicalIndex,
-                  totalItems: _minuteTotalItems,
-                  baseCycle: _minuteBaseCycle,
+                // 中央の選択行のグラデーションボックス
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        height: _itemExtent,
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          gradient: createHorizontalOrangeYellowGradient(),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // 選択中の値ラベル
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Builder(
+                        builder: (context) {
+                          if (!widget.controller.hasClients) {
+                            return Text(
+                              widget.formatLabel(widget.options[0]),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            );
+                          }
+                          final currentIndex =
+                              (widget.controller.offset / _itemExtent).round();
+                          final logicalIndex = widget.toLogicalIndex(
+                            currentIndex,
+                          );
+                          return Text(
+                            widget.formatLabel(widget.options[logicalIndex]),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -428,4 +514,27 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
       ),
     );
   }
+}
+
+// SmoothListWheelScrollPhysics の再利用
+class SmoothListWheelScrollPhysics extends FixedExtentScrollPhysics {
+  const SmoothListWheelScrollPhysics({super.parent});
+
+  @override
+  SmoothListWheelScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return SmoothListWheelScrollPhysics(parent: buildParent(ancestor));
+  }
+
+  @override
+  SpringDescription get spring =>
+      const SpringDescription(mass: 1.0, stiffness: 50.0, damping: 8.0);
+
+  @override
+  double get minFlingVelocity => 30.0;
+
+  @override
+  double get maxFlingVelocity => 1600.0;
+
+  @override
+  Tolerance get tolerance => const Tolerance(velocity: 0.3, distance: 0.15);
 }
