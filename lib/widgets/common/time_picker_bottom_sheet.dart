@@ -1,25 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import '../../gradients.dart';
 
-/// タスクの期限選択用ボトムシート
+/// 日時選択用ボトムシート
 /// 月・日・時・分を個別に操作できるドラム式ピッカーを横一列に配置
-class DueDatePickerBottomSheet extends StatefulWidget {
+class TimePickerBottomSheet extends StatefulWidget {
   final DateTime? initialDate;
   final ValueChanged<DateTime> onDateChanged;
 
-  const DueDatePickerBottomSheet({
+  const TimePickerBottomSheet({
     super.key,
     this.initialDate,
     required this.onDateChanged,
   });
 
   @override
-  State<DueDatePickerBottomSheet> createState() =>
-      _DueDatePickerBottomSheetState();
+  State<TimePickerBottomSheet> createState() =>
+      _TimePickerBottomSheetState();
 }
 
-class _DueDatePickerBottomSheetState extends State<DueDatePickerBottomSheet> {
+class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
   late int _selectedYear;
   late int _selectedMonth;
   late int _selectedDay;
@@ -121,7 +119,6 @@ class _DueDatePickerBottomSheetState extends State<DueDatePickerBottomSheet> {
     final newMonth = _monthOptions[logicalIndex];
     if (newMonth != _selectedMonth) {
       final oldMonth = _selectedMonth; // 変更前の月を保存
-      final oldMaxDays = DateTime(_selectedYear, _selectedMonth + 1, 0).day;
 
       setState(() {
         _selectedMonth = newMonth;
