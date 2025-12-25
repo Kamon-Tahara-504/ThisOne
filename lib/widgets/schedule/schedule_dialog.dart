@@ -177,7 +177,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final maxWidth = screenSize.width * 0.95;
+    final maxWidth = screenSize.width * 0.9;
     final maxHeight = screenSize.height * 0.85;
 
     return Dialog(

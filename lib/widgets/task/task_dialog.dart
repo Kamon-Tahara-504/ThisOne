@@ -65,77 +65,81 @@ class _TaskDialogState extends State<TaskDialog> {
 
     return Dialog(
       backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: maxWidth, maxHeight: maxHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: const Color(0xFF2B2B2B),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ヘッダー
-              TaskFormHeader(onClose: () => Navigator.pop(context)),
+        child: SizedBox(
+          width: maxWidth,
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF2B2B2B),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ヘッダー
+                TaskFormHeader(onClose: () => Navigator.pop(context)),
 
-              // メインコンテンツ
-              Flexible(
-                child: GestureDetector(
-                  onTap: () {
-                    // 入力欄以外をタップした時にキーボードを格納
-                    FocusScope.of(context).unfocus();
-                  },
-                  behavior: HitTestBehavior.opaque,
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 16,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // タイトル入力
-                        TaskTitleInput(
-                          titleController: _titleController,
-                          titleFocusNode: _titleFocusNode,
-                        ),
-                        const SizedBox(height: 16),
+                // メインコンテンツ
+                Flexible(
+                  child: GestureDetector(
+                    onTap: () {
+                      // 入力欄以外をタップした時にキーボードを格納
+                      FocusScope.of(context).unfocus();
+                    },
+                    behavior: HitTestBehavior.opaque,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 16,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // タイトル入力
+                          TaskTitleInput(
+                            titleController: _titleController,
+                            titleFocusNode: _titleFocusNode,
+                          ),
+                          const SizedBox(height: 16),
 
-                        // 期限選択
-                        TaskDueDateSelector(
-                          selectedDueDate: _selectedDueDate,
-                          onDateChanged: (newDate) {
-                            setState(() {
-                              _selectedDueDate = newDate;
-                            });
-                          },
-                          onDateCleared: () {
-                            setState(() {
-                              _selectedDueDate = null;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 16),
+                          // 期限選択
+                          TaskDueDateSelector(
+                            selectedDueDate: _selectedDueDate,
+                            onDateChanged: (newDate) {
+                              setState(() {
+                                _selectedDueDate = newDate;
+                              });
+                            },
+                            onDateCleared: () {
+                              setState(() {
+                                _selectedDueDate = null;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
 
-                        // 優先度選択
-                        TaskPrioritySelector(
-                          selectedPriority: _selectedPriority,
-                          onPriorityChanged: (priority) {
-                            setState(() {
-                              _selectedPriority = priority;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 24),
+                          // 優先度選択
+                          TaskPrioritySelector(
+                            selectedPriority: _selectedPriority,
+                            onPriorityChanged: (priority) {
+                              setState(() {
+                                _selectedPriority = priority;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 24),
 
-                        // 作成ボタン
-                        TaskFormSubmitButton(onPressed: _addTask),
-                      ],
+                          // 作成ボタン
+                          TaskFormSubmitButton(onPressed: _addTask),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
