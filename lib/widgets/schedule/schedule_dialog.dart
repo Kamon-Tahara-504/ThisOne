@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../models/schedule.dart';
 import '../common/time_picker_bottom_sheet.dart';
 import 'notification_settings.dart';
 import 'schedule_form_header.dart';
@@ -9,12 +10,16 @@ import 'schedule_form_submit_button.dart';
 
 class ScheduleDialog extends StatefulWidget {
   final DateTime selectedDate;
-  final Function(Map<String, dynamic>) onAdd;
+  final Function(Map<String, dynamic>)? onAdd;
+  final Schedule? schedule;
+  final Function(Map<String, dynamic>)? onUpdate;
 
   const ScheduleDialog({
     super.key,
     required this.selectedDate,
-    required this.onAdd,
+    this.onAdd,
+    this.schedule,
+    this.onUpdate,
   });
 
   @override
@@ -36,7 +41,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
 
   // 開始時間と終了時間のDateTime（ピッカー用）
   DateTime get _startDateTime {
-    final selectedDate = widget.selectedDate;
+    final selectedDate = widget.schedule?.scheduleDate ?? widget.selectedDate;
     return DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -47,7 +52,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
   }
 
   DateTime get _endDateTime {
-    final selectedDate = widget.selectedDate;
+    final selectedDate = widget.schedule?.scheduleDate ?? widget.selectedDate;
     return DateTime(
       selectedDate.year,
       selectedDate.month,
@@ -70,6 +75,28 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
     {'label': '1日前', 'minutes': 1440},
     {'label': 'カスタム', 'minutes': -1}, // -1はカスタムの識別子
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // 編集モードの場合、既存スケジュールの値を初期値として設定
+    if (widget.schedule != null) {
+      final schedule = widget.schedule!;
+      _titleController.text = schedule.title;
+      _descriptionController.text = schedule.description ?? '';
+      _startTime = schedule.startTime;
+      _endTime =
+          schedule.endTime ??
+          TimeOfDay(
+            hour: schedule.startTime.hour + 1,
+            minute: schedule.startTime.minute,
+          );
+      _isAllDay = schedule.isAllDay;
+      _selectedColorHex = schedule.colorHex;
+      _reminderMinutes = schedule.reminderMinutes;
+      _isNotificationEnabled = schedule.reminderMinutes > 0;
+    }
+  }
 
   @override
   void dispose() {
@@ -113,7 +140,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
     }
   }
 
-  void _addSchedule() {
+  void _saveSchedule() {
     if (_titleController.text.trim().isNotEmpty) {
       final finalReminderMinutes =
           _isCustomReminder ? _getCustomReminderMinutes() : _reminderMinutes;
@@ -122,21 +149,35 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
           _isAllDay ? const TimeOfDay(hour: 0, minute: 0) : _startTime;
       final TimeOfDay? endForSave = _isAllDay ? null : _endTime;
 
-      widget.onAdd({
-        'id': DateTime.now().millisecondsSinceEpoch,
+      final scheduleData = {
         'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'date': widget.selectedDate,
+        'description':
+            _descriptionController.text.trim().isEmpty
+                ? null
+                : _descriptionController.text.trim(),
+        'date': widget.schedule?.scheduleDate ?? widget.selectedDate,
         'startTime': startForSave,
         'endTime': endForSave,
         'isAllDay': _isAllDay,
         'colorHex': _selectedColorHex,
-        'notificationMode': _isNotificationEnabled ? 'reminder' : 'none',
         'reminderMinutes': _isNotificationEnabled ? finalReminderMinutes : 0,
-        'isAlarmEnabled': false,
-        'createdAt': DateTime.now(),
-      });
-      // Navigator.popはonAddコールバック内で呼ばれるため、ここでは呼ばない
+      };
+
+      if (widget.schedule == null) {
+        // 作成モード
+        widget.onAdd?.call({
+          ...scheduleData,
+          'id': DateTime.now().millisecondsSinceEpoch,
+          'notificationMode': _isNotificationEnabled ? 'reminder' : 'none',
+          'isAlarmEnabled': false,
+          'createdAt': DateTime.now(),
+        });
+        // Navigator.popはonAddコールバック内で呼ばれるため、ここでは呼ばない
+      } else {
+        // 編集モード
+        widget.onUpdate?.call(scheduleData);
+        // Navigator.popはonUpdateコールバック内で呼ばれるため、ここでは呼ばない
+      }
     }
   }
 
@@ -197,8 +238,10 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
               children: [
                 // ヘッダー
                 ScheduleFormHeader(
-                  selectedDate: widget.selectedDate,
+                  selectedDate:
+                      widget.schedule?.scheduleDate ?? widget.selectedDate,
                   onClose: () => Navigator.pop(context),
+                  isEditMode: widget.schedule != null,
                 ),
 
                 // メインコンテンツ
@@ -273,8 +316,14 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
 
                           const SizedBox(height: 20),
 
-                          // 作成ボタン
-                          ScheduleFormSubmitButton(onPressed: _addSchedule),
+                          // 作成/更新ボタン
+                          ScheduleFormSubmitButton(
+                            onPressed: _saveSchedule,
+                            label:
+                                widget.schedule != null
+                                    ? 'スケジュールを更新'
+                                    : 'スケジュールを作成',
+                          ),
                         ],
                       ),
                     ),
