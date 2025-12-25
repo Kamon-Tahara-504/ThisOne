@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import '../../gradients.dart';
 import '../../widgets/schedule/schedule_dialog.dart';
 import '../../widgets/schedule/schedule_card.dart';
 import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/schedule.dart';
+import 'schedule_calendar_header.dart';
+import 'schedule_calendar.dart';
+import 'empty_schedule_state.dart';
+import 'schedule_list_title.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;
@@ -30,6 +33,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  bool _isFormatChanging = false;
   late AnimationController _popAnimationController;
   late Animation<double> _popAnimation;
   String? _animatingScheduleId;
@@ -121,30 +125,21 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// カレンダー表示形式を切り替える
   void _toggleCalendarFormat() {
     setState(() {
-      switch (_calendarFormat) {
-        case CalendarFormat.month:
-          _calendarFormat = CalendarFormat.twoWeeks;
-          break;
-        case CalendarFormat.twoWeeks:
-          _calendarFormat = CalendarFormat.week;
-          break;
-        case CalendarFormat.week:
-          _calendarFormat = CalendarFormat.month;
-          break;
+      _isFormatChanging = true;
+      if (_calendarFormat == CalendarFormat.month) {
+        _calendarFormat = CalendarFormat.week;
+      } else {
+        _calendarFormat = CalendarFormat.month;
       }
     });
-  }
-
-  /// 現在のカレンダー表示形式に応じたテキストを取得
-  String _getCalendarFormatText() {
-    switch (_calendarFormat) {
-      case CalendarFormat.month:
-        return 'Month';
-      case CalendarFormat.twoWeeks:
-        return '2 Weeks';
-      case CalendarFormat.week:
-        return 'Week';
-    }
+    // フォーマット変更が完了したら、フラグをリセット
+    Future.microtask(() {
+      if (mounted) {
+        setState(() {
+          _isFormatChanging = false;
+        });
+      }
+    });
   }
 
   /// スケジュールを追加（データベースにも保存）
@@ -223,329 +218,30 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           ),
                           child: Column(
                             children: [
-                              // カスタムヘッダー
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    // 左矢印
-                                    IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _focusedDate = DateTime(
-                                            _focusedDate.year,
-                                            _focusedDate.month - 1,
-                                          );
-                                        });
-                                      },
-                                      icon: const Icon(
-                                        Icons.chevron_left,
-                                        color: Colors.white,
-                                      ),
-                                      iconSize: 24,
-                                      splashRadius: 20,
-                                    ),
-
-                                    // 中央に配置するためのSpacer
-                                    const Spacer(),
-
-                                    // 年月表示
-                                    Text(
-                                      '${_focusedDate.year}年${_focusedDate.month}月',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-
-                                    const SizedBox(width: 12),
-
-                                    // 表示形式切り替えボタン
-                                    GestureDetector(
-                                      onTap: _toggleCalendarFormat,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 6,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          gradient:
-                                              createHorizontalOrangeYellowGradient(),
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(
-                                                alpha: 0.3,
-                                              ),
-                                              blurRadius: 3,
-                                              offset: const Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          _getCalendarFormatText(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    // 中央に配置するためのSpacer
-                                    const Spacer(),
-
-                                    // 右矢印
-                                    IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _focusedDate = DateTime(
-                                            _focusedDate.year,
-                                            _focusedDate.month + 1,
-                                          );
-                                        });
-                                      },
-                                      icon: const Icon(
-                                        Icons.chevron_right,
-                                        color: Colors.white,
-                                      ),
-                                      iconSize: 24,
-                                      splashRadius: 20,
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // TableCalendar（ヘッダー非表示）
-                              TableCalendar<Map<String, dynamic>>(
-                                firstDay: DateTime.utc(2020, 1, 1),
-                                lastDay: DateTime.utc(2030, 12, 31),
-                                focusedDay: _focusedDate,
-                                selectedDayPredicate:
-                                    (day) => isSameDay(_selectedDate, day),
+                              ScheduleCalendarHeader(
+                                focusedDate: _focusedDate,
                                 calendarFormat: _calendarFormat,
-                                eventLoader:
-                                    (date) =>
-                                        _getSchedulesForDate(
-                                          date,
-                                          allSchedules,
-                                        ).map((s) => s.toMap()).toList(),
-                                startingDayOfWeek: StartingDayOfWeek.monday,
-                                headerVisible: false,
-                                calendarStyle: CalendarStyle(
-                                  outsideDaysVisible: true,
-                                  weekendTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  defaultTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  // 前月・次月の日付スタイル（薄いグレー）
-                                  outsideTextStyle: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 16,
-                                  ),
-                                  // 過去の日付も白色で表示（期限切れでも色を変えない）
-                                  todayTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  selectedTextStyle: const TextStyle(
-                                    color: Colors.white,
-                                  ),
-                                  selectedDecoration: const BoxDecoration(
-                                    color: Colors.transparent,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  todayDecoration: BoxDecoration(
-                                    gradient: createOrangeYellowGradient(),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  markerDecoration: const BoxDecoration(
-                                    color: Colors.transparent,
-                                  ),
-                                  markersMaxCount: 1,
-                                  markerSize: 0,
-                                ),
-                                calendarBuilders: CalendarBuilders(
-                                  // 曜日ビルダー（日〜土）
-                                  dowBuilder: (context, day) {
-                                    final weekdays = [
-                                      '月',
-                                      '火',
-                                      '水',
-                                      '木',
-                                      '金',
-                                      '土',
-                                      '日',
-                                    ];
-                                    // 土曜日は青色、日曜日は赤色
-                                    Color textColor;
-                                    if (day.weekday == 6) {
-                                      textColor = Colors.blue; // 土曜日
-                                    } else if (day.weekday == 7) {
-                                      textColor = Colors.red; // 日曜日
-                                    } else {
-                                      textColor = Colors.white; // 平日
-                                    }
-                                    return Center(
-                                      child: Text(
-                                        weekdays[day.weekday - 1],
-                                        style: TextStyle(
-                                          color: textColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    );
-                                  },
-
-                                  // 通常の日付ビルダー（土曜日と日曜日の色を変更）
-                                  defaultBuilder: (context, day, focusedDay) {
-                                    Color textColor;
-                                    if (day.weekday == 6) {
-                                      textColor = Colors.blue; // 土曜日
-                                    } else if (day.weekday == 7) {
-                                      textColor = Colors.red; // 日曜日
-                                    } else {
-                                      textColor = Colors.white; // 平日
-                                    }
-                                    return Center(
-                                      child: Text(
-                                        day.day.toString(),
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    );
-                                  },
-
-                                  // 今日の日付ビルダー
-                                  todayBuilder: (context, day, focusedDay) {
-                                    return Container(
-                                      margin: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        gradient: createOrangeYellowGradient(),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          day.day.toString(),
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-
-                                  // 前月・次月の日付ビルダー
-                                  outsideBuilder: (context, day, focusedDay) {
-                                    Color textColor;
-                                    if (day.weekday == 6) {
-                                      textColor = Colors.blue.withValues(
-                                        alpha: 0.4,
-                                      ); // 土曜日
-                                    } else if (day.weekday == 7) {
-                                      textColor = Colors.red.withValues(
-                                        alpha: 0.4,
-                                      ); // 日曜日
-                                    } else {
-                                      textColor = Colors.grey[600]!; // 平日
-                                    }
-                                    return Center(
-                                      child: Text(
-                                        day.day.toString(),
-                                        style: TextStyle(color: textColor),
-                                      ),
-                                    );
-                                  },
-
-                                  selectedBuilder: (context, day, focusedDay) {
-                                    final isToday = isSameDay(
-                                      day,
-                                      DateTime.now(),
-                                    );
-
-                                    return Container(
-                                      margin: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        gradient: createOrangeYellowGradient(),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Container(
-                                        margin: const EdgeInsets.all(2),
-                                        decoration: const BoxDecoration(
-                                          color: Color(0xFF3A3A3A), // 背景色に合わせる
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child:
-                                            isToday
-                                                ? Container(
-                                                  margin: const EdgeInsets.all(
-                                                    6,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    gradient:
-                                                        createOrangeYellowGradient(),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      day.day.toString(),
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                                : Center(
-                                                  child: Text(
-                                                    day.day.toString(),
-                                                    style: const TextStyle(
-                                                      color: Colors.white,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                  ),
-                                                ),
-                                      ),
-                                    );
-                                  },
-                                  markerBuilder: (context, day, events) {
-                                    final eventCount = events.length;
-                                    if (eventCount > 0) {
-                                      return Positioned(
-                                        right: 1,
-                                        bottom: 1,
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            color: Colors.green,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          width: 18,
-                                          height: 18,
-                                          child: Center(
-                                            child: Text(
-                                              eventCount > 99
-                                                  ? '99+'
-                                                  : eventCount.toString(),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                    return null;
-                                  },
-                                ),
+                                onPreviousMonth: (date) {
+                                  setState(() {
+                                    _focusedDate = date;
+                                  });
+                                },
+                                onNextMonth: (date) {
+                                  setState(() {
+                                    _focusedDate = date;
+                                  });
+                                },
+                                onToggleFormat: _toggleCalendarFormat,
+                              ),
+                              ScheduleCalendar(
+                                focusedDate: _focusedDate,
+                                selectedDate: _selectedDate,
+                                calendarFormat: _calendarFormat,
+                                getSchedulesForDate:
+                                    (date) => _getSchedulesForDate(
+                                      date,
+                                      allSchedules,
+                                    ),
                                 onDaySelected: (selectedDay, focusedDay) {
                                   setState(() {
                                     _selectedDate = selectedDay;
@@ -554,11 +250,31 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                 },
                                 onFormatChanged: (format) {
                                   setState(() {
-                                    _calendarFormat = format;
+                                    _isFormatChanging = true;
+                                    // twoWeeksが渡された場合はweekに変換
+                                    if (format == CalendarFormat.twoWeeks) {
+                                      _calendarFormat = CalendarFormat.week;
+                                    } else {
+                                      _calendarFormat = format;
+                                    }
+                                    // focusedDateは変更しない（表示形式変更時も現在の日付を維持）
+                                  });
+                                  // フォーマット変更が完了したら、フラグをリセット
+                                  Future.microtask(() {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isFormatChanging = false;
+                                      });
+                                    }
                                   });
                                 },
                                 onPageChanged: (focusedDay) {
-                                  _focusedDate = focusedDay;
+                                  // フォーマット変更中は、focusedDateを変更しない
+                                  if (!_isFormatChanging) {
+                                    setState(() {
+                                      _focusedDate = focusedDay;
+                                    });
+                                  }
                                 },
                               ),
                             ],
@@ -573,52 +289,14 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                           vertical: 8,
                         ),
                         sliver: SliverToBoxAdapter(
-                          child: Text(
-                            '${_selectedDate.year}年${_selectedDate.month}月${_selectedDate.day}日のスケジュール',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          child: ScheduleListTitle(selectedDate: _selectedDate),
                         ),
                       ),
 
                       // スケジュールリスト部分
                       todaySchedules.isEmpty
-                          ? SliverToBoxAdapter(
-                            child: Container(
-                              height: 200,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    ShaderMask(
-                                      shaderCallback:
-                                          (bounds) =>
-                                              createOrangeYellowGradient()
-                                                  .createShader(bounds),
-                                      child: const Icon(
-                                        Icons.event_note,
-                                        size: 48,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'この日にスケジュールはありません',
-                                      style: TextStyle(
-                                        color: Colors.grey[400],
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          ? const SliverToBoxAdapter(
+                            child: EmptyScheduleState(),
                           )
                           : SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
