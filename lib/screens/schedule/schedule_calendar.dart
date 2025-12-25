@@ -31,6 +31,10 @@ class ScheduleCalendar extends StatelessWidget {
       focusedDay: focusedDate,
       selectedDayPredicate: (day) => isSameDay(selectedDate, day),
       calendarFormat: calendarFormat,
+      availableCalendarFormats: const {
+        CalendarFormat.month: 'Month',
+        CalendarFormat.week: 'Week',
+      },
       eventLoader:
           (date) => getSchedulesForDate(date).map((s) => s.toMap()).toList(),
       startingDayOfWeek: StartingDayOfWeek.monday,

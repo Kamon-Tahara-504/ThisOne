@@ -38,9 +38,13 @@ class ScheduleCalendarHeader extends StatelessWidget {
           // 左矢印
           IconButton(
             onPressed: () {
-              onPreviousMonth(
-                DateTime(focusedDate.year, focusedDate.month - 1),
-              );
+              DateTime newDate;
+              if (calendarFormat == CalendarFormat.week) {
+                newDate = focusedDate.subtract(const Duration(days: 7));
+              } else {
+                newDate = DateTime(focusedDate.year, focusedDate.month - 1);
+              }
+              onPreviousMonth(newDate);
             },
             icon: const Icon(Icons.chevron_left, color: Colors.white),
             iconSize: 24,
@@ -95,7 +99,13 @@ class ScheduleCalendarHeader extends StatelessWidget {
           // 右矢印
           IconButton(
             onPressed: () {
-              onNextMonth(DateTime(focusedDate.year, focusedDate.month + 1));
+              DateTime newDate;
+              if (calendarFormat == CalendarFormat.week) {
+                newDate = focusedDate.add(const Duration(days: 7));
+              } else {
+                newDate = DateTime(focusedDate.year, focusedDate.month + 1);
+              }
+              onNextMonth(newDate);
             },
             icon: const Icon(Icons.chevron_right, color: Colors.white),
             iconSize: 24,

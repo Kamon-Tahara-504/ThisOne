@@ -33,6 +33,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   DateTime _selectedDate = DateTime.now();
   DateTime _focusedDate = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  bool _isFormatChanging = false;
   late AnimationController _popAnimationController;
   late Animation<double> _popAnimation;
   String? _animatingScheduleId;
@@ -124,16 +125,19 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   /// カレンダー表示形式を切り替える
   void _toggleCalendarFormat() {
     setState(() {
-      switch (_calendarFormat) {
-        case CalendarFormat.month:
-          _calendarFormat = CalendarFormat.twoWeeks;
-          break;
-        case CalendarFormat.twoWeeks:
-          _calendarFormat = CalendarFormat.week;
-          break;
-        case CalendarFormat.week:
-          _calendarFormat = CalendarFormat.month;
-          break;
+      _isFormatChanging = true;
+      if (_calendarFormat == CalendarFormat.month) {
+        _calendarFormat = CalendarFormat.week;
+      } else {
+        _calendarFormat = CalendarFormat.month;
+      }
+    });
+    // フォーマット変更が完了したら、フラグをリセット
+    Future.microtask(() {
+      if (mounted) {
+        setState(() {
+          _isFormatChanging = false;
+        });
       }
     });
   }
@@ -246,13 +250,31 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                                 },
                                 onFormatChanged: (format) {
                                   setState(() {
-                                    _calendarFormat = format;
+                                    _isFormatChanging = true;
+                                    // twoWeeksが渡された場合はweekに変換
+                                    if (format == CalendarFormat.twoWeeks) {
+                                      _calendarFormat = CalendarFormat.week;
+                                    } else {
+                                      _calendarFormat = format;
+                                    }
+                                    // focusedDateは変更しない（表示形式変更時も現在の日付を維持）
+                                  });
+                                  // フォーマット変更が完了したら、フラグをリセット
+                                  Future.microtask(() {
+                                    if (mounted) {
+                                      setState(() {
+                                        _isFormatChanging = false;
+                                      });
+                                    }
                                   });
                                 },
                                 onPageChanged: (focusedDay) {
-                                  setState(() {
-                                    _focusedDate = focusedDay;
-                                  });
+                                  // フォーマット変更中は、focusedDateを変更しない
+                                  if (!_isFormatChanging) {
+                                    setState(() {
+                                      _focusedDate = focusedDay;
+                                    });
+                                  }
                                 },
                               ),
                             ],
