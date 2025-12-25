@@ -33,7 +33,7 @@ class MemoEditSubmitButton extends StatelessWidget {
             isLoading
                 ? const CircularProgressIndicator(color: Colors.white)
                 : const Text(
-                  '保存',
+                  'メモ設定を更新',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
