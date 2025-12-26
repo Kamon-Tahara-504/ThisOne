@@ -40,6 +40,23 @@ class SupabaseService {
     await _supabase.auth.signOut();
   }
 
+  /// アカウントを削除
+  ///
+  /// Supabase Functionsのdelete-accountエッジ関数を呼び出して
+  /// ユーザーのデータとAuthアカウントを削除します
+  Future<void> deleteAccount() async {
+    final response = await _supabase.functions.invoke(
+      'delete-account',
+      body: {'confirm': true},
+    );
+
+    if (response.status != 200) {
+      final errorData = response.data;
+      final errorMessage = errorData?['error'] ?? 'アカウントの削除に失敗しました';
+      throw Exception(errorMessage);
+    }
+  }
+
   /// 現在のユーザー情報を取得
   User? getCurrentUser() {
     try {

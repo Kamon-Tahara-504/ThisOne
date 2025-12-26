@@ -201,28 +201,30 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     });
 
     try {
-      // TODO: 実際のアカウント削除処理を実装
-      await Future.delayed(const Duration(seconds: 2));
+      final userId = _getUserId();
+
+      // Supabaseのアカウントを削除（サーバー側のデータも削除される）
+      await _supabaseService.deleteAccount();
+
+      // ローカルデータベースのデータも削除
+      await _taskService.permanentlyDeleteAllTasks(userId);
+      await _memoService.permanentlyDeleteAllMemos(userId);
+      await _scheduleService.permanentlyDeleteAllSchedules(userId);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('アカウントを削除しました'),
-          backgroundColor: Color(0xFFE85A3B),
-        ),
-      );
+      // サインアウト
+      await _supabaseService.signOut();
+
+      if (!mounted) return;
+
+      AppErrorHandler.showSuccess(context, 'アカウントを削除しました');
+
       // アカウント削除後はログイン画面に遷移
-      if (!mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('削除に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'アカウントの削除');
       }
     } finally {
       if (mounted) {
