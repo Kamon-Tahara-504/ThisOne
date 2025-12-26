@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../models/schedule.dart';
+import '../../utils/text_selection_menu_builder.dart';
 import '../common/time_picker_bottom_sheet.dart';
 import 'notification_settings.dart';
 import 'schedule_form_header.dart';
@@ -407,6 +408,7 @@ class _CustomReminderDialogState extends State<_CustomReminderDialog> {
                     ),
                   ),
                   keyboardType: TextInputType.number,
+                  contextMenuBuilder: nativeTextSelectionMenuBuilder,
                   onChanged: (value) {
                     final intValue = int.tryParse(value);
                     if (intValue != null && intValue > 0) {

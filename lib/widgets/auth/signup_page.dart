@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import '../../utils/error_handler.dart';
+import '../../utils/text_selection_menu_builder.dart';
 import 'google_signin_button.dart';
 import 'x_signin_button.dart';
 import 'disabled_auth_button.dart';
@@ -231,6 +232,7 @@ class _SignupPageState extends State<SignupPage> {
                           color: Colors.grey,
                         ),
                       ),
+                      contextMenuBuilder: nativeTextSelectionMenuBuilder,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -326,6 +328,7 @@ class _SignupPageState extends State<SignupPage> {
                           },
                         ),
                       ),
+                      contextMenuBuilder: nativeTextSelectionMenuBuilder,
                     ),
                   ),
                   const SizedBox(height: 32),

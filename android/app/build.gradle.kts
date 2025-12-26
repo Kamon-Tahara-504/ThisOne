@@ -68,3 +68,28 @@ android {
 flutter {
     source = "../.."
 }
+
+// Flutterツールが期待する場所（プロジェクトルートのbuild/app/outputs/flutter-apk/）にAPKファイルをコピーするタスク
+tasks.register("copyDebugApkToFlutterExpectedLocation") {
+    doLast {
+        val debugApkPath = file("${layout.buildDirectory.get()}/outputs/apk/debug/app-debug.apk")
+        val projectRootDir = rootProject.projectDir.parentFile
+        val expectedDir = file("$projectRootDir/build/app/outputs/flutter-apk")
+        val expectedPath = file("$expectedDir/app-debug.apk")
+
+        if (debugApkPath.exists()) {
+            expectedDir.mkdirs()
+            debugApkPath.copyTo(expectedPath, overwrite = true)
+            println("Debug APK copied to Flutter expected location: $expectedPath")
+        } else {
+            println("Debug APK not found at: $debugApkPath")
+        }
+    }
+}
+
+// assembleDebugタスクの後にAPKをコピーするタスクを実行
+tasks.configureEach {
+    if (name == "assembleDebug") {
+        finalizedBy("copyDebugApkToFlutterExpectedLocation")
+    }
+}

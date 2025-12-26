@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../utils/text_selection_menu_builder.dart';
 
 class AccountInfoItem extends StatelessWidget {
   final IconData icon;
@@ -74,6 +75,7 @@ class AccountInfoItem extends StatelessWidget {
                         vertical: 8,
                       ),
                     ),
+                    contextMenuBuilder: nativeTextSelectionMenuBuilder,
                   )
                 else
                   Text(

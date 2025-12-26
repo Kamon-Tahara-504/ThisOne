@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide BottomNavigationBar;
@@ -109,6 +110,11 @@ class MyApp extends StatelessWidget {
         floatingActionButtonTheme: const FloatingActionButtonThemeData(
           backgroundColor: Color(0xFFE85A3B), // FABを程よいオレンジに
           foregroundColor: Colors.white, // FABのアイコン色
+        ),
+        textSelectionTheme: TextSelectionThemeData(
+          // Androidでは青系、iOSではnull（システム標準）を使用
+          selectionHandleColor: Platform.isAndroid ? Colors.blueAccent : null,
+          cursorColor: Platform.isAndroid ? Colors.blueAccent : null,
         ),
         // Androidシミュレーター対応：フォントファミリーを明示的に設定
         fontFamily: 'Roboto',
@@ -570,6 +576,11 @@ class ErrorApp extends StatelessWidget {
           onSurface: Colors.white,
         ),
         scaffoldBackgroundColor: const Color(0xFF2B2B2B),
+        textSelectionTheme: TextSelectionThemeData(
+          // Androidでは青系、iOSではnull（システム標準）を使用
+          selectionHandleColor: Platform.isAndroid ? Colors.blueAccent : null,
+          cursorColor: Platform.isAndroid ? Colors.blueAccent : null,
+        ),
         useMaterial3: true,
       ),
       home: Scaffold(

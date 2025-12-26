@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../utils/text_selection_menu_builder.dart';
 
 class TaskTitleInput extends StatelessWidget {
   final TextEditingController titleController;
@@ -40,6 +41,7 @@ class TaskTitleInput extends StatelessWidget {
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(16),
             ),
+            contextMenuBuilder: nativeTextSelectionMenuBuilder,
           ),
         ),
       ],
