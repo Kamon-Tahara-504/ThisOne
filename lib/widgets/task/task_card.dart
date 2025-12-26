@@ -6,6 +6,7 @@ class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback onToggleComplete;
   final VoidCallback onDelete;
+  final VoidCallback? onEdit;
   final bool isAnimating;
   final Animation<double>? popAnimation;
 
@@ -14,6 +15,7 @@ class TaskCard extends StatelessWidget {
     required this.task,
     required this.onToggleComplete,
     required this.onDelete,
+    this.onEdit,
     this.isAnimating = false,
     this.popAnimation,
   });
@@ -165,21 +167,44 @@ class TaskCard extends StatelessWidget {
               ),
             ),
 
-            // 削除ボタン
-            GestureDetector(
-              onTap: onDelete,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red[400]!.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+            // 編集ボタンと削除ボタン
+            Row(
+              children: [
+                // 編集ボタン
+                if (onEdit != null)
+                  GestureDetector(
+                    onTap: onEdit,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[400]!.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: Colors.blue[400],
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                if (onEdit != null) const SizedBox(width: 8),
+                // 削除ボタン
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[400]!.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red[400],
+                      size: 20,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red[400],
-                  size: 20,
-                ),
-              ),
+              ],
             ),
           ],
         ),
