@@ -164,4 +164,12 @@ class LocalTaskService {
       whereArgs: [userId],
     );
   }
+
+  /// ユーザーのすべてのタスクを物理削除
+  ///
+  /// [userId] ユーザーID
+  Future<void> permanentlyDeleteAllTasks(String userId) async {
+    final db = await _dbService.database;
+    await db.delete('tasks', where: 'user_id = ?', whereArgs: [userId]);
+  }
 }

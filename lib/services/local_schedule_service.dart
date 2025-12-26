@@ -199,4 +199,12 @@ class LocalScheduleService {
       whereArgs: [userId],
     );
   }
+
+  /// ユーザーのすべてのスケジュールを物理削除
+  ///
+  /// [userId] ユーザーID
+  Future<void> permanentlyDeleteAllSchedules(String userId) async {
+    final db = await _dbService.database;
+    await db.delete('schedules', where: 'user_id = ?', whereArgs: [userId]);
+  }
 }

@@ -425,6 +425,7 @@ class _MainScreenState extends State<MainScreen> {
       // 3: 設定画面
       SettingsScreen(
         scrollController: _scrollControllerManager.getScrollController(3),
+        dataService: _dataService,
       ),
     ];
 
