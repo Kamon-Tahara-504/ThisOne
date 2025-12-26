@@ -4,6 +4,7 @@ import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/task.dart';
 import '../../widgets/task/task_card.dart';
+import '../../widgets/task/task_dialog.dart';
 import '../../widgets/overlays/sort_overlay.dart';
 
 class TaskScreen extends StatefulWidget {
@@ -154,6 +155,54 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
     }
   }
 
+  /// タスクを編集
+  void _editTask(Task task) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => TaskDialog(
+            task: task,
+            onUpdate: (taskData) {
+              Navigator.pop(context);
+              _updateTask(task, taskData);
+            },
+          ),
+    );
+  }
+
+  /// タスクを更新（データベースにも保存）
+  Future<void> _updateTask(
+    Task originalTask,
+    Map<String, dynamic> taskData,
+  ) async {
+    try {
+      final updatedTask = originalTask.copyWith(
+        title: taskData['title'],
+        priority: taskData['priority'],
+        dueDate: taskData['dueDate'],
+        updatedAt: DateTime.now(),
+      );
+      await widget.dataService.updateTask(updatedTask);
+
+      if (mounted) {
+        setState(() {
+          _tasks = List<Task>.from(widget.dataService.tasks);
+          _applySorting();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(
+          context,
+          e,
+          operation: 'タスクの更新',
+          onRetry: () => _updateTask(originalTask, taskData),
+        );
+      }
+    }
+  }
+
   void _showSortOverlay() {
     _sortOverlay?.dispose();
     _sortOverlay = SortOverlay(
@@ -229,6 +278,7 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
                         return TaskCard(
                           task: task,
                           onToggleComplete: () => _toggleTask(originalIndex),
+                          onEdit: () => _editTask(task),
                           onDelete: () => _deleteTask(originalIndex),
                           isAnimating: isAnimating,
                           popAnimation: isAnimating ? _popAnimation : null,

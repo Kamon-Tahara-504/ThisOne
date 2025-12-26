@@ -8,9 +8,11 @@ import 'task_priority_selector.dart';
 import 'task_form_submit_button.dart';
 
 class TaskDialog extends StatefulWidget {
-  final Function(Map<String, dynamic>) onAdd;
+  final Function(Map<String, dynamic>)? onAdd;
+  final Task? task;
+  final Function(Map<String, dynamic>)? onUpdate;
 
-  const TaskDialog({super.key, required this.onAdd});
+  const TaskDialog({super.key, this.onAdd, this.task, this.onUpdate});
 
   @override
   State<TaskDialog> createState() => _TaskDialogState();
@@ -27,6 +29,13 @@ class _TaskDialogState extends State<TaskDialog> {
     super.initState();
     // フォーカスリスナーを追加（UI更新のため）
     _titleFocusNode.addListener(_onFocusChange);
+    // 編集モードの場合、既存タスクの値を初期値として設定
+    if (widget.task != null) {
+      final task = widget.task!;
+      _titleController.text = task.title;
+      _selectedPriority = task.priority;
+      _selectedDueDate = task.dueDate;
+    }
   }
 
   void _onFocusChange() {
@@ -44,16 +53,29 @@ class _TaskDialogState extends State<TaskDialog> {
     super.dispose();
   }
 
-  void _addTask() {
+  void _saveTask() {
     if (_titleController.text.trim().isNotEmpty) {
-      widget.onAdd({
+      final taskData = {
         'title': _titleController.text.trim(),
         'priority': _selectedPriority,
         'dueDate': _selectedDueDate,
-      });
-      // Navigator.popはonAddコールバック内で呼ばれるため、ここでは呼ばない
+      };
+
+      if (widget.task == null) {
+        // 作成モード
+        widget.onAdd?.call(taskData);
+        // Navigator.popはonAddコールバック内で呼ばれるため、ここでは呼ばない
+      } else {
+        // 編集モード
+        widget.onUpdate?.call(taskData);
+        // Navigator.popはonUpdateコールバック内で呼ばれるため、ここでは呼ばない
+      }
     } else {
-      AppErrorHandler.handleError(context, 'タイトルを入力してください', operation: 'タスク追加');
+      AppErrorHandler.handleError(
+        context,
+        'タイトルを入力してください',
+        operation: widget.task == null ? 'タスク追加' : 'タスク更新',
+      );
     }
   }
 
@@ -79,7 +101,10 @@ class _TaskDialogState extends State<TaskDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // ヘッダー
-                TaskFormHeader(onClose: () => Navigator.pop(context)),
+                TaskFormHeader(
+                  onClose: () => Navigator.pop(context),
+                  isEditMode: widget.task != null,
+                ),
 
                 // メインコンテンツ
                 Flexible(
@@ -131,8 +156,11 @@ class _TaskDialogState extends State<TaskDialog> {
                           ),
                           const SizedBox(height: 24),
 
-                          // 作成ボタン
-                          TaskFormSubmitButton(onPressed: _addTask),
+                          // 作成/更新ボタン
+                          TaskFormSubmitButton(
+                            onPressed: _saveTask,
+                            label: widget.task != null ? 'タスクを更新' : 'タスクを作成',
+                          ),
                         ],
                       ),
                     ),
