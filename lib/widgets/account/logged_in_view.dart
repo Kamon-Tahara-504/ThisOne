@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../utils/text_selection_menu_builder.dart';
 import 'account_info_item.dart';
 import 'logout_dialog.dart';
 import '../../services/supabase_service.dart';
@@ -75,6 +76,7 @@ class LoggedInView extends StatelessWidget {
                         borderSide: const BorderSide(color: Color(0xFFE85A3B)),
                       ),
                     ),
+                    contextMenuBuilder: nativeTextSelectionMenuBuilder,
                   )
                 else
                   Text(

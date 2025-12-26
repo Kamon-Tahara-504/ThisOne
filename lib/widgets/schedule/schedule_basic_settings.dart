@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/color_utils.dart';
+import '../../utils/text_selection_menu_builder.dart';
 import 'color_picker_bottom_sheet.dart';
 
 class ScheduleBasicSettings extends StatelessWidget {
@@ -84,6 +85,7 @@ class ScheduleBasicSettings extends StatelessWidget {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(12),
                 ),
+                contextMenuBuilder: nativeTextSelectionMenuBuilder,
               ),
             ),
           ],

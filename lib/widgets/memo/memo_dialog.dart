@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../utils/color_utils.dart';
+import '../../utils/text_selection_menu_builder.dart';
 
 class MemoDialog extends StatefulWidget {
   final Function(String, String, String) onMemoCreated;
@@ -186,6 +187,8 @@ class _MemoDialogState extends State<MemoDialog> {
                                     border: InputBorder.none,
                                     contentPadding: EdgeInsets.all(16),
                                   ),
+                                  contextMenuBuilder:
+                                      nativeTextSelectionMenuBuilder,
                                 ),
                               ),
                             ],

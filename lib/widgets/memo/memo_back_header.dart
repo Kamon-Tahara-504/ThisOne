@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../utils/color_utils.dart'; // 色分けラベル用のユーティリティを追加
+import '../../utils/text_selection_menu_builder.dart';
 
 class MemoBackHeader extends StatelessWidget {
   final TextEditingController titleController;
@@ -141,6 +142,7 @@ class MemoBackHeader extends StatelessWidget {
                             contentPadding: EdgeInsets.symmetric(vertical: 6),
                             isDense: true,
                           ),
+                          contextMenuBuilder: nativeTextSelectionMenuBuilder,
                         ),
                       ),
                       const SizedBox(height: 4), // 間隔を調整
