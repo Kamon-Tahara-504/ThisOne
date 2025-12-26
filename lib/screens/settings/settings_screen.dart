@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../services/main_data_service.dart';
 import 'account_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'data_management_screen.dart';
@@ -25,8 +26,9 @@ import 'app_info_screen.dart';
 /// - アプリについて: バージョン情報とライセンス
 class SettingsScreen extends StatefulWidget {
   final ScrollController? scrollController;
+  final MainDataService? dataService;
 
-  const SettingsScreen({super.key, this.scrollController});
+  const SettingsScreen({super.key, this.scrollController, this.dataService});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -101,7 +103,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const PrivacySettingsScreen(),
+                  builder:
+                      (context) => PrivacySettingsScreen(
+                        dataService: widget.dataService,
+                      ),
                 ),
               );
             },

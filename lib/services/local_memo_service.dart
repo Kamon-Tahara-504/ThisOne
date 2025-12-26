@@ -173,4 +173,12 @@ class LocalMemoService {
       whereArgs: [userId],
     );
   }
+
+  /// ユーザーのすべてのメモを物理削除
+  ///
+  /// [userId] ユーザーID
+  Future<void> permanentlyDeleteAllMemos(String userId) async {
+    final db = await _dbService.database;
+    await db.delete('memos', where: 'user_id = ?', whereArgs: [userId]);
+  }
 }

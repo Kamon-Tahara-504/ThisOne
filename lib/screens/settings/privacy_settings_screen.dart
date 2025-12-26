@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
+import '../../services/main_data_service.dart';
+import '../../services/local_task_service.dart';
+import '../../services/local_memo_service.dart';
+import '../../services/local_schedule_service.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 
@@ -16,7 +22,9 @@ import '../../widgets/app_bars/static_header_guideline.dart';
 /// - 自動削除設定セクション
 /// - 危険な操作セクション（削除系）
 class PrivacySettingsScreen extends StatefulWidget {
-  const PrivacySettingsScreen({super.key});
+  final MainDataService? dataService;
+
+  const PrivacySettingsScreen({super.key, this.dataService});
 
   @override
   State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
@@ -24,6 +32,10 @@ class PrivacySettingsScreen extends StatefulWidget {
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   final SettingsService _settingsService = SettingsService();
+  final LocalTaskService _taskService = LocalTaskService();
+  final LocalMemoService _memoService = LocalMemoService();
+  final LocalScheduleService _scheduleService = LocalScheduleService();
+  final SupabaseService _supabaseService = SupabaseService();
 
   String _autoDeleteCompletedTasks = 'none';
   bool _autoArchiveOldMemos = false;
@@ -122,6 +134,12 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     }
   }
 
+  /// 現在のユーザーIDを取得
+  String _getUserId() {
+    final user = _supabaseService.getCurrentUser();
+    return user?.id ?? 'local';
+  }
+
   /// 全データを削除
   Future<void> _deleteAllData() async {
     final confirmed = await _showConfirmDialog(
@@ -138,25 +156,27 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     });
 
     try {
-      // TODO: 実際のデータ削除処理を実装
-      await Future.delayed(const Duration(seconds: 2));
+      final userId = _getUserId();
+
+      // タスク、メモ、スケジュールを順番に物理削除
+      await _taskService.permanentlyDeleteAllTasks(userId);
+      await _memoService.permanentlyDeleteAllMemos(userId);
+      await _scheduleService.permanentlyDeleteAllSchedules(userId);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('全データを削除しました'),
-          backgroundColor: Color(0xFFE85A3B),
-        ),
-      );
+      // MainDataServiceが渡されている場合は再読み込み
+      if (widget.dataService != null) {
+        await widget.dataService!.loadTasks();
+        await widget.dataService!.loadMemos();
+        await widget.dataService!.loadSchedules();
+      }
+
+      if (!mounted) return;
+      AppErrorHandler.showSuccess(context, '全データを削除しました');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('削除に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: '全データの削除');
       }
     } finally {
       setState(() {

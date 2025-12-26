@@ -95,6 +95,9 @@ class _ScheduleScreenState extends State<ScheduleScreen>
     try {
       // ローカルデータベースから削除
       await widget.dataService.deleteSchedule(schedule.id);
+
+      // リストを再読み込み（メモ削除処理と一貫性を保つ）
+      await widget.dataService.loadSchedules();
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
