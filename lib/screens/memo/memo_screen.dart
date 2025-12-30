@@ -352,10 +352,10 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
                   },
                 ),
               ),
-          // メモ数表示（メモリストと重なる位置）
+          // メモ数表示（左下）
           Positioned(
-            top: 4,
-            right: 8,
+            bottom: 10,
+            left: 8,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
