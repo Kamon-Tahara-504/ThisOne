@@ -6,6 +6,7 @@ import '../../models/task.dart';
 import '../../widgets/task/task_card.dart';
 import '../../widgets/task/task_dialog.dart';
 import '../../widgets/overlays/sort_overlay.dart';
+import '../../widgets/common/count_badge.dart';
 
 class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更
@@ -226,66 +227,62 @@ class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
       resizeToAvoidBottomInset: false,
-      body: Column(
+      body: Stack(
         children: [
           // タスクリスト
-          Expanded(
-            child:
-                sortedTasks.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ShaderMask(
-                            shaderCallback:
-                                (bounds) => createOrangeYellowGradient()
-                                    .createShader(bounds),
-                            child: const Icon(
-                              Icons.task_alt,
-                              size: 64,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'タスクがありません',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '下部の + ボタンから新しいタスクを追加してください',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+          sortedTasks.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ShaderMask(
+                      shaderCallback:
+                          (bounds) =>
+                              createOrangeYellowGradient().createShader(bounds),
+                      child: const Icon(
+                        Icons.task_alt,
+                        size: 64,
+                        color: Colors.white,
                       ),
-                    )
-                    : ListView.builder(
-                      controller: widget.scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: sortedTasks.length,
-                      itemBuilder: (context, index) {
-                        final task = sortedTasks[index];
-                        final originalIndex = _tasks.indexOf(task);
-                        final isAnimating = _animatingTaskId == task.id;
-                        return TaskCard(
-                          task: task,
-                          onToggleComplete: () => _toggleTask(originalIndex),
-                          onEdit: () => _editTask(task),
-                          onDelete: () => _deleteTask(originalIndex),
-                          isAnimating: isAnimating,
-                          popAnimation: isAnimating ? _popAnimation : null,
-                        );
-                      },
                     ),
-          ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'タスクがありません',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '下部の + ボタンから新しいタスクを追加してください',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              )
+              : ListView.builder(
+                controller: widget.scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: sortedTasks.length,
+                itemBuilder: (context, index) {
+                  final task = sortedTasks[index];
+                  final originalIndex = _tasks.indexOf(task);
+                  final isAnimating = _animatingTaskId == task.id;
+                  return TaskCard(
+                    task: task,
+                    onToggleComplete: () => _toggleTask(originalIndex),
+                    onEdit: () => _editTask(task),
+                    onDelete: () => _deleteTask(originalIndex),
+                    isAnimating: isAnimating,
+                    popAnimation: isAnimating ? _popAnimation : null,
+                  );
+                },
+              ),
+          // タスク数表示（左下）
+          CountBadge(count: sortedTasks.length, icon: Icons.task_alt),
         ],
       ),
       floatingActionButton: Container(
