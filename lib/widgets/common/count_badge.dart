@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// 左下に表示する件数バッジウィジェット
+/// 左下または左上に表示する件数バッジウィジェット
 class CountBadge extends StatelessWidget {
   final int count;
   final IconData icon;
-  final double bottom;
+  final double? top;
+  final double? bottom;
   final double left;
 
   const CountBadge({
     super.key,
     required this.count,
     required this.icon,
-    this.bottom = 10,
+    this.top,
+    this.bottom,
     this.left = 8,
   });
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      bottom: bottom,
+      top: top,
+      bottom: bottom ?? (top == null ? 10 : null),
       left: left,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
