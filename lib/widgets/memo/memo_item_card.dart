@@ -97,20 +97,6 @@ class MemoItemCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          // ピン留めアイコン
-                          if (isPinned) ...[
-                            ShaderMask(
-                              shaderCallback:
-                                  (bounds) => createOrangeYellowGradient()
-                                      .createShader(bounds),
-                              child: const Icon(
-                                Icons.push_pin,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
                           // モード表示ラベル
                           Container(
                             padding: const EdgeInsets.symmetric(
