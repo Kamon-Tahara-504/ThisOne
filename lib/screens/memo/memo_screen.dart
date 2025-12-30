@@ -9,6 +9,7 @@ import '../../widgets/memo/memo_edit_dialog.dart';
 import '../../utils/error_handler.dart';
 import '../../models/memo.dart';
 import '../../widgets/overlays/memo_sort_overlay.dart';
+import '../../widgets/common/count_badge.dart';
 import 'memo_detail_screen.dart';
 
 class MemoScreen extends StatefulWidget {
@@ -353,40 +354,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
                 ),
               ),
           // メモ数表示（左下）
-          Positioned(
-            bottom: 10,
-            left: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2B2B2B).withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[700]!, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.description, size: 14, color: Colors.grey[400]),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${filteredMemos.length}件',
-                    style: TextStyle(
-                      color: Colors.grey[300],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          CountBadge(count: filteredMemos.length, icon: Icons.description),
           // 色フィルタリングボタン（sortボタンの上）
           Positioned(
             bottom: 80, // sortボタン（56px）+ 間隔（16px）+ マージン（8px）
