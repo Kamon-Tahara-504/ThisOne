@@ -6,6 +6,7 @@ import 'color_picker_bottom_sheet.dart';
 class ScheduleBasicSettings extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController descriptionController;
+  final TextEditingController locationController;
   final String selectedColorHex;
   final ValueChanged<String> onColorChanged;
 
@@ -13,6 +14,7 @@ class ScheduleBasicSettings extends StatelessWidget {
     super.key,
     required this.titleController,
     required this.descriptionController,
+    required this.locationController,
     required this.selectedColorHex,
     required this.onColorChanged,
   });
@@ -84,6 +86,41 @@ class ScheduleBasicSettings extends StatelessWidget {
                   hintStyle: TextStyle(color: Colors.grey),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.all(12),
+                ),
+                contextMenuBuilder: nativeTextSelectionMenuBuilder,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+
+        // 場所入力
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '場所',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF3A3A3A),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[600]!),
+              ),
+              child: TextField(
+                controller: locationController,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: const InputDecoration(
+                  hintText: '場所を入力...',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.all(16),
                 ),
                 contextMenuBuilder: nativeTextSelectionMenuBuilder,
               ),

@@ -220,6 +220,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         startTime: schedule['startTime'],
         endTime: schedule['endTime'],
         isAllDay: schedule['isAllDay'] ?? false,
+        location: schedule['location'],
         reminderMinutes: schedule['reminderMinutes'],
         colorHex: schedule['colorHex'] ?? '#E85A3B',
       );
@@ -265,6 +266,7 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         startTime: scheduleData['startTime'],
         endTime: scheduleData['endTime'],
         isAllDay: scheduleData['isAllDay'] ?? false,
+        location: scheduleData['location'],
         reminderMinutes: scheduleData['reminderMinutes'],
         colorHex: scheduleData['colorHex'] ?? '#E85A3B',
         updatedAt: DateTime.now(),
