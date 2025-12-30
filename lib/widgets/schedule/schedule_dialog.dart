@@ -30,6 +30,7 @@ class ScheduleDialog extends StatefulWidget {
 class _ScheduleDialogState extends State<ScheduleDialog> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _locationController = TextEditingController();
   TimeOfDay _startTime = TimeOfDay.now();
   TimeOfDay _endTime = TimeOfDay(
     hour: TimeOfDay.now().hour + 1,
@@ -85,6 +86,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
       final schedule = widget.schedule!;
       _titleController.text = schedule.title;
       _descriptionController.text = schedule.description ?? '';
+      _locationController.text = schedule.location ?? '';
       _startTime = schedule.startTime;
       _endTime =
           schedule.endTime ??
@@ -103,6 +105,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -156,6 +159,10 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
             _descriptionController.text.trim().isEmpty
                 ? null
                 : _descriptionController.text.trim(),
+        'location':
+            _locationController.text.trim().isEmpty
+                ? null
+                : _locationController.text.trim(),
         'date': widget.schedule?.scheduleDate ?? widget.selectedDate,
         'startTime': startForSave,
         'endTime': endForSave,
@@ -261,6 +268,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
                           ScheduleBasicSettings(
                             titleController: _titleController,
                             descriptionController: _descriptionController,
+                            locationController: _locationController,
                             selectedColorHex: _selectedColorHex,
                             onColorChanged: (color) {
                               setState(() {
