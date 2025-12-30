@@ -9,6 +9,7 @@ import 'schedule_calendar_header.dart';
 import 'schedule_calendar.dart';
 import 'empty_schedule_state.dart';
 import 'schedule_list_title.dart';
+import '../../widgets/common/count_badge.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;
@@ -122,6 +123,69 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         schedule.scheduleDate.day,
       );
       return scheduleDate == normalizedDate;
+    }).toList();
+  }
+
+  /// 指定された月の範囲内のスケジュールを取得
+  List<Schedule> _getSchedulesForMonth(
+    DateTime focusedDate,
+    List<Schedule> allSchedules,
+  ) {
+    final monthStart = DateTime(focusedDate.year, focusedDate.month, 1);
+    final monthEnd = DateTime(focusedDate.year, focusedDate.month + 1, 0);
+    final normalizedMonthStart = DateTime(
+      monthStart.year,
+      monthStart.month,
+      monthStart.day,
+    );
+    final normalizedMonthEnd = DateTime(
+      monthEnd.year,
+      monthEnd.month,
+      monthEnd.day,
+    );
+
+    return allSchedules.where((schedule) {
+      final scheduleDate = DateTime(
+        schedule.scheduleDate.year,
+        schedule.scheduleDate.month,
+        schedule.scheduleDate.day,
+      );
+      return (scheduleDate.isAfter(normalizedMonthStart) ||
+              scheduleDate.isAtSameMomentAs(normalizedMonthStart)) &&
+          (scheduleDate.isBefore(normalizedMonthEnd) ||
+              scheduleDate.isAtSameMomentAs(normalizedMonthEnd));
+    }).toList();
+  }
+
+  /// 指定された週の範囲内のスケジュールを取得（月曜日始まり）
+  List<Schedule> _getSchedulesForWeek(
+    DateTime focusedDate,
+    List<Schedule> allSchedules,
+  ) {
+    final weekday = focusedDate.weekday; // 1=月曜日, 7=日曜日
+    final weekStart = focusedDate.subtract(Duration(days: weekday - 1));
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    final normalizedWeekStart = DateTime(
+      weekStart.year,
+      weekStart.month,
+      weekStart.day,
+    );
+    final normalizedWeekEnd = DateTime(
+      weekEnd.year,
+      weekEnd.month,
+      weekEnd.day,
+    );
+
+    return allSchedules.where((schedule) {
+      final scheduleDate = DateTime(
+        schedule.scheduleDate.year,
+        schedule.scheduleDate.month,
+        schedule.scheduleDate.day,
+      );
+      return (scheduleDate.isAfter(normalizedWeekStart) ||
+              scheduleDate.isAtSameMomentAs(normalizedWeekStart)) &&
+          (scheduleDate.isBefore(normalizedWeekEnd) ||
+              scheduleDate.isAtSameMomentAs(normalizedWeekEnd));
     }).toList();
   }
 
@@ -249,132 +313,149 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         return Scaffold(
           backgroundColor: const Color(0xFF2B2B2B),
           resizeToAvoidBottomInset: false,
-          body:
-              isLoading
-                  ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
-                  )
-                  : CustomScrollView(
-                    controller: widget.scrollController,
-                    slivers: [
-                      // カレンダー部分
-                      SliverToBoxAdapter(
-                        child: Container(
-                          margin: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF3A3A3A),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[700]!),
-                          ),
-                          child: Column(
-                            children: [
-                              ScheduleCalendarHeader(
-                                focusedDate: _focusedDate,
-                                calendarFormat: _calendarFormat,
-                                onPreviousMonth: (date) {
-                                  setState(() {
-                                    _focusedDate = date;
-                                  });
-                                },
-                                onNextMonth: (date) {
-                                  setState(() {
-                                    _focusedDate = date;
-                                  });
-                                },
-                                onToggleFormat: _toggleCalendarFormat,
-                              ),
-                              ScheduleCalendar(
-                                focusedDate: _focusedDate,
-                                selectedDate: _selectedDate,
-                                calendarFormat: _calendarFormat,
-                                getSchedulesForDate:
-                                    (date) => _getSchedulesForDate(
-                                      date,
-                                      allSchedules,
-                                    ),
-                                onDaySelected: (selectedDay, focusedDay) {
-                                  setState(() {
-                                    _selectedDate = selectedDay;
-                                    _focusedDate = focusedDay;
-                                  });
-                                },
-                                onFormatChanged: (format) {
-                                  setState(() {
-                                    _isFormatChanging = true;
-                                    // twoWeeksが渡された場合はweekに変換
-                                    if (format == CalendarFormat.twoWeeks) {
-                                      _calendarFormat = CalendarFormat.week;
-                                    } else {
-                                      _calendarFormat = format;
-                                    }
-                                    // focusedDateは変更しない（表示形式変更時も現在の日付を維持）
-                                  });
-                                  // フォーマット変更が完了したら、フラグをリセット
-                                  Future.microtask(() {
-                                    if (mounted) {
-                                      setState(() {
-                                        _isFormatChanging = false;
-                                      });
-                                    }
-                                  });
-                                },
-                                onPageChanged: (focusedDay) {
-                                  // フォーマット変更中は、focusedDateを変更しない
-                                  if (!_isFormatChanging) {
+          body: Stack(
+            children: [
+              if (isLoading)
+                const Center(
+                  child: CircularProgressIndicator(color: Color(0xFFE85A3B)),
+                )
+              else
+                CustomScrollView(
+                  controller: widget.scrollController,
+                  slivers: [
+                    // カレンダー部分
+                    SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF3A3A3A),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey[700]!),
+                        ),
+                        child: Column(
+                          children: [
+                            ScheduleCalendarHeader(
+                              focusedDate: _focusedDate,
+                              calendarFormat: _calendarFormat,
+                              onPreviousMonth: (date) {
+                                setState(() {
+                                  _focusedDate = date;
+                                });
+                              },
+                              onNextMonth: (date) {
+                                setState(() {
+                                  _focusedDate = date;
+                                });
+                              },
+                              onToggleFormat: _toggleCalendarFormat,
+                            ),
+                            ScheduleCalendar(
+                              focusedDate: _focusedDate,
+                              selectedDate: _selectedDate,
+                              calendarFormat: _calendarFormat,
+                              getSchedulesForDate:
+                                  (date) =>
+                                      _getSchedulesForDate(date, allSchedules),
+                              onDaySelected: (selectedDay, focusedDay) {
+                                setState(() {
+                                  _selectedDate = selectedDay;
+                                  _focusedDate = focusedDay;
+                                });
+                              },
+                              onFormatChanged: (format) {
+                                setState(() {
+                                  _isFormatChanging = true;
+                                  // twoWeeksが渡された場合はweekに変換
+                                  if (format == CalendarFormat.twoWeeks) {
+                                    _calendarFormat = CalendarFormat.week;
+                                  } else {
+                                    _calendarFormat = format;
+                                  }
+                                  // focusedDateは変更しない（表示形式変更時も現在の日付を維持）
+                                });
+                                // フォーマット変更が完了したら、フラグをリセット
+                                Future.microtask(() {
+                                  if (mounted) {
                                     setState(() {
-                                      _focusedDate = focusedDay;
+                                      _isFormatChanging = false;
                                     });
                                   }
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // スケジュールリストのタイトル
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        sliver: SliverToBoxAdapter(
-                          child: ScheduleListTitle(selectedDate: _selectedDate),
-                        ),
-                      ),
-
-                      // スケジュールリスト部分
-                      todaySchedules.isEmpty
-                          ? const SliverToBoxAdapter(
-                            child: EmptyScheduleState(),
-                          )
-                          : SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            sliver: SliverList(
-                              delegate: SliverChildBuilderDelegate((
-                                context,
-                                index,
-                              ) {
-                                final schedule = todaySchedules[index];
-                                final isAnimating =
-                                    _animatingScheduleId == schedule.id;
-
-                                return ScheduleCard(
-                                  schedule: schedule,
-                                  onEdit: () => _editSchedule(schedule),
-                                  onDelete: () => _deleteSchedule(schedule),
-                                  isAnimating: isAnimating,
-                                  popAnimation:
-                                      isAnimating ? _popAnimation : null,
-                                );
-                              }, childCount: todaySchedules.length),
+                                });
+                              },
+                              onPageChanged: (focusedDay) {
+                                // フォーマット変更中は、focusedDateを変更しない
+                                if (!_isFormatChanging) {
+                                  setState(() {
+                                    _focusedDate = focusedDay;
+                                  });
+                                }
+                              },
                             ),
-                          ),
+                          ],
+                        ),
+                      ),
+                    ),
 
-                      // 最下部の余白
-                      const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
-                    ],
-                  ),
+                    // スケジュールリストのタイトル
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: ScheduleListTitle(selectedDate: _selectedDate),
+                      ),
+                    ),
+
+                    // スケジュールリスト部分
+                    todaySchedules.isEmpty
+                        ? const SliverToBoxAdapter(child: EmptyScheduleState())
+                        : SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          sliver: SliverList(
+                            delegate: SliverChildBuilderDelegate((
+                              context,
+                              index,
+                            ) {
+                              final schedule = todaySchedules[index];
+                              final isAnimating =
+                                  _animatingScheduleId == schedule.id;
+
+                              return ScheduleCard(
+                                schedule: schedule,
+                                onEdit: () => _editSchedule(schedule),
+                                onDelete: () => _deleteSchedule(schedule),
+                                isAnimating: isAnimating,
+                                popAnimation:
+                                    isAnimating ? _popAnimation : null,
+                              );
+                            }, childCount: todaySchedules.length),
+                          ),
+                        ),
+
+                    // 最下部の余白
+                    const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+                  ],
+                ),
+              // 件数バッジ（左上、スクリーン基準）
+              if (!isLoading)
+                CountBadge(
+                  count:
+                      _calendarFormat == CalendarFormat.month
+                          ? _getSchedulesForMonth(
+                            _focusedDate,
+                            allSchedules,
+                          ).length
+                          : _getSchedulesForWeek(
+                            _focusedDate,
+                            allSchedules,
+                          ).length,
+                  icon: Icons.calendar_today,
+                  top: 4,
+                  bottom: null,
+                ),
+            ],
+          ),
         );
       },
     );
