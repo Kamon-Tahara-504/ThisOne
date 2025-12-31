@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 class LocalDatabaseService {
   static Database? _database;
   static const String _databaseName = 'thisone.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 3;
 
   /// データベースインスタンスを取得
   ///
@@ -45,6 +45,7 @@ class LocalDatabaseService {
     await _createTasksTable(db);
     await _createSchedulesTable(db);
     await _createUserProfilesTable(db);
+    await _createScheduleTemplatesTable(db);
   }
 
   /// データベースアップグレード時の処理
@@ -53,6 +54,9 @@ class LocalDatabaseService {
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await _createUserProfilesTable(db);
+    }
+    if (oldVersion < 3) {
+      await _createScheduleTemplatesTable(db);
     }
   }
 
@@ -164,6 +168,36 @@ class LocalDatabaseService {
     );
     await db.execute(
       'CREATE INDEX idx_schedules_is_deleted ON schedules(is_deleted)',
+    );
+  }
+
+  /// スケジュールテンプレートテーブルを作成
+  ///
+  /// スケジュールテンプレートデータを保存するテーブル
+  Future<void> _createScheduleTemplatesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS schedule_templates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        is_all_day INTEGER NOT NULL DEFAULT 0,
+        location TEXT,
+        reminder_minutes INTEGER NOT NULL DEFAULT 0,
+        color_hex TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // インデックスの作成
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_schedule_templates_user_id ON schedule_templates(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_schedule_templates_created_at ON schedule_templates(created_at)',
     );
   }
 

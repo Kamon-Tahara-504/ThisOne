@@ -12,6 +12,7 @@ class BottomNavigationBar extends StatelessWidget {
   final Function(Map<String, dynamic>) onTaskCreate;
   final Function(String, String, String) onMemoCreated;
   final VoidCallback? onScheduleCreate; // スケジュール作成コールバックを追加
+  final VoidCallback? onTemplateCreate; // テンプレート作成コールバック
 
   const BottomNavigationBar({
     super.key,
@@ -22,6 +23,7 @@ class BottomNavigationBar extends StatelessWidget {
     required this.onTaskCreate,
     required this.onMemoCreated,
     this.onScheduleCreate, // スケジュール作成コールバックを追加
+    this.onTemplateCreate, // テンプレート作成コールバック
   });
 
   @override

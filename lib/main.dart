@@ -9,6 +9,8 @@ import 'services/supabase_service.dart';
 import 'widgets/app_bars/collapsible_app_bar.dart';
 import 'widgets/overlays/account_info_overlay.dart';
 import 'widgets/navigation/bottom_navigation_bar.dart';
+import 'widgets/schedule/schedule_dialog.dart';
+import 'models/schedule_template.dart';
 import 'screens/task/task_screen.dart';
 import 'screens/schedule/schedule_screen.dart';
 import 'screens/memo/memo_screen.dart';
@@ -237,6 +239,11 @@ class _MainScreenState extends State<MainScreen> {
       _loadData().catchError((error) {
         debugPrint('MainScreen初期化時のデータ読み込みエラー: $error');
         // エラーが発生してもアプリは続行可能
+      });
+
+      // テンプレートを読み込み
+      _dataService.loadTemplates().catchError((error) {
+        debugPrint('テンプレート読み込みエラー: $error');
       });
 
       // 認証状態の変更を監視
@@ -535,7 +542,97 @@ class _MainScreenState extends State<MainScreen> {
     if (_appPageController.currentIndex ==
         AppPageController.schedulePageIndex) {
       final scheduleScreenState = _scheduleScreenKey.currentState as dynamic;
-      scheduleScreenState?.addScheduleFromExternal();
+      scheduleScreenState?.addScheduleFromExternal(
+        onTemplateEdit: _handleTemplateEdit,
+        onTemplateDelete: _handleTemplateDelete,
+        onTemplateCreate: _handleTemplateCreate,
+      );
+    }
+  }
+
+  // テンプレート作成処理
+  void _handleTemplateCreate() {
+    if (!mounted) return;
+
+    // スケジュール画面がアクティブな場合、テンプレート作成ダイアログを表示
+    if (_appPageController.currentIndex ==
+        AppPageController.schedulePageIndex) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.7),
+        builder:
+            (context) => ScheduleDialog(
+              selectedDate: DateTime.now(),
+              dataService: _dataService,
+              onTemplateAdd: (template) {
+                // テンプレート作成完了（コールバック内でダイアログが閉じられる）
+              },
+            ),
+      );
+    }
+  }
+
+  // テンプレート編集処理
+  void _handleTemplateEdit(ScheduleTemplate template) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => ScheduleDialog(
+            selectedDate: DateTime.now(),
+            dataService: _dataService,
+            editingTemplate: template,
+            onTemplateUpdate: (updatedTemplate) {
+              // テンプレート更新完了（コールバック内でダイアログが閉じられる）
+            },
+          ),
+    );
+  }
+
+  // テンプレート削除処理
+  void _handleTemplateDelete(ScheduleTemplate template) async {
+    if (!mounted) return;
+
+    // 確認ダイアログを表示
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2B2B2B),
+            title: const Text(
+              'テンプレートを削除',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              '「${template.title}」を削除しますか？',
+              style: const TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  'キャンセル',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await _dataService.deleteTemplate(template.id);
+      } catch (e) {
+        if (mounted) {
+          AppErrorHandler.handleError(context, e, operation: 'テンプレートの削除');
+        }
+      }
     }
   }
 

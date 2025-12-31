@@ -4,9 +4,11 @@ import 'supabase_service.dart';
 import '../models/task.dart';
 import '../models/memo.dart';
 import '../models/schedule.dart';
+import '../models/schedule_template.dart';
 import 'local_memo_service.dart';
 import 'local_task_service.dart';
 import 'local_schedule_service.dart';
+import 'local_schedule_template_service.dart';
 
 /// メイン画面のデータ管理を担当するクラス
 ///
@@ -17,11 +19,14 @@ class MainDataService extends ChangeNotifier {
   final LocalMemoService _localMemoService = LocalMemoService();
   final LocalTaskService _localTaskService = LocalTaskService();
   final LocalScheduleService _localScheduleService = LocalScheduleService();
+  final LocalScheduleTemplateService _localScheduleTemplateService =
+      LocalScheduleTemplateService();
 
   // データ
   final List<Task> _tasks = [];
   final List<Memo> _memos = [];
   final List<Schedule> _schedules = [];
+  final List<ScheduleTemplate> _templates = [];
 
   // 状態
   bool _isLoading = true;
@@ -36,6 +41,7 @@ class MainDataService extends ChangeNotifier {
   List<Task> get tasks => List.unmodifiable(_tasks);
   List<Memo> get memos => List.unmodifiable(_memos);
   List<Schedule> get schedules => List.unmodifiable(_schedules);
+  List<ScheduleTemplate> get templates => List.unmodifiable(_templates);
   bool get isLoading => _isLoading;
   bool get isLoadingMemos => _isLoadingMemos;
   bool get isLoadingSchedules => _isLoadingSchedules;
@@ -108,6 +114,27 @@ class MainDataService extends ChangeNotifier {
     } catch (e) {
       if (!_isDisposed) {
         _isLoadingSchedules = false;
+        notifyListeners();
+        rethrow;
+      }
+    }
+  }
+
+  /// テンプレートを読み込み
+  Future<void> loadTemplates() async {
+    if (_isDisposed) return;
+
+    try {
+      final templates = await _localScheduleTemplateService.getTemplates(
+        _userId,
+      );
+      if (!_isDisposed) {
+        _templates.clear();
+        _templates.addAll(templates);
+        notifyListeners();
+      }
+    } catch (e) {
+      if (!_isDisposed) {
         notifyListeners();
         rethrow;
       }
@@ -379,6 +406,79 @@ class MainDataService extends ChangeNotifier {
       final index = _schedules.indexWhere((item) => item.id == schedule.id);
       if (index != -1) {
         _schedules[index] = schedule.copyWith(updatedAt: DateTime.now());
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// テンプレートを追加
+  Future<ScheduleTemplate> addTemplate({
+    required String title,
+    String? description,
+    required TimeOfDay startTime,
+    TimeOfDay? endTime,
+    required bool isAllDay,
+    String? location,
+    int reminderMinutes = 0,
+    String colorHex = '#E85A3B',
+  }) async {
+    if (_isDisposed) {
+      throw StateError('MainDataService is disposed');
+    }
+
+    try {
+      final newTemplate = await _localScheduleTemplateService.addTemplate(
+        userId: _userId,
+        title: title,
+        description: description,
+        startTime: startTime,
+        endTime: endTime,
+        isAllDay: isAllDay,
+        location: location,
+        reminderMinutes: reminderMinutes,
+        colorHex: colorHex,
+      );
+
+      if (!_isDisposed) {
+        _templates.insert(0, newTemplate);
+        notifyListeners();
+      }
+      return newTemplate;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// テンプレートを更新
+  Future<void> updateTemplate(ScheduleTemplate template) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localScheduleTemplateService.updateTemplate(template);
+
+      if (_isDisposed) return;
+
+      final index = _templates.indexWhere((item) => item.id == template.id);
+      if (index != -1) {
+        _templates[index] = template.copyWith(updatedAt: DateTime.now());
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// テンプレートを削除
+  Future<void> deleteTemplate(String templateId) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localScheduleTemplateService.deleteTemplate(templateId);
+
+      if (!_isDisposed) {
+        _templates.removeWhere((template) => template.id == templateId);
         notifyListeners();
       }
     } catch (e) {
