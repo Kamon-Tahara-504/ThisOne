@@ -102,10 +102,12 @@ class _TaskDialogState extends State<TaskDialog> {
             priority: _selectedPriority,
             dueDate: _selectedDueDate,
           );
+          if (!mounted) return;
           widget.onTemplateAdd?.call(newTemplate);
           Navigator.pop(context);
           return;
         } catch (e) {
+          if (!mounted) return;
           AppErrorHandler.handleError(context, e, operation: 'テンプレート作成');
           return;
         }
@@ -123,11 +125,11 @@ class _TaskDialogState extends State<TaskDialog> {
             updatedAt: DateTime.now(),
           );
           await widget.dataService!.updateTaskTemplate(updatedTemplate);
+          if (!mounted) return;
           widget.onTemplateUpdate?.call(updatedTemplate);
-          if (mounted) {
-            Navigator.pop(context);
-          }
+          Navigator.pop(context);
         } catch (e) {
+          if (!mounted) return;
           AppErrorHandler.handleError(context, e, operation: 'テンプレート更新');
         }
         return;
