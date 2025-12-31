@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../models/schedule.dart';
+import '../../models/schedule_template.dart';
+import '../../services/main_data_service.dart';
 import '../../utils/text_selection_menu_builder.dart';
 import '../common/time_picker_bottom_sheet.dart';
 import 'notification_settings.dart';
@@ -8,12 +10,21 @@ import 'schedule_form_header.dart';
 import 'schedule_time_selector.dart';
 import 'schedule_basic_settings.dart';
 import 'schedule_form_submit_button.dart';
+import 'schedule_template_bottom_sheet.dart';
 
 class ScheduleDialog extends StatefulWidget {
   final DateTime selectedDate;
   final Function(Map<String, dynamic>)? onAdd;
   final Schedule? schedule;
   final Function(Map<String, dynamic>)? onUpdate;
+  final ScheduleTemplate? template;
+  final ScheduleTemplate? editingTemplate;
+  final MainDataService? dataService;
+  final Function(ScheduleTemplate)? onTemplateAdd;
+  final Function(ScheduleTemplate)? onTemplateUpdate;
+  final Function(ScheduleTemplate)? onTemplateEditFromSelection;
+  final Function(ScheduleTemplate)? onTemplateDeleteFromSelection;
+  final VoidCallback? onTemplateCreate;
 
   const ScheduleDialog({
     super.key,
@@ -21,6 +32,14 @@ class ScheduleDialog extends StatefulWidget {
     this.onAdd,
     this.schedule,
     this.onUpdate,
+    this.template,
+    this.editingTemplate,
+    this.dataService,
+    this.onTemplateAdd,
+    this.onTemplateUpdate,
+    this.onTemplateEditFromSelection,
+    this.onTemplateDeleteFromSelection,
+    this.onTemplateCreate,
   });
 
   @override
@@ -81,8 +100,44 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
   @override
   void initState() {
     super.initState();
+    // テンプレート編集モードの場合、その内容で初期化
+    if (widget.editingTemplate != null) {
+      final template = widget.editingTemplate!;
+      _titleController.text = template.title;
+      _descriptionController.text = template.description ?? '';
+      _locationController.text = template.location ?? '';
+      _startTime = template.startTime;
+      _endTime =
+          template.endTime ??
+          TimeOfDay(
+            hour: template.startTime.hour + 1,
+            minute: template.startTime.minute,
+          );
+      _isAllDay = template.isAllDay;
+      _selectedColorHex = template.colorHex;
+      _reminderMinutes = template.reminderMinutes;
+      _isNotificationEnabled = template.reminderMinutes > 0;
+    }
+    // テンプレートが指定されている場合、その内容で初期化（スケジュール作成時にテンプレートから初期化）
+    else if (widget.template != null) {
+      final template = widget.template!;
+      _titleController.text = template.title;
+      _descriptionController.text = template.description ?? '';
+      _locationController.text = template.location ?? '';
+      _startTime = template.startTime;
+      _endTime =
+          template.endTime ??
+          TimeOfDay(
+            hour: template.startTime.hour + 1,
+            minute: template.startTime.minute,
+          );
+      _isAllDay = template.isAllDay;
+      _selectedColorHex = template.colorHex;
+      _reminderMinutes = template.reminderMinutes;
+      _isNotificationEnabled = template.reminderMinutes > 0;
+    }
     // 編集モードの場合、既存スケジュールの値を初期値として設定
-    if (widget.schedule != null) {
+    else if (widget.schedule != null) {
       final schedule = widget.schedule!;
       _titleController.text = schedule.title;
       _descriptionController.text = schedule.description ?? '';
@@ -144,7 +199,7 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
     }
   }
 
-  void _saveSchedule() {
+  void _saveSchedule() async {
     if (_titleController.text.trim().isNotEmpty) {
       final finalReminderMinutes =
           _isCustomReminder ? _getCustomReminderMinutes() : _reminderMinutes;
@@ -152,6 +207,68 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
       final startForSave =
           _isAllDay ? const TimeOfDay(hour: 0, minute: 0) : _startTime;
       final TimeOfDay? endForSave = _isAllDay ? null : _endTime;
+
+      // テンプレート作成モード
+      if (widget.onTemplateAdd != null && widget.dataService != null) {
+        try {
+          final newTemplate = await widget.dataService!.addTemplate(
+            title: _titleController.text.trim(),
+            description:
+                _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
+            location:
+                _locationController.text.trim().isEmpty
+                    ? null
+                    : _locationController.text.trim(),
+            startTime: startForSave,
+            endTime: endForSave,
+            isAllDay: _isAllDay,
+            colorHex: _selectedColorHex,
+            reminderMinutes: _isNotificationEnabled ? finalReminderMinutes : 0,
+          );
+          widget.onTemplateAdd?.call(newTemplate);
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        } catch (e) {
+          debugPrint('テンプレート作成エラー: $e');
+        }
+        return;
+      }
+
+      // テンプレート編集モード
+      if (widget.editingTemplate != null &&
+          widget.onTemplateUpdate != null &&
+          widget.dataService != null) {
+        try {
+          final updatedTemplate = widget.editingTemplate!.copyWith(
+            title: _titleController.text.trim(),
+            description:
+                _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
+            location:
+                _locationController.text.trim().isEmpty
+                    ? null
+                    : _locationController.text.trim(),
+            startTime: startForSave,
+            endTime: endForSave,
+            isAllDay: _isAllDay,
+            colorHex: _selectedColorHex,
+            reminderMinutes: _isNotificationEnabled ? finalReminderMinutes : 0,
+            updatedAt: DateTime.now(),
+          );
+          await widget.dataService!.updateTemplate(updatedTemplate);
+          widget.onTemplateUpdate?.call(updatedTemplate);
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        } catch (e) {
+          debugPrint('テンプレート更新エラー: $e');
+        }
+        return;
+      }
 
       final scheduleData = {
         'title': _titleController.text.trim(),
@@ -223,6 +340,45 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
     );
   }
 
+  void _showTemplateSelectionBottomSheet() {
+    if (widget.dataService == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => ScheduleTemplateBottomSheet(
+            dataService: widget.dataService!,
+            onTemplateSelected: (template) {
+              _applyTemplate(template);
+            },
+            onTemplateEdit: widget.onTemplateEditFromSelection,
+            onTemplateDelete: widget.onTemplateDeleteFromSelection,
+            onTemplateCreate: widget.onTemplateCreate,
+          ),
+    );
+  }
+
+  void _applyTemplate(ScheduleTemplate template) {
+    setState(() {
+      _titleController.text = template.title;
+      _descriptionController.text = template.description ?? '';
+      _locationController.text = template.location ?? '';
+      _startTime = template.startTime;
+      _endTime =
+          template.endTime ??
+          TimeOfDay(
+            hour: template.startTime.hour + 1,
+            minute: template.startTime.minute,
+          );
+      _isAllDay = template.isAllDay;
+      _selectedColorHex = template.colorHex;
+      _reminderMinutes = template.reminderMinutes;
+      _isNotificationEnabled = template.reminderMinutes > 0;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -247,9 +403,15 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
                 // ヘッダー
                 ScheduleFormHeader(
                   selectedDate:
-                      widget.schedule?.scheduleDate ?? widget.selectedDate,
+                      widget.editingTemplate != null ||
+                              widget.onTemplateAdd != null
+                          ? null
+                          : widget.schedule?.scheduleDate ??
+                              widget.selectedDate,
                   onClose: () => Navigator.pop(context),
                   isEditMode: widget.schedule != null,
+                  isTemplateMode: widget.onTemplateAdd != null,
+                  isTemplateEditMode: widget.editingTemplate != null,
                 ),
 
                 // メインコンテンツ
@@ -275,6 +437,12 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
                                 _selectedColorHex = color;
                               });
                             },
+                            onTemplateSelect:
+                                widget.editingTemplate == null &&
+                                        widget.onTemplateAdd == null &&
+                                        widget.dataService != null
+                                    ? _showTemplateSelectionBottomSheet
+                                    : null,
                           ),
                           const SizedBox(height: 20),
 
@@ -329,7 +497,11 @@ class _ScheduleDialogState extends State<ScheduleDialog> {
                           ScheduleFormSubmitButton(
                             onPressed: _saveSchedule,
                             label:
-                                widget.schedule != null
+                                widget.editingTemplate != null
+                                    ? 'テンプレートを更新'
+                                    : widget.onTemplateAdd != null
+                                    ? 'テンプレートを作成'
+                                    : widget.schedule != null
                                     ? 'スケジュールを更新'
                                     : 'スケジュールを作成',
                           ),

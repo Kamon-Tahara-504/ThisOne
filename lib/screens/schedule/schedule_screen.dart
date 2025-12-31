@@ -5,6 +5,7 @@ import '../../widgets/schedule/schedule_card.dart';
 import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/schedule.dart';
+import '../../models/schedule_template.dart';
 import 'schedule_calendar_header.dart';
 import 'schedule_calendar.dart';
 import 'empty_schedule_state.dart';
@@ -285,17 +286,25 @@ class _ScheduleScreenState extends State<ScheduleScreen>
   }
 
   // 外部（MainScreenなど）から呼び出すためのpublicメソッド
-  void addScheduleFromExternal() {
+  void addScheduleFromExternal({
+    Function(ScheduleTemplate)? onTemplateEdit,
+    Function(ScheduleTemplate)? onTemplateDelete,
+    VoidCallback? onTemplateCreate,
+  }) {
     showDialog(
       context: context,
       barrierColor: Colors.black.withValues(alpha: 0.7),
       builder:
           (context) => ScheduleDialog(
             selectedDate: _selectedDate,
+            dataService: widget.dataService,
             onAdd: (schedule) {
               Navigator.pop(context); // ダイアログを閉じる
               _addSchedule(schedule);
             },
+            onTemplateEditFromSelection: onTemplateEdit,
+            onTemplateDeleteFromSelection: onTemplateDelete,
+            onTemplateCreate: onTemplateCreate,
           ),
     );
   }

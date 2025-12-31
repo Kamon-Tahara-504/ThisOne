@@ -9,6 +9,7 @@ class ScheduleBasicSettings extends StatelessWidget {
   final TextEditingController locationController;
   final String selectedColorHex;
   final ValueChanged<String> onColorChanged;
+  final VoidCallback? onTemplateSelect;
 
   const ScheduleBasicSettings({
     super.key,
@@ -17,6 +18,7 @@ class ScheduleBasicSettings extends StatelessWidget {
     required this.locationController,
     required this.selectedColorHex,
     required this.onColorChanged,
+    this.onTemplateSelect,
   });
 
   @override
@@ -46,11 +48,26 @@ class ScheduleBasicSettings extends StatelessWidget {
               child: TextField(
                 controller: titleController,
                 style: const TextStyle(color: Colors.white, fontSize: 16),
-                decoration: const InputDecoration(
-                  hintText: 'スケジュールのタイトルを入力...',
-                  hintStyle: TextStyle(color: Colors.grey),
+                decoration: InputDecoration(
+                  hintText: 'タイトルを入力...',
+                  hintStyle: const TextStyle(color: Colors.grey),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.all(16),
+                  contentPadding: const EdgeInsets.all(16),
+                  suffixIcon:
+                      onTemplateSelect != null
+                          ? InkWell(
+                            onTap: onTemplateSelect,
+                            borderRadius: BorderRadius.circular(24),
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                Icons.description,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          )
+                          : null,
                 ),
               ),
             ),
@@ -70,7 +87,7 @@ class ScheduleBasicSettings extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 0),
             Container(
               decoration: BoxDecoration(
                 color: const Color(0xFF3A3A3A),
