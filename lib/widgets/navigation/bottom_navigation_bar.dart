@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
+import '../../services/main_data_service.dart';
+import '../../models/task_template.dart';
 import '../task/task_dialog.dart';
 import '../memo/memo_dialog.dart';
 
@@ -13,6 +15,9 @@ class BottomNavigationBar extends StatelessWidget {
   final Function(String, String, String) onMemoCreated;
   final VoidCallback? onScheduleCreate; // スケジュール作成コールバックを追加
   final VoidCallback? onTemplateCreate; // テンプレート作成コールバック
+  final MainDataService? dataService; // タスクテンプレート用
+  final Function(TaskTemplate)? onTaskTemplateEdit; // タスクテンプレート編集
+  final Function(TaskTemplate)? onTaskTemplateDelete; // タスクテンプレート削除
 
   const BottomNavigationBar({
     super.key,
@@ -24,6 +29,9 @@ class BottomNavigationBar extends StatelessWidget {
     required this.onMemoCreated,
     this.onScheduleCreate, // スケジュール作成コールバックを追加
     this.onTemplateCreate, // テンプレート作成コールバック
+    this.dataService, // タスクテンプレート用
+    this.onTaskTemplateEdit, // タスクテンプレート編集
+    this.onTaskTemplateDelete, // タスクテンプレート削除
   });
 
   @override
@@ -157,6 +165,20 @@ class BottomNavigationBar extends StatelessWidget {
               _showCreateMemoDialog(context);
             }
           },
+          onLongPress: () {
+            // 長押しでテンプレート作成
+            if (currentIndex == 0) {
+              // タスクテンプレート作成
+              if (onTemplateCreate != null) {
+                onTemplateCreate!();
+              }
+            } else if (currentIndex == 1) {
+              // スケジュールテンプレート作成
+              if (onTemplateCreate != null) {
+                onTemplateCreate!();
+              }
+            }
+          },
           child: Container(
             width: 60, // さらに少し大きくしてはみ出し効果を強調
             height: 60,
@@ -195,10 +217,14 @@ class BottomNavigationBar extends StatelessWidget {
       barrierColor: Colors.black.withValues(alpha: 0.7),
       builder:
           (context) => TaskDialog(
+            dataService: dataService,
             onAdd: (taskData) {
               Navigator.pop(context); // ダイアログを閉じる
               onTaskCreate(taskData);
             },
+            onTemplateEditFromSelection: onTaskTemplateEdit,
+            onTemplateDeleteFromSelection: onTaskTemplateDelete,
+            onTemplateCreate: currentIndex == 0 ? onTemplateCreate : null,
           ),
     );
   }

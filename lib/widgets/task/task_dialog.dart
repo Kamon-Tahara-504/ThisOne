@@ -1,18 +1,42 @@
 import 'package:flutter/material.dart';
 import '../../models/task.dart';
+import '../../models/task_template.dart';
+import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import 'task_form_header.dart';
 import 'task_title_input.dart';
 import 'task_due_date_selector.dart';
 import 'task_priority_selector.dart';
 import 'task_form_submit_button.dart';
+import 'task_template_bottom_sheet.dart';
 
 class TaskDialog extends StatefulWidget {
   final Function(Map<String, dynamic>)? onAdd;
   final Task? task;
   final Function(Map<String, dynamic>)? onUpdate;
+  final TaskTemplate? template;
+  final TaskTemplate? editingTemplate;
+  final MainDataService? dataService;
+  final Function(TaskTemplate)? onTemplateAdd;
+  final Function(TaskTemplate)? onTemplateUpdate;
+  final Function(TaskTemplate)? onTemplateEditFromSelection;
+  final Function(TaskTemplate)? onTemplateDeleteFromSelection;
+  final VoidCallback? onTemplateCreate;
 
-  const TaskDialog({super.key, this.onAdd, this.task, this.onUpdate});
+  const TaskDialog({
+    super.key,
+    this.onAdd,
+    this.task,
+    this.onUpdate,
+    this.template,
+    this.editingTemplate,
+    this.dataService,
+    this.onTemplateAdd,
+    this.onTemplateUpdate,
+    this.onTemplateEditFromSelection,
+    this.onTemplateDeleteFromSelection,
+    this.onTemplateCreate,
+  });
 
   @override
   State<TaskDialog> createState() => _TaskDialogState();
@@ -29,8 +53,22 @@ class _TaskDialogState extends State<TaskDialog> {
     super.initState();
     // フォーカスリスナーを追加（UI更新のため）
     _titleFocusNode.addListener(_onFocusChange);
+    // テンプレート編集モードの場合、その内容で初期化
+    if (widget.editingTemplate != null) {
+      final template = widget.editingTemplate!;
+      _titleController.text = template.title;
+      _selectedPriority = template.priority;
+      _selectedDueDate = template.dueDate;
+    }
+    // テンプレートが指定されている場合、その内容で初期化（タスク作成時にテンプレートから初期化）
+    else if (widget.template != null) {
+      final template = widget.template!;
+      _titleController.text = template.title;
+      _selectedPriority = template.priority;
+      _selectedDueDate = template.dueDate;
+    }
     // 編集モードの場合、既存タスクの値を初期値として設定
-    if (widget.task != null) {
+    else if (widget.task != null) {
       final task = widget.task!;
       _titleController.text = task.title;
       _selectedPriority = task.priority;
@@ -53,8 +91,48 @@ class _TaskDialogState extends State<TaskDialog> {
     super.dispose();
   }
 
-  void _saveTask() {
+  void _saveTask() async {
     if (_titleController.text.trim().isNotEmpty) {
+      // テンプレート作成モードの場合
+      if (widget.onTemplateAdd != null && widget.dataService != null) {
+        try {
+          final newTemplate = await widget.dataService!.addTaskTemplate(
+            title: _titleController.text.trim(),
+            description: null, // タスクテンプレートには説明フィールドがないため
+            priority: _selectedPriority,
+            dueDate: _selectedDueDate,
+          );
+          widget.onTemplateAdd?.call(newTemplate);
+          Navigator.pop(context);
+          return;
+        } catch (e) {
+          AppErrorHandler.handleError(context, e, operation: 'テンプレート作成');
+          return;
+        }
+      }
+
+      // テンプレート編集モードの場合
+      if (widget.editingTemplate != null &&
+          widget.onTemplateUpdate != null &&
+          widget.dataService != null) {
+        try {
+          final updatedTemplate = widget.editingTemplate!.copyWith(
+            title: _titleController.text.trim(),
+            priority: _selectedPriority,
+            dueDate: _selectedDueDate,
+            updatedAt: DateTime.now(),
+          );
+          await widget.dataService!.updateTaskTemplate(updatedTemplate);
+          widget.onTemplateUpdate?.call(updatedTemplate);
+          if (mounted) {
+            Navigator.pop(context);
+          }
+        } catch (e) {
+          AppErrorHandler.handleError(context, e, operation: 'テンプレート更新');
+        }
+        return;
+      }
+
       final taskData = {
         'title': _titleController.text.trim(),
         'priority': _selectedPriority,
@@ -77,6 +155,34 @@ class _TaskDialogState extends State<TaskDialog> {
         operation: widget.task == null ? 'タスク追加' : 'タスク更新',
       );
     }
+  }
+
+  void _showTemplateSelectionBottomSheet() {
+    if (widget.dataService == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => TaskTemplateBottomSheet(
+            dataService: widget.dataService!,
+            onTemplateSelected: (template) {
+              _applyTemplate(template);
+            },
+            onTemplateEdit: widget.onTemplateEditFromSelection,
+            onTemplateDelete: widget.onTemplateDeleteFromSelection,
+            onTemplateCreate: widget.onTemplateCreate,
+          ),
+    );
+  }
+
+  void _applyTemplate(TaskTemplate template) {
+    setState(() {
+      _titleController.text = template.title;
+      _selectedPriority = template.priority;
+      _selectedDueDate = template.dueDate;
+    });
   }
 
   @override
@@ -104,6 +210,8 @@ class _TaskDialogState extends State<TaskDialog> {
                 TaskFormHeader(
                   onClose: () => Navigator.pop(context),
                   isEditMode: widget.task != null,
+                  isTemplateMode: widget.onTemplateAdd != null,
+                  isTemplateEditMode: widget.editingTemplate != null,
                 ),
 
                 // メインコンテンツ
@@ -126,6 +234,12 @@ class _TaskDialogState extends State<TaskDialog> {
                           TaskTitleInput(
                             titleController: _titleController,
                             titleFocusNode: _titleFocusNode,
+                            onTemplateSelect:
+                                widget.editingTemplate == null &&
+                                        widget.onTemplateAdd == null &&
+                                        widget.dataService != null
+                                    ? _showTemplateSelectionBottomSheet
+                                    : null,
                           ),
                           const SizedBox(height: 16),
 
@@ -159,7 +273,14 @@ class _TaskDialogState extends State<TaskDialog> {
                           // 作成/更新ボタン
                           TaskFormSubmitButton(
                             onPressed: _saveTask,
-                            label: widget.task != null ? 'タスクを更新' : 'タスクを作成',
+                            label:
+                                widget.editingTemplate != null
+                                    ? 'テンプレートを更新'
+                                    : widget.onTemplateAdd != null
+                                    ? 'テンプレートを作成'
+                                    : widget.task != null
+                                    ? 'タスクを更新'
+                                    : 'タスクを作成',
                           ),
                         ],
                       ),

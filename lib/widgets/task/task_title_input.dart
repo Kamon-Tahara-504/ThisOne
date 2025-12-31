@@ -4,11 +4,13 @@ import '../../utils/text_selection_menu_builder.dart';
 class TaskTitleInput extends StatelessWidget {
   final TextEditingController titleController;
   final FocusNode titleFocusNode;
+  final VoidCallback? onTemplateSelect;
 
   const TaskTitleInput({
     super.key,
     required this.titleController,
     required this.titleFocusNode,
+    this.onTemplateSelect,
   });
 
   @override
@@ -35,11 +37,26 @@ class TaskTitleInput extends StatelessWidget {
             controller: titleController,
             focusNode: titleFocusNode,
             style: const TextStyle(color: Colors.white, fontSize: 16),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'タスクのタイトルを入力...',
-              hintStyle: TextStyle(color: Colors.grey),
+              hintStyle: const TextStyle(color: Colors.grey),
               border: InputBorder.none,
-              contentPadding: EdgeInsets.all(16),
+              contentPadding: const EdgeInsets.all(16),
+              suffixIcon:
+                  onTemplateSelect != null
+                      ? InkWell(
+                        onTap: onTemplateSelect,
+                        borderRadius: BorderRadius.circular(24),
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.checklist,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                      )
+                      : null,
             ),
             contextMenuBuilder: nativeTextSelectionMenuBuilder,
           ),

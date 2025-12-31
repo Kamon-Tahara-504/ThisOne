@@ -5,10 +5,12 @@ import '../models/task.dart';
 import '../models/memo.dart';
 import '../models/schedule.dart';
 import '../models/schedule_template.dart';
+import '../models/task_template.dart';
 import 'local_memo_service.dart';
 import 'local_task_service.dart';
 import 'local_schedule_service.dart';
 import 'local_schedule_template_service.dart';
+import 'local_task_template_service.dart';
 
 /// メイン画面のデータ管理を担当するクラス
 ///
@@ -21,12 +23,15 @@ class MainDataService extends ChangeNotifier {
   final LocalScheduleService _localScheduleService = LocalScheduleService();
   final LocalScheduleTemplateService _localScheduleTemplateService =
       LocalScheduleTemplateService();
+  final LocalTaskTemplateService _localTaskTemplateService =
+      LocalTaskTemplateService();
 
   // データ
   final List<Task> _tasks = [];
   final List<Memo> _memos = [];
   final List<Schedule> _schedules = [];
   final List<ScheduleTemplate> _templates = [];
+  final List<TaskTemplate> _taskTemplates = [];
 
   // 状態
   bool _isLoading = true;
@@ -42,6 +47,7 @@ class MainDataService extends ChangeNotifier {
   List<Memo> get memos => List.unmodifiable(_memos);
   List<Schedule> get schedules => List.unmodifiable(_schedules);
   List<ScheduleTemplate> get templates => List.unmodifiable(_templates);
+  List<TaskTemplate> get taskTemplates => List.unmodifiable(_taskTemplates);
   bool get isLoading => _isLoading;
   bool get isLoadingMemos => _isLoadingMemos;
   bool get isLoadingSchedules => _isLoadingSchedules;
@@ -131,6 +137,27 @@ class MainDataService extends ChangeNotifier {
       if (!_isDisposed) {
         _templates.clear();
         _templates.addAll(templates);
+        notifyListeners();
+      }
+    } catch (e) {
+      if (!_isDisposed) {
+        notifyListeners();
+        rethrow;
+      }
+    }
+  }
+
+  /// タスクテンプレートを読み込み
+  Future<void> loadTaskTemplates() async {
+    if (_isDisposed) return;
+
+    try {
+      final taskTemplates = await _localTaskTemplateService.getTemplates(
+        _userId,
+      );
+      if (!_isDisposed) {
+        _taskTemplates.clear();
+        _taskTemplates.addAll(taskTemplates);
         notifyListeners();
       }
     } catch (e) {
@@ -479,6 +506,71 @@ class MainDataService extends ChangeNotifier {
 
       if (!_isDisposed) {
         _templates.removeWhere((template) => template.id == templateId);
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// タスクテンプレートを追加
+  Future<TaskTemplate> addTaskTemplate({
+    required String title,
+    String? description,
+    required TaskPriority priority,
+    DateTime? dueDate,
+  }) async {
+    if (_isDisposed) {
+      throw StateError('MainDataService is disposed');
+    }
+
+    try {
+      final newTemplate = await _localTaskTemplateService.addTemplate(
+        userId: _userId,
+        title: title,
+        description: description,
+        priority: priority,
+        dueDate: dueDate,
+      );
+
+      if (!_isDisposed) {
+        _taskTemplates.insert(0, newTemplate);
+        notifyListeners();
+      }
+      return newTemplate;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// タスクテンプレートを更新
+  Future<void> updateTaskTemplate(TaskTemplate template) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localTaskTemplateService.updateTemplate(template);
+
+      if (_isDisposed) return;
+
+      final index = _taskTemplates.indexWhere((item) => item.id == template.id);
+      if (index != -1) {
+        _taskTemplates[index] = template.copyWith(updatedAt: DateTime.now());
+        notifyListeners();
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// タスクテンプレートを削除
+  Future<void> deleteTaskTemplate(String templateId) async {
+    if (_isDisposed) return;
+
+    try {
+      await _localTaskTemplateService.deleteTemplate(templateId);
+
+      if (!_isDisposed) {
+        _taskTemplates.removeWhere((template) => template.id == templateId);
         notifyListeners();
       }
     } catch (e) {

@@ -4,11 +4,15 @@ import '../../gradients.dart';
 class TaskFormHeader extends StatelessWidget {
   final VoidCallback onClose;
   final bool isEditMode;
+  final bool isTemplateMode;
+  final bool isTemplateEditMode;
 
   const TaskFormHeader({
     super.key,
     required this.onClose,
     this.isEditMode = false,
+    this.isTemplateMode = false,
+    this.isTemplateEditMode = false,
   });
 
   @override
@@ -24,7 +28,13 @@ class TaskFormHeader extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            isEditMode ? 'タスク編集' : 'タスク作成',
+            isTemplateEditMode
+                ? 'テンプレート編集'
+                : isTemplateMode
+                    ? 'テンプレート作成'
+                    : isEditMode
+                        ? 'タスク編集'
+                        : 'タスク作成',
             style: const TextStyle(
               color: Colors.white,
               fontSize: 24,

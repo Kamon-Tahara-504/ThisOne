@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 class LocalDatabaseService {
   static Database? _database;
   static const String _databaseName = 'thisone.db';
-  static const int _databaseVersion = 3;
+  static const int _databaseVersion = 4;
 
   /// データベースインスタンスを取得
   ///
@@ -46,6 +46,7 @@ class LocalDatabaseService {
     await _createSchedulesTable(db);
     await _createUserProfilesTable(db);
     await _createScheduleTemplatesTable(db);
+    await _createTaskTemplatesTable(db);
   }
 
   /// データベースアップグレード時の処理
@@ -57,6 +58,9 @@ class LocalDatabaseService {
     }
     if (oldVersion < 3) {
       await _createScheduleTemplatesTable(db);
+    }
+    if (oldVersion < 4) {
+      await _createTaskTemplatesTable(db);
     }
   }
 
@@ -198,6 +202,32 @@ class LocalDatabaseService {
     );
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_schedule_templates_created_at ON schedule_templates(created_at)',
+    );
+  }
+
+  /// タスクテンプレートテーブルを作成
+  ///
+  /// タスクテンプレートデータを保存するテーブル
+  Future<void> _createTaskTemplatesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_templates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        priority INTEGER NOT NULL DEFAULT 0,
+        due_date TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // インデックスの作成
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_templates_user_id ON task_templates(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_templates_created_at ON task_templates(created_at)',
     );
   }
 
