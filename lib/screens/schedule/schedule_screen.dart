@@ -10,7 +10,6 @@ import 'schedule_calendar_header.dart';
 import 'schedule_calendar.dart';
 import 'empty_schedule_state.dart';
 import 'schedule_list_title.dart';
-import '../../widgets/common/count_badge.dart';
 
 class ScheduleScreen extends StatefulWidget {
   final ScrollController? scrollController;
@@ -124,69 +123,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
         schedule.scheduleDate.day,
       );
       return scheduleDate == normalizedDate;
-    }).toList();
-  }
-
-  /// 指定された月の範囲内のスケジュールを取得
-  List<Schedule> _getSchedulesForMonth(
-    DateTime focusedDate,
-    List<Schedule> allSchedules,
-  ) {
-    final monthStart = DateTime(focusedDate.year, focusedDate.month, 1);
-    final monthEnd = DateTime(focusedDate.year, focusedDate.month + 1, 0);
-    final normalizedMonthStart = DateTime(
-      monthStart.year,
-      monthStart.month,
-      monthStart.day,
-    );
-    final normalizedMonthEnd = DateTime(
-      monthEnd.year,
-      monthEnd.month,
-      monthEnd.day,
-    );
-
-    return allSchedules.where((schedule) {
-      final scheduleDate = DateTime(
-        schedule.scheduleDate.year,
-        schedule.scheduleDate.month,
-        schedule.scheduleDate.day,
-      );
-      return (scheduleDate.isAfter(normalizedMonthStart) ||
-              scheduleDate.isAtSameMomentAs(normalizedMonthStart)) &&
-          (scheduleDate.isBefore(normalizedMonthEnd) ||
-              scheduleDate.isAtSameMomentAs(normalizedMonthEnd));
-    }).toList();
-  }
-
-  /// 指定された週の範囲内のスケジュールを取得（月曜日始まり）
-  List<Schedule> _getSchedulesForWeek(
-    DateTime focusedDate,
-    List<Schedule> allSchedules,
-  ) {
-    final weekday = focusedDate.weekday; // 1=月曜日, 7=日曜日
-    final weekStart = focusedDate.subtract(Duration(days: weekday - 1));
-    final weekEnd = weekStart.add(const Duration(days: 6));
-    final normalizedWeekStart = DateTime(
-      weekStart.year,
-      weekStart.month,
-      weekStart.day,
-    );
-    final normalizedWeekEnd = DateTime(
-      weekEnd.year,
-      weekEnd.month,
-      weekEnd.day,
-    );
-
-    return allSchedules.where((schedule) {
-      final scheduleDate = DateTime(
-        schedule.scheduleDate.year,
-        schedule.scheduleDate.month,
-        schedule.scheduleDate.day,
-      );
-      return (scheduleDate.isAfter(normalizedWeekStart) ||
-              scheduleDate.isAtSameMomentAs(normalizedWeekStart)) &&
-          (scheduleDate.isBefore(normalizedWeekEnd) ||
-              scheduleDate.isAtSameMomentAs(normalizedWeekEnd));
     }).toList();
   }
 
@@ -447,23 +383,6 @@ class _ScheduleScreenState extends State<ScheduleScreen>
                     // 最下部の余白
                     const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
                   ],
-                ),
-              // 件数バッジ（左上、スクリーン基準）
-              if (!isLoading)
-                CountBadge(
-                  count:
-                      _calendarFormat == CalendarFormat.month
-                          ? _getSchedulesForMonth(
-                            _focusedDate,
-                            allSchedules,
-                          ).length
-                          : _getSchedulesForWeek(
-                            _focusedDate,
-                            allSchedules,
-                          ).length,
-                  icon: Icons.calendar_today,
-                  top: 4,
-                  bottom: null,
                 ),
             ],
           ),
