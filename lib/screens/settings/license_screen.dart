@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import '../../widgets/settings/tappable_settings_card.dart';
 
 /// ライセンス情報画面（カスタム）
 ///
@@ -232,15 +233,9 @@ class _LicenseScreenState extends State<LicenseScreen> {
                             ...(_packageLicenseCounts.entries.toList()
                                   ..sort((a, b) => a.key.compareTo(b.key)))
                                 .map((entry) {
-                                  return Container(
+                                  return TappableSettingsCard(
                                     margin: const EdgeInsets.only(bottom: 8),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF3A3A3A),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.grey[700]!,
-                                      ),
-                                    ),
+                                    onTap: () => _showLicenseDetail(entry.key),
                                     child: ListTile(
                                       title: Text(
                                         entry.key,
@@ -268,8 +263,7 @@ class _LicenseScreenState extends State<LicenseScreen> {
                                           ),
                                         ],
                                       ),
-                                      onTap:
-                                          () => _showLicenseDetail(entry.key),
+                                      enableFeedback: false,
                                     ),
                                   );
                                 }),
