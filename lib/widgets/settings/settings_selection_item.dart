@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import 'tappable_settings_card.dart';
 
 /// 設定画面で使用する選択肢付き設定項目ウィジェット
 ///
@@ -29,13 +30,8 @@ class SettingsSelectionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
+    return TappableSettingsCard(
+      onTap: enabled ? onTap : null,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -80,7 +76,7 @@ class SettingsSelectionItem extends StatelessWidget {
             ),
           ],
         ),
-        onTap: enabled ? onTap : null,
+        enableFeedback: false,
       ),
     );
   }
