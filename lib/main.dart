@@ -292,6 +292,15 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  /// ページ変更時の処理（ヘッダーリセットを含む）
+  void _handlePageChanged(int pageIndex) {
+    // 既存のページ管理ロジックを実行
+    _appPageController.onPageChanged(pageIndex);
+
+    // ヘッダーをリセット（新しい画面に遷移した際に常に表示状態に戻す）
+    _headerController.reset();
+  }
+
   // AccountInfoOverlayの遅延初期化
   AccountInfoOverlay get accountInfoOverlay {
     _accountInfoOverlay ??= AccountInfoOverlay(
@@ -465,7 +474,7 @@ class _MainScreenState extends State<MainScreen> {
                 controller: _appPageController.pageController,
                 physics:
                     const PageScrollPhysics(), // 標準のPageScrollPhysicsでページスナップを確実にする
-                onPageChanged: _appPageController.onPageChanged,
+                onPageChanged: _handlePageChanged,
                 children: pages,
               ),
             ),
