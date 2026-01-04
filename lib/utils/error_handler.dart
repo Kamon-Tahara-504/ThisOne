@@ -12,14 +12,13 @@ class AppErrorHandler {
     dynamic error, {
     String? operation,
     VoidCallback? onRetry,
-    bool showSnackBar = true,
   }) {
     final appError = _convertToAppError(error, operation);
 
     // デバッグ用ログ出力
     NetworkUtils.logError(error, operation: operation);
 
-    if (showSnackBar && context.mounted) {
+    if (context.mounted) {
       showErrorBanner(context, appError, onRetry: onRetry);
     }
   }
