@@ -85,22 +85,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('設定を変更しました'),
-          backgroundColor: Color(0xFFE85A3B),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppErrorHandler.showSuccess(context, '設定を変更しました');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
+      if (!mounted) return;
+      AppErrorHandler.handleError(context, e, operation: '設定の保存');
     }
   }
 
@@ -115,22 +103,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('設定を変更しました'),
-          backgroundColor: Color(0xFFE85A3B),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppErrorHandler.showSuccess(context, '設定を変更しました');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
+      if (!mounted) return;
+      AppErrorHandler.handleError(context, e, operation: '設定の保存');
     }
   }
 
