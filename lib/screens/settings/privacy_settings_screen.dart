@@ -483,8 +483,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey[700]!),
                               ),
-                              child: SwitchListTile(
-                                secondary: Container(
+                              child: ListTile(
+                                leading: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     gradient: createOrangeYellowGradient(),
@@ -511,26 +511,29 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                     fontSize: 14,
                                   ),
                                 ),
-                                value: _autoArchiveOldMemos,
-                                onChanged: _updateAutoArchiveSetting,
-                                thumbColor: WidgetStateProperty.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return const Color(0xFFE85A3B);
-                                  }
-                                  return Colors.grey[400];
-                                }),
-                                trackColor: WidgetStateProperty.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return const Color(
-                                      0xFFE85A3B,
-                                    ).withValues(alpha: 0.3);
-                                  }
-                                  return Colors.grey[700];
-                                }),
+                                trailing: Switch(
+                                  value: _autoArchiveOldMemos,
+                                  onChanged: _updateAutoArchiveSetting,
+                                  thumbColor: WidgetStateProperty.resolveWith((
+                                    states,
+                                  ) {
+                                    if (states.contains(WidgetState.selected)) {
+                                      return const Color(0xFFE85A3B);
+                                    }
+                                    return Colors.grey[400];
+                                  }),
+                                  trackColor: WidgetStateProperty.resolveWith((
+                                    states,
+                                  ) {
+                                    if (states.contains(WidgetState.selected)) {
+                                      return const Color(
+                                        0xFFE85A3B,
+                                      ).withValues(alpha: 0.3);
+                                    }
+                                    return Colors.grey[700];
+                                  }),
+                                ),
+                                enableFeedback: false,
                               ),
                             ),
 

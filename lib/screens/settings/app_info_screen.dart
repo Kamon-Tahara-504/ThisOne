@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../gradients.dart';
 import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import '../../widgets/settings/tappable_settings_card.dart';
 import 'terms_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'license_screen.dart';
@@ -452,13 +453,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
+    return TappableSettingsCard(
+      onTap: onTap,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -485,7 +481,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           color: Colors.grey[500],
           size: 16,
         ),
-        onTap: onTap,
+        enableFeedback: false,
       ),
     );
   }
