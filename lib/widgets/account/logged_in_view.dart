@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
 import '../../utils/text_selection_menu_builder.dart';
 import '../../utils/phone_validator.dart';
+import '../../utils/error_handler.dart';
 import 'account_info_item.dart';
 import 'logout_dialog.dart';
 import '../../services/supabase_service.dart';
@@ -153,31 +155,101 @@ class LoggedInView extends StatelessWidget {
           const SizedBox(height: 32),
 
           // ログアウトボタン
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              leading: Icon(Icons.logout, color: Colors.red[400]),
-              title: Text(
-                'ログアウト',
-                style: TextStyle(
-                  color: Colors.red[400],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                showLogoutDialog(
-                  context: context,
-                  supabaseService: SupabaseService(),
-                  onLogoutSuccess: onLogout,
-                );
-              },
-            ),
+          _AccountActionButton(
+            icon: Icons.logout,
+            label: 'ログアウト',
+            onTap: () {
+              showLogoutDialog(
+                context: context,
+                supabaseService: SupabaseService(),
+                onLogoutSuccess: onLogout,
+              );
+            },
+          ),
+
+          // アカウント削除ボタン
+          _AccountActionButton(
+            icon: Icons.person_remove,
+            label: 'アカウント削除',
+            onTap: () => _openDeleteAccountPage(context),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _openDeleteAccountPage(BuildContext context) async {
+    final uri = Uri.parse(
+      'https://kamon-tahara-504.github.io/ThisOne-Web/delete-account',
+    );
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppErrorHandler.handleError(context, e, operation: 'アカウント削除');
+      }
+    }
+  }
+}
+
+/// アカウント情報のメールアドレス・電話番号ボックスと同じ大きさのアクションボタン
+class _AccountActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _AccountActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3A3A3A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: Colors.red[400], size: 20),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.red[400],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
