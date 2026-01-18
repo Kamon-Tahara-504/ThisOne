@@ -99,16 +99,14 @@ Deno.serve(async (req) => {
 
   const userId = user.id;
 
-  // ユーザー関連テーブルのデータを削除
-  const tables = [
+  // ユーザー関連テーブルのデータを削除（user_idカラムを持つテーブル）
+  const userIdTables = [
     "tasks",
     "memos",
     "schedules",
-    "user_profiles",
-    "user_settings",
   ];
 
-  for (const table of tables) {
+  for (const table of userIdTables) {
     const { error } = await supabaseAdmin
       .from(table)
       .delete()
@@ -118,6 +116,17 @@ Deno.serve(async (req) => {
       console.error(`Error deleting from ${table}:`, error);
       // エラーがあっても続行
     }
+  }
+
+  // usersテーブルのデータを削除（auth_idカラムを使用）
+  const { error: usersDeleteError } = await supabaseAdmin
+    .from("users")
+    .delete()
+    .eq("auth_id", userId);
+
+  if (usersDeleteError) {
+    console.error("Error deleting from users:", usersDeleteError);
+    // エラーがあっても続行
   }
 
   // Auth ユーザーを削除

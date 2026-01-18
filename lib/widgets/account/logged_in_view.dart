@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../utils/text_selection_menu_builder.dart';
+import '../../utils/phone_validator.dart';
 import 'account_info_item.dart';
 import 'logout_dialog.dart';
 import '../../services/supabase_service.dart';
@@ -12,6 +13,7 @@ class LoggedInView extends StatelessWidget {
   final TextEditingController displayNameController;
   final TextEditingController phoneController;
   final VoidCallback onLogout;
+  final String? phoneErrorText;
 
   const LoggedInView({
     super.key,
@@ -21,6 +23,7 @@ class LoggedInView extends StatelessWidget {
     required this.displayNameController,
     required this.phoneController,
     required this.onLogout,
+    this.phoneErrorText,
   });
 
   @override
@@ -126,11 +129,15 @@ class LoggedInView extends StatelessWidget {
                 isEditing
                     ? null
                     : (userProfile?['phone_number']?.isEmpty == false
-                        ? userProfile!['phone_number']
+                        ? PhoneValidator.format(userProfile!['phone_number'])
                         : '未設定'),
             isEditable: true,
             isEditing: isEditing,
             controller: isEditing ? phoneController : null,
+            hintText: '例: 090-1234-5678',
+            keyboardType: TextInputType.phone,
+            inputFormatters: [PhoneInputFormatter()],
+            errorText: phoneErrorText,
           ),
 
           // ログイン済み表示
