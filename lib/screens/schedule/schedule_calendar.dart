@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:holiday_jp/holiday_jp.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../gradients.dart';
 import '../../models/schedule.dart';
@@ -81,10 +82,12 @@ class ScheduleCalendar extends StatelessWidget {
           );
         },
 
-        // 通常の日付ビルダー（土曜日と日曜日の色を変更）
+        // 通常の日付ビルダー（祝日＝赤、土曜＝青、日曜＝赤、平日＝白）
         defaultBuilder: (context, day, focusedDay) {
           Color textColor;
-          if (day.weekday == 6) {
+          if (isHoliday(day)) {
+            textColor = Colors.red; // 日本の祝日
+          } else if (day.weekday == 6) {
             textColor = Colors.blue; // 土曜日
           } else if (day.weekday == 7) {
             textColor = Colors.red; // 日曜日
@@ -96,7 +99,7 @@ class ScheduleCalendar extends StatelessWidget {
           );
         },
 
-        // 今日の日付ビルダー
+        // 今日の日付ビルダー（祝日なら文字を赤に）
         todayBuilder: (context, day, focusedDay) {
           return Container(
             margin: const EdgeInsets.all(4),
@@ -107,8 +110,8 @@ class ScheduleCalendar extends StatelessWidget {
             child: Center(
               child: Text(
                 day.day.toString(),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: isHoliday(day) ? Colors.red : Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -116,10 +119,12 @@ class ScheduleCalendar extends StatelessWidget {
           );
         },
 
-        // 前月・次月の日付ビルダー
+        // 前月・次月の日付ビルダー（祝日＝赤・薄、土/日/平日も薄く）
         outsideBuilder: (context, day, focusedDay) {
           Color textColor;
-          if (day.weekday == 6) {
+          if (isHoliday(day)) {
+            textColor = Colors.red.withValues(alpha: 0.6); // 祝日
+          } else if (day.weekday == 6) {
             textColor = Colors.blue.withValues(alpha: 0.4); // 土曜日
           } else if (day.weekday == 7) {
             textColor = Colors.red.withValues(alpha: 0.4); // 日曜日
@@ -133,6 +138,7 @@ class ScheduleCalendar extends StatelessWidget {
 
         selectedBuilder: (context, day, focusedDay) {
           final isToday = isSameDay(day, DateTime.now());
+          final holidayColor = isHoliday(day) ? Colors.red : Colors.white;
 
           return Container(
             margin: const EdgeInsets.all(4),
@@ -157,8 +163,8 @@ class ScheduleCalendar extends StatelessWidget {
                         child: Center(
                           child: Text(
                             day.day.toString(),
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: holidayColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -167,8 +173,8 @@ class ScheduleCalendar extends StatelessWidget {
                       : Center(
                         child: Text(
                           day.day.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: holidayColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
