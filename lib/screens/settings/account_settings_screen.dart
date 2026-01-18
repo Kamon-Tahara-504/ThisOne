@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
-import '../../services/local_user_service.dart';
+import '../../services/user_service.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/phone_validator.dart';
 import '../../widgets/account/not_logged_in_view.dart';
@@ -16,7 +16,7 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final SupabaseService _supabaseService = SupabaseService();
-  final LocalUserService _localUserService = LocalUserService();
+  final UserService _userService = UserService();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
@@ -51,12 +51,11 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         return;
       }
 
-      var profile = await _localUserService.getUser(user.id);
+      var profile = await _userService.getUser(user.id);
 
       // プロフィールが存在しない場合は初期レコードを作成
       if (profile == null) {
-        await _localUserService.upsertUser(authId: user.id);
-        profile = await _localUserService.getUser(user.id);
+        profile = await _userService.upsertUser(authId: user.id);
       }
 
       setState(() {
@@ -66,6 +65,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('_loadUserProfile error: $e');
       setState(() {
         _isLoading = false;
       });
@@ -96,7 +96,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       // 正規化された電話番号を使用（空の場合はnull）
       final phoneNumber = phoneValidation.normalizedValue;
 
-      await _localUserService.upsertUser(
+      final updatedProfile = await _userService.upsertUser(
         authId: user.id,
         displayName: displayName,
         phoneNumber: phoneNumber,
@@ -105,18 +105,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       setState(() {
         _isEditing = false;
         _phoneErrorText = null;
-        _userProfile = {
-          'auth_id': user.id,
-          'display_name': displayName,
-          'phone_number': phoneNumber,
-        };
+        _userProfile = updatedProfile;
       });
 
       if (mounted) {
         AppErrorHandler.showSuccess(context, 'プロフィールを更新しました');
       }
-
-      await _loadUserProfile();
     } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(context, e, operation: 'プロフィールの更新');
