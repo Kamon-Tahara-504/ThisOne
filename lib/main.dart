@@ -1,13 +1,18 @@
+import 'dart:io' show Platform;
 import 'dart:ui';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide BottomNavigationBar;
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_config.dart';
 import 'services/supabase_service.dart';
 import 'widgets/app_bars/collapsible_app_bar.dart';
 import 'widgets/overlays/account_info_overlay.dart';
-import 'widgets/navigation/custom_bottom_navigation_bar.dart';
+import 'widgets/navigation/bottom_navigation_bar.dart';
+import 'widgets/schedule/schedule_dialog.dart';
+import 'widgets/task/task_dialog.dart';
+import 'models/schedule_template.dart';
+import 'models/task_template.dart';
 import 'screens/task/task_screen.dart';
 import 'screens/schedule/schedule_screen.dart';
 import 'screens/memo/memo_screen.dart';
@@ -18,6 +23,7 @@ import 'controllers/header_controller.dart';
 import 'controllers/page_controller.dart';
 import 'services/main_data_service.dart';
 import 'screens/auth/unified_auth_screen.dart';
+import 'screens/auth/password_reset_screen.dart';
 
 // カスタムScrollPhysics for スワイプアニメーション速度調整
 class CustomPageScrollPhysics extends ScrollPhysics {
@@ -110,6 +116,11 @@ class MyApp extends StatelessWidget {
           backgroundColor: Color(0xFFE85A3B), // FABを程よいオレンジに
           foregroundColor: Colors.white, // FABのアイコン色
         ),
+        textSelectionTheme: TextSelectionThemeData(
+          // Androidでは青系、iOSではnull（システム標準）を使用
+          selectionHandleColor: Platform.isAndroid ? Colors.blueAccent : null,
+          cursorColor: Platform.isAndroid ? Colors.blueAccent : null,
+        ),
         // Androidシミュレーター対応：フォントファミリーを明示的に設定
         fontFamily: 'Roboto',
         useMaterial3: true,
@@ -119,8 +130,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _isPasswordRecoveryMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +153,33 @@ class AuthGate extends StatelessWidget {
             debugPrint('AuthGate StreamBuilder error: ${snapshot.error}');
             // エラーが発生しても認証画面を表示（オフライン対応）
             return const UnifiedAuthScreen();
+          }
+
+          // パスワードリカバリーイベントをチェック
+          if (snapshot.hasData) {
+            final authState = snapshot.data!;
+            if (authState.event == AuthChangeEvent.passwordRecovery) {
+              // パスワードリカバリーモードに設定
+              if (!_isPasswordRecoveryMode) {
+                _isPasswordRecoveryMode = true;
+                // 次のフレームでパスワードリセット画面に遷移
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PasswordResetScreen(
+                          onPasswordResetComplete: () {
+                            setState(() {
+                              _isPasswordRecoveryMode = false;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                });
+              }
+            }
           }
 
           try {
@@ -233,6 +278,16 @@ class _MainScreenState extends State<MainScreen> {
         // エラーが発生してもアプリは続行可能
       });
 
+      // テンプレートを読み込み
+      _dataService.loadTemplates().catchError((error) {
+        debugPrint('テンプレート読み込みエラー: $error');
+      });
+
+      // タスクテンプレートを読み込み
+      _dataService.loadTaskTemplates().catchError((error) {
+        debugPrint('タスクテンプレート読み込みエラー: $error');
+      });
+
       // 認証状態の変更を監視
       try {
         _dataService.startAuthStateListener();
@@ -270,6 +325,15 @@ class _MainScreenState extends State<MainScreen> {
       currentPageIndex: pageIndex,
       targetPageIndex: currentPageIndex,
     );
+  }
+
+  /// ページ変更時の処理（ヘッダーリセットを含む）
+  void _handlePageChanged(int pageIndex) {
+    // 既存のページ管理ロジックを実行
+    _appPageController.onPageChanged(pageIndex);
+
+    // ヘッダーをリセット（新しい画面に遷移した際に常に表示状態に戻す）
+    _headerController.reset();
   }
 
   // AccountInfoOverlayの遅延初期化
@@ -390,12 +454,20 @@ class _MainScreenState extends State<MainScreen> {
             tasks: _dataService.tasks,
             dataService: _dataService,
             scrollController: _scrollControllerManager.getScrollController(0),
+            newlyCreatedTaskId: _dataService.newlyCreatedTaskId,
+            onPopAnimationComplete: () {
+              _dataService.clearNewlyCreatedTaskId();
+            },
           ),
       // 1: カレンダー画面
       ScheduleScreen(
         key: _scheduleScreenKey,
         scrollController: _scrollControllerManager.getScrollController(1),
         dataService: _dataService,
+        newlyCreatedScheduleId: _dataService.newlyCreatedScheduleId,
+        onPopAnimationComplete: () {
+          _dataService.clearNewlyCreatedScheduleId();
+        },
       ),
       // 2: メモ画面
       _dataService.isLoadingMemos
@@ -417,6 +489,7 @@ class _MainScreenState extends State<MainScreen> {
       // 3: 設定画面
       SettingsScreen(
         scrollController: _scrollControllerManager.getScrollController(3),
+        dataService: _dataService,
       ),
     ];
 
@@ -436,7 +509,7 @@ class _MainScreenState extends State<MainScreen> {
                 controller: _appPageController.pageController,
                 physics:
                     const PageScrollPhysics(), // 標準のPageScrollPhysicsでページスナップを確実にする
-                onPageChanged: _appPageController.onPageChanged,
+                onPageChanged: _handlePageChanged,
                 children: pages,
               ),
             ),
@@ -499,7 +572,7 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: AnimatedBuilder(
         animation: _appPageController,
         builder: (context, child) {
-          return CustomBottomNavigationBar(
+          return BottomNavigationBar(
             currentIndex: _appPageController.currentIndex,
             onTabChanged: (index) => _appPageController.navigateToTab(index),
             pageController: _appPageController.pageController,
@@ -508,6 +581,10 @@ class _MainScreenState extends State<MainScreen> {
             onMemoCreated:
                 (title, mode, colorHex) => _createMemo(title, mode, colorHex),
             onScheduleCreate: _handleScheduleCreate,
+            onTemplateCreate: _handleTemplateCreate,
+            dataService: _dataService,
+            onTaskTemplateEdit: _handleTaskTemplateEdit,
+            onTaskTemplateDelete: _handleTaskTemplateDelete,
           );
         },
       ),
@@ -520,7 +597,177 @@ class _MainScreenState extends State<MainScreen> {
     if (_appPageController.currentIndex ==
         AppPageController.schedulePageIndex) {
       final scheduleScreenState = _scheduleScreenKey.currentState as dynamic;
-      scheduleScreenState?.addScheduleFromExternal();
+      scheduleScreenState?.addScheduleFromExternal(
+        onTemplateEdit: _handleTemplateEdit,
+        onTemplateDelete: _handleTemplateDelete,
+        onTemplateCreate: _handleTemplateCreate,
+      );
+    }
+  }
+
+  // テンプレート作成処理
+  void _handleTemplateCreate() {
+    if (!mounted) return;
+
+    // スケジュール画面がアクティブな場合、スケジュールテンプレート作成ダイアログを表示
+    if (_appPageController.currentIndex ==
+        AppPageController.schedulePageIndex) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.7),
+        builder:
+            (context) => ScheduleDialog(
+              selectedDate: DateTime.now(),
+              dataService: _dataService,
+              onTemplateAdd: (template) {
+                // テンプレート作成完了（コールバック内でダイアログが閉じられる）
+              },
+            ),
+      );
+    }
+    // タスク画面がアクティブな場合、タスクテンプレート作成ダイアログを表示
+    else if (_appPageController.currentIndex ==
+        AppPageController.taskPageIndex) {
+      showDialog(
+        context: context,
+        barrierColor: Colors.black.withValues(alpha: 0.7),
+        builder:
+            (context) => TaskDialog(
+              dataService: _dataService,
+              onTemplateAdd: (template) {
+                // テンプレート作成完了（コールバック内でダイアログが閉じられる）
+                // TaskDialogの_saveTask内で既にaddTaskTemplateが呼ばれているため、ここでは何もしない
+              },
+            ),
+      );
+    }
+  }
+
+  // テンプレート編集処理
+  void _handleTemplateEdit(ScheduleTemplate template) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => ScheduleDialog(
+            selectedDate: DateTime.now(),
+            dataService: _dataService,
+            editingTemplate: template,
+            onTemplateUpdate: (updatedTemplate) {
+              // テンプレート更新完了（コールバック内でダイアログが閉じられる）
+            },
+          ),
+    );
+  }
+
+  // テンプレート削除処理
+  void _handleTemplateDelete(ScheduleTemplate template) async {
+    if (!mounted) return;
+
+    // 確認ダイアログを表示
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2B2B2B),
+            title: const Text(
+              'テンプレートを削除',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              '「${template.title}」を削除しますか？',
+              style: const TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  'キャンセル',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await _dataService.deleteTemplate(template.id);
+      } catch (e) {
+        if (mounted) {
+          AppErrorHandler.handleError(context, e, operation: 'テンプレートの削除');
+        }
+      }
+    }
+  }
+
+  // タスクテンプレート編集処理
+  void _handleTaskTemplateEdit(TaskTemplate template) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => TaskDialog(
+            dataService: _dataService,
+            editingTemplate: template,
+            onTemplateUpdate: (updatedTemplate) {
+              // テンプレート更新完了（コールバック内でダイアログが閉じられる）
+              // TaskDialogの_saveTask内で既にupdateTaskTemplateが呼ばれているため、ここでは何もしない
+            },
+          ),
+    );
+  }
+
+  // タスクテンプレート削除処理
+  void _handleTaskTemplateDelete(TaskTemplate template) async {
+    if (!mounted) return;
+
+    // 確認ダイアログを表示
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2B2B2B),
+            title: const Text(
+              'テンプレートを削除',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: Text(
+              '「${template.title}」を削除しますか？',
+              style: const TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text(
+                  'キャンセル',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('削除', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await _dataService.deleteTaskTemplate(template.id);
+      } catch (e) {
+        if (mounted) {
+          AppErrorHandler.handleError(context, e, operation: 'テンプレート削除');
+        }
+      }
     }
   }
 
@@ -561,6 +808,11 @@ class ErrorApp extends StatelessWidget {
           onSurface: Colors.white,
         ),
         scaffoldBackgroundColor: const Color(0xFF2B2B2B),
+        textSelectionTheme: TextSelectionThemeData(
+          // Androidでは青系、iOSではnull（システム標準）を使用
+          selectionHandleColor: Platform.isAndroid ? Colors.blueAccent : null,
+          cursorColor: Platform.isAndroid ? Colors.blueAccent : null,
+        ),
         useMaterial3: true,
       ),
       home: Scaffold(

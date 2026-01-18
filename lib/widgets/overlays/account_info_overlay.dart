@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
-import '../../services/local_user_profile_service.dart';
+import '../../services/user_service.dart';
 import '../../screens/auth/unified_auth_screen.dart';
 import '../../screens/settings/account_settings_screen.dart';
 
@@ -9,8 +9,7 @@ class AccountInfoOverlay {
   OverlayEntry? _overlayEntry;
   final BuildContext context;
   final SupabaseService _supabaseService = SupabaseService();
-  final LocalUserProfileService _localUserProfileService =
-      LocalUserProfileService();
+  final UserService _userService = UserService();
   final VoidCallback? onTasksNeedReload;
 
   AccountInfoOverlay({required this.context, this.onTasksNeedReload});
@@ -99,7 +98,7 @@ class AccountInfoOverlay {
 
   Widget _buildAccountInfoContent(dynamic user) {
     return FutureBuilder<Map<String, dynamic>?>(
-      future: _localUserProfileService.getUserProfile(user.id),
+      future: _userService.getUser(user.id),
       builder: (context, snapshot) {
         final userProfile = snapshot.data;
 

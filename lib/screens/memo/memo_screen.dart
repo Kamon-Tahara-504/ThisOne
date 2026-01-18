@@ -4,9 +4,12 @@ import '../../gradients.dart';
 import '../../widgets/memo/memo_item_card.dart';
 import '../../widgets/memo/memo_filter.dart';
 import '../../widgets/memo/empty_memo_state.dart';
-import '../../widgets/color_palette.dart';
+import '../../widgets/memo/color_filter_bottom_sheet.dart';
+import '../../widgets/memo/memo_edit_dialog.dart';
 import '../../utils/error_handler.dart';
 import '../../models/memo.dart';
+import '../../widgets/overlays/memo_sort_overlay.dart';
+import '../../widgets/common/count_badge.dart';
 import 'memo_detail_screen.dart';
 
 class MemoScreen extends StatefulWidget {
@@ -35,9 +38,12 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
   late AnimationController _popAnimationController;
   late Animation<double> _popAnimation;
   String? _animatingMemoId; // アニメーション中のメモID
+  MemoSortOverlay? _sortOverlay;
 
   // 型安全なフィルター管理
-  MemoFilter _currentFilter = const MemoFilter();
+  MemoFilter _currentFilter = const MemoFilter(
+    sortOrder: MemoSortOrder.pinnedFirst,
+  );
 
   @override
   void initState() {
@@ -69,6 +75,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _sortOverlay?.dispose();
     _popAnimationController.dispose();
     super.dispose();
   }
@@ -93,7 +100,8 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
 
   // フィルタリングされたメモを取得（型安全版）
   List<Memo> get _filteredMemos {
-    return widget.memos.where(_currentFilter.matches).toList();
+    final filtered = widget.memos.where(_currentFilter.matches).toList();
+    return filtered.applySort(_currentFilter.sortOrder);
   }
 
   // 色フィルタリングを設定
@@ -109,7 +117,7 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
   // 色フィルタリングをクリア
   void _clearColorFilter() {
     setState(() {
-      _currentFilter = const MemoFilter();
+      _currentFilter = const MemoFilter(sortOrder: MemoSortOrder.pinnedFirst);
     });
   }
 
@@ -120,11 +128,32 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) => _ColorFilterBottomSheet(
+          (context) => ColorFilterBottomSheet(
             selectedColorFilter: _currentFilter.colorTag,
             onColorSelected: _setColorFilter,
           ),
     );
+  }
+
+  // 並び替えオーバーレイを表示
+  void _showSortOverlay() {
+    _sortOverlay?.dispose();
+    _sortOverlay = MemoSortOverlay(
+      context: context,
+      currentSortOrder: _currentFilter.sortOrder,
+      onSortChanged: (sortOrder) {
+        setState(() {
+          _currentFilter = MemoFilter(
+            mode: _currentFilter.mode,
+            colorTag: _currentFilter.colorTag,
+            isPinned: _currentFilter.isPinned,
+            searchQuery: _currentFilter.searchQuery,
+            sortOrder: sortOrder,
+          );
+        });
+      },
+    );
+    _sortOverlay!.toggle();
   }
 
   // メモを再読み込み（ローカルデータベース）
@@ -271,19 +300,17 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
     }
   }
 
-  // メモ編集ボトムシートを表示（型安全版）
+  // メモ編集ダイアログを表示
   void _editMemo(Memo memo) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
       builder:
-          (context) =>
-              _EditMemoBottomSheet(
-                memo: memo,
-                onMemoUpdated: _loadMemos,
-                dataService: widget.dataService,
-              ),
+          (context) => MemoEditDialog(
+            memo: memo,
+            onMemoUpdated: _loadMemos,
+            dataService: widget.dataService,
+          ),
     );
   }
 
@@ -326,44 +353,11 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
                   },
                 ),
               ),
-          // メモ数表示（メモリストと重なる位置）
+          // メモ数表示（左下）
+          CountBadge(count: filteredMemos.length, icon: Icons.description),
+          // 色フィルタリングボタン（sortボタンの上）
           Positioned(
-            top: 4,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF2B2B2B).withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[700]!, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.description, size: 14, color: Colors.grey[400]),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${filteredMemos.length}件',
-                    style: TextStyle(
-                      color: Colors.grey[300],
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // 色フィルタリングボタン（右下）
-          Positioned(
-            bottom: 16,
+            bottom: 80, // sortボタン（56px）+ 間隔（16px）+ マージン（8px）
             right: 16,
             child: MemoFilterWidget(
               selectedColorFilter: _currentFilter.colorTag,
@@ -371,359 +365,34 @@ class _MemoScreenState extends State<MemoScreen> with TickerProviderStateMixin {
               onClearColorFilter: _clearColorFilter,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// 色フィルタリング用のBottomSheet
-class _ColorFilterBottomSheet extends StatelessWidget {
-  final String? selectedColorFilter;
-  final Function(String?) onColorSelected;
-
-  const _ColorFilterBottomSheet({
-    required this.selectedColorFilter,
-    required this.onColorSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(
-        color: Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.palette, color: Colors.white, size: 24),
-              const SizedBox(width: 12),
-              const Text(
-                '色でメモを検索',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const Spacer(),
-              if (selectedColorFilter != null)
-                TextButton(
-                  onPressed: () {
-                    onColorSelected(null);
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    'すべて表示',
-                    style: TextStyle(color: Color(0xFFE85A3B), fontSize: 14),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '表示したいメモの色を選択してください',
-            style: TextStyle(color: Colors.grey[400], fontSize: 14),
-          ),
-          const SizedBox(height: 24),
-          // 色パレット
-          ColorPalette(
-            selectedColorHex: selectedColorFilter,
-            onColorSelected: (colorHex) {
-              onColorSelected(colorHex);
-              Navigator.pop(context);
-            },
-            showCheckIcon: true,
-            itemSize: 56.0,
-          ),
-          const SizedBox(height: 16),
-        ],
-      ),
-    );
-  }
-}
-
-// メモ編集用ボトムシート（型安全版）
-class _EditMemoBottomSheet extends StatefulWidget {
-  final Memo memo;
-  final VoidCallback onMemoUpdated;
-  final MainDataService dataService;
-
-  const _EditMemoBottomSheet({
-    required this.memo,
-    required this.onMemoUpdated,
-    required this.dataService,
-  });
-
-  @override
-  State<_EditMemoBottomSheet> createState() => _EditMemoBottomSheetState();
-}
-
-class _EditMemoBottomSheetState extends State<_EditMemoBottomSheet> {
-  late MemoMode _selectedMode;
-  late String _selectedColorHex;
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedMode = widget.memo.mode;
-    _selectedColorHex = widget.memo.colorTag;
-  }
-
-  Future<void> _saveMemoSettings() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final updatedMemo = widget.memo.copyWith(
-        mode: _selectedMode,
-        colorTag: _selectedColorHex,
-      );
-
-      await widget.dataService.updateMemo(updatedMemo);
-
-      if (mounted) {
-        Navigator.pop(context);
-        widget.onMemoUpdated();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('メモ設定を更新しました')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('設定の更新に失敗しました: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.65,
-      decoration: const BoxDecoration(
-        color: Color(0xFF2B2B2B),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        children: [
-          // ハンドル
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            width: 60,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[600],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // タイトル
-                  Row(
-                    children: [
-                      const SizedBox(width: 12),
-                      const Text(
-                        'メモ設定を編集',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // モード選択
-                  const Text(
-                    'メモの種類',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap:
-                              () =>
-                                  setState(() => _selectedMode = MemoMode.memo),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient:
-                                  _selectedMode == MemoMode.memo
-                                      ? createHorizontalOrangeYellowGradient()
-                                      : null,
-                              color:
-                                  _selectedMode == MemoMode.memo
-                                      ? null
-                                      : const Color(0xFF3A3A3A),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color:
-                                    _selectedMode == MemoMode.memo
-                                        ? Colors.transparent
-                                        : Colors.grey[600]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: const Column(
-                              children: [
-                                Icon(
-                                  Icons.edit_note,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'メモ',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap:
-                              () => setState(
-                                () => _selectedMode = MemoMode.calculator,
-                              ),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              gradient:
-                                  _selectedMode == MemoMode.calculator
-                                      ? createHorizontalOrangeYellowGradient()
-                                      : null,
-                              color:
-                                  _selectedMode == MemoMode.calculator
-                                      ? null
-                                      : const Color(0xFF3A3A3A),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color:
-                                    _selectedMode == MemoMode.calculator
-                                        ? Colors.transparent
-                                        : Colors.grey[600]!,
-                                width: 1,
-                              ),
-                            ),
-                            child: const Column(
-                              children: [
-                                Icon(
-                                  Icons.calculate,
-                                  color: Colors.white,
-                                  size: 24,
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  '計算機',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // 色選択
-                  const Text(
-                    '色ラベル',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ColorPalette(
-                    selectedColorHex: _selectedColorHex,
-                    onColorSelected:
-                        (colorHex) =>
-                            setState(() => _selectedColorHex = colorHex),
-                    showCheckIcon: true,
-                    itemSize: 50.0,
-                  ),
-
-                  const Spacer(),
-
-                  // 保存ボタン
-                  Container(
-                    width: double.infinity,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      gradient: createHorizontalOrangeYellowGradient(),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveMemoSettings,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child:
-                          _isLoading
-                              ? const CircularProgressIndicator(
-                                color: Colors.white,
-                              )
-                              : const Text(
-                                '保存',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                    ),
+          // sortボタン（右下）
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: createOrangeYellowGradient(),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: _showSortOverlay,
+                  customBorder: const CircleBorder(),
+                  child: const Center(
+                    child: Icon(Icons.sort, color: Color(0xFF2B2B2B), size: 24),
+                  ),
+                ),
               ),
             ),
           ),

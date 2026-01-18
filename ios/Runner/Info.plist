@@ -47,5 +47,18 @@
 	</array>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>このアプリは現在写真ライブラリへのアクセス機能を使用していませんが、使用しているライブラリがこの権限を参照しているため、この説明文が必要です。</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.thisone.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>thisone</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

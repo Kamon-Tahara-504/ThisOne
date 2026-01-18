@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/supabase_service.dart';
 import '../../gradients.dart';
-import 'google_signin_button.dart';
-import 'x_signin_button.dart';
-import 'disabled_auth_button.dart';
+import '../../utils/error_handler.dart';
+import '../../utils/text_selection_menu_builder.dart';
 
-class SignupPage extends StatefulWidget {
-  const SignupPage({super.key});
+/// パスワードリセット画面
+///
+/// パスワードリセットのディープリンクからアプリが起動された後に表示される画面。
+/// 新しいパスワードを入力してパスワードを更新する。
+class PasswordResetScreen extends StatefulWidget {
+  final VoidCallback? onPasswordResetComplete;
+
+  const PasswordResetScreen({super.key, this.onPasswordResetComplete});
 
   @override
-  State<SignupPage> createState() => _SignupPageState();
+  State<PasswordResetScreen> createState() => _PasswordResetScreenState();
 }
 
-class _SignupPageState extends State<SignupPage> {
-  final _emailController = TextEditingController();
+class _PasswordResetScreenState extends State<PasswordResetScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _supabaseService = SupabaseService();
@@ -24,19 +27,38 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   void dispose() {
-    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _signUpWithEmail() async {
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('パスワードが一致しません'),
-          backgroundColor: Colors.red,
-        ),
+  Future<void> _updatePassword() async {
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (password.isEmpty) {
+      AppErrorHandler.handleError(
+        context,
+        '新しいパスワードを入力してください',
+        operation: 'パスワード更新',
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      AppErrorHandler.handleError(
+        context,
+        'パスワードは6文字以上で入力してください',
+        operation: 'パスワード更新',
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      AppErrorHandler.handleError(
+        context,
+        'パスワードが一致しません',
+        operation: 'パスワード確認',
       );
       return;
     }
@@ -46,139 +68,25 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
-      final response = await _supabaseService.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      await _supabaseService.updatePassword(newPassword: password);
 
       if (mounted) {
-        if (response.user != null && response.user!.emailConfirmedAt == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('サインアップが完了しました！メールを確認してアカウントを有効化してください。'),
-              duration: Duration(seconds: 5),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('サインアップが完了しました！')));
-        }
-        Navigator.pop(context, true);
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        String errorMessage;
-        switch (error.message) {
-          case 'User already registered':
-            errorMessage = 'このメールアドレスは既に登録されています。';
-            break;
-          case 'Password should be at least 6 characters':
-            errorMessage = 'パスワードは6文字以上で入力してください。';
-            break;
-          default:
-            errorMessage = 'エラー: ${error.message}';
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
+        AppErrorHandler.showSuccess(
+          context,
+          'パスワードを更新しました。',
+          duration: const Duration(seconds: 3),
         );
+        // コールバックを呼び出し
+        widget.onPasswordResetComplete?.call();
+        // 前の画面に戻る（またはホーム画面に遷移）
+        Navigator.of(context).pop(true);
       }
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('予期しないエラーが発生しました: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _signUpWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithGoogle();
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Googleで登録しました！')));
-          Navigator.pop(context, true);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Google認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _signUpWithX() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithTwitter();
-      if (mounted) {
-        if (success) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('Xで登録しました！')));
-          Navigator.pop(context, true);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('X認証がキャンセルされました'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('X認証エラー: $error'),
-            backgroundColor: Colors.red,
-          ),
+        AppErrorHandler.handleError(
+          context,
+          error,
+          operation: 'パスワード更新',
         );
       }
     } finally {
@@ -222,7 +130,7 @@ class _SignupPageState extends State<SignupPage> {
                   const SizedBox(width: 8),
                   // タイトル
                   const Text(
-                    '新規会員登録',
+                    'パスワード再設定',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,
@@ -256,43 +164,20 @@ class _SignupPageState extends State<SignupPage> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // メールアドレス入力
-                  const Text(
-                    'メールアドレス',
+                  // 説明テキスト
+                  Text(
+                    '新しいパスワードを入力してください。',
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                      height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF3A3A3A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[600]!),
-                    ),
-                    child: TextField(
-                      controller: _emailController,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(
-                        hintText: 'example@email.com',
-                        hintStyle: TextStyle(color: Colors.grey),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(16),
-                        prefixIcon: Icon(
-                          Icons.email_outlined,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // パスワード入力
+                  // 新しいパスワード入力
                   const Text(
-                    'パスワード',
+                    '新しいパスワード',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -308,7 +193,8 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     child: TextField(
                       controller: _passwordController,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 16),
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         hintText: '6文字以上で入力',
@@ -333,6 +219,7 @@ class _SignupPageState extends State<SignupPage> {
                           },
                         ),
                       ),
+                      contextMenuBuilder: nativeTextSelectionMenuBuilder,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -355,7 +242,8 @@ class _SignupPageState extends State<SignupPage> {
                     ),
                     child: TextField(
                       controller: _confirmPasswordController,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                      style:
+                          const TextStyle(color: Colors.white, fontSize: 16),
                       obscureText: _obscureConfirmPassword,
                       decoration: InputDecoration(
                         hintText: 'パスワードを再入力',
@@ -381,11 +269,12 @@ class _SignupPageState extends State<SignupPage> {
                           },
                         ),
                       ),
+                      contextMenuBuilder: nativeTextSelectionMenuBuilder,
                     ),
                   ),
                   const SizedBox(height: 32),
 
-                  // メール登録ボタン
+                  // 更新ボタン
                   Container(
                     width: double.infinity,
                     height: 56,
@@ -394,7 +283,7 @@ class _SignupPageState extends State<SignupPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _signUpWithEmail,
+                      onPressed: _isLoading ? null : _updatePassword,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -408,7 +297,7 @@ class _SignupPageState extends State<SignupPage> {
                                 color: Colors.white,
                               )
                               : const Text(
-                                'メールアドレスで登録',
+                                'パスワードを更新',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -416,49 +305,6 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // OR区切り
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Colors.grey[600])),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'または',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: Colors.grey[600])),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // ソーシャル登録ボタン
-                  Column(
-                    children: [
-                      // Google登録 - ブランディングガイドライン準拠（開発中）
-                      DisabledAuthButton(
-                        button: GoogleSignInButton(
-                          onPressed: null, // 無効化
-                          text: "Googleで新規会員登録",
-                          borderRadius: 12.0,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // X登録 - ブランディングガイドライン準拠（開発中）
-                      DisabledAuthButton(
-                        button: XSignInButton(
-                          onPressed: null, // 無効化
-                          text: "Xで新規会員登録",
-                          borderRadius: 12.0,
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 40),
                 ],

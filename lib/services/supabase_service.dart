@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../supabase_config.dart';
 
 /// Supabase認証サービス
 ///
@@ -40,6 +41,43 @@ class SupabaseService {
     await _supabase.auth.signOut();
   }
 
+  /// パスワードリセットメールを送信
+  ///
+  /// 指定されたメールアドレスにパスワードリセット用のリンクを送信します。
+  /// リンクをタップすると、アプリがディープリンクで起動し、
+  /// 新しいパスワードを設定できます。
+  Future<void> resetPassword({required String email}) async {
+    await _supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo: SupabaseConfig.passwordResetRedirectUrl,
+    );
+  }
+
+  /// パスワードを更新
+  ///
+  /// パスワードリセットのディープリンクからアプリが起動された後、
+  /// 新しいパスワードを設定するために使用します。
+  Future<void> updatePassword({required String newPassword}) async {
+    await _supabase.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
+  /// アカウントを削除
+  ///
+  /// Supabase Functionsのdelete-accountエッジ関数を呼び出して
+  /// ユーザーのデータとAuthアカウントを削除します
+  Future<void> deleteAccount() async {
+    final response = await _supabase.functions.invoke(
+      'delete-account',
+      body: {'confirm': true},
+    );
+
+    if (response.status != 200) {
+      final errorData = response.data;
+      final errorMessage = errorData?['error'] ?? 'アカウントの削除に失敗しました';
+      throw Exception(errorMessage);
+    }
+  }
+
   /// 現在のユーザー情報を取得
   User? getCurrentUser() {
     try {
@@ -59,32 +97,6 @@ class SupabaseService {
       // エラーが発生した場合、空のストリームを返す（エラーを無視）
       // これにより、AuthGateでエラーハンドリングが可能になる
       return Stream<AuthState>.empty();
-    }
-  }
-
-  /// Google OAuthでサインイン
-  Future<bool> signInWithGoogle() async {
-    try {
-      return await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: null, // アプリ構成に応じて設定
-      );
-    } catch (e) {
-      debugPrint('Google認証エラー: $e');
-      rethrow;
-    }
-  }
-
-  /// X(Twitter) OAuthでサインイン
-  Future<bool> signInWithTwitter() async {
-    try {
-      return await _supabase.auth.signInWithOAuth(
-        OAuthProvider.twitter,
-        redirectTo: null, // アプリ構成に応じて設定
-      );
-    } catch (e) {
-      debugPrint('X認証エラー: $e');
-      rethrow;
     }
   }
 }

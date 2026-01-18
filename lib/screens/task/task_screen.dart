@@ -4,33 +4,65 @@ import '../../services/main_data_service.dart';
 import '../../utils/error_handler.dart';
 import '../../models/task.dart';
 import '../../widgets/task/task_card.dart';
+import '../../widgets/task/task_dialog.dart';
 import '../../widgets/overlays/sort_overlay.dart';
+import '../../widgets/common/count_badge.dart';
 
 class TaskScreen extends StatefulWidget {
   final List<Task>? tasks; // 型安全なTaskモデルに変更
   final MainDataService dataService;
   final ScrollController? scrollController;
+  final String? newlyCreatedTaskId;
+  final VoidCallback? onPopAnimationComplete;
 
   const TaskScreen({
     super.key,
     this.tasks,
     required this.dataService,
     this.scrollController,
+    this.newlyCreatedTaskId,
+    this.onPopAnimationComplete,
   });
 
   @override
   State<TaskScreen> createState() => _TaskScreenState();
 }
 
-class _TaskScreenState extends State<TaskScreen> {
+class _TaskScreenState extends State<TaskScreen> with TickerProviderStateMixin {
   late List<Task> _tasks; // 型安全なTaskモデルに変更
   TaskSortOrder _currentSortOrder = TaskSortOrder.createdAt;
   SortOverlay? _sortOverlay;
+  late AnimationController _popAnimationController;
+  late Animation<double> _popAnimation;
+  String? _animatingTaskId;
 
   @override
   void initState() {
     super.initState();
     _tasks = widget.tasks != null ? List.from(widget.tasks!) : [];
+
+    // ポップアニメーションコントローラー
+    _popAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _popAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _popAnimationController,
+        curve: Curves.elasticOut,
+      ),
+    );
+
+    // アニメーション完了時のリスナー
+    _popAnimationController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        setState(() {
+          _animatingTaskId = null;
+        });
+        widget.onPopAnimationComplete?.call();
+      }
+    });
   }
 
   @override
@@ -43,12 +75,26 @@ class _TaskScreenState extends State<TaskScreen> {
         _applySorting();
       });
     }
+
+    // 新しいタスクが作成された場合にアニメーションを開始
+    if (widget.newlyCreatedTaskId != null &&
+        widget.newlyCreatedTaskId != oldWidget.newlyCreatedTaskId) {
+      _startPopAnimation(widget.newlyCreatedTaskId!);
+    }
   }
 
   @override
   void dispose() {
     _sortOverlay?.dispose();
+    _popAnimationController.dispose();
     super.dispose();
+  }
+
+  void _startPopAnimation(String taskId) {
+    setState(() {
+      _animatingTaskId = taskId;
+    });
+    _popAnimationController.forward(from: 0.0);
   }
 
   void _applySorting() {
@@ -110,6 +156,54 @@ class _TaskScreenState extends State<TaskScreen> {
     }
   }
 
+  /// タスクを編集
+  void _editTask(Task task) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.7),
+      builder:
+          (context) => TaskDialog(
+            task: task,
+            onUpdate: (taskData) {
+              Navigator.pop(context);
+              _updateTask(task, taskData);
+            },
+          ),
+    );
+  }
+
+  /// タスクを更新（データベースにも保存）
+  Future<void> _updateTask(
+    Task originalTask,
+    Map<String, dynamic> taskData,
+  ) async {
+    try {
+      final updatedTask = originalTask.copyWith(
+        title: taskData['title'],
+        priority: taskData['priority'],
+        dueDate: taskData['dueDate'],
+        updatedAt: DateTime.now(),
+      );
+      await widget.dataService.updateTask(updatedTask);
+
+      if (mounted) {
+        setState(() {
+          _tasks = List<Task>.from(widget.dataService.tasks);
+          _applySorting();
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(
+          context,
+          e,
+          operation: 'タスクの更新',
+          onRetry: () => _updateTask(originalTask, taskData),
+        );
+      }
+    }
+  }
+
   void _showSortOverlay() {
     _sortOverlay?.dispose();
     _sortOverlay = SortOverlay(
@@ -133,97 +227,90 @@ class _TaskScreenState extends State<TaskScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF2B2B2B),
       resizeToAvoidBottomInset: false,
-      body: Column(
+      body: Stack(
         children: [
           // タスクリスト
-          Expanded(
-            child:
-                sortedTasks.isEmpty
-                    ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ShaderMask(
-                            shaderCallback:
-                                (bounds) => createOrangeYellowGradient()
-                                    .createShader(bounds),
-                            child: const Icon(
-                              Icons.task_alt,
-                              size: 64,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'タスクがありません',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '下部の + ボタンから新しいタスクを追加してください',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+          sortedTasks.isEmpty
+              ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ShaderMask(
+                      shaderCallback:
+                          (bounds) =>
+                              createOrangeYellowGradient().createShader(bounds),
+                      child: const Icon(
+                        Icons.task_alt,
+                        size: 64,
+                        color: Colors.white,
                       ),
-                    )
-                    : ListView.builder(
-                      controller: widget.scrollController,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: sortedTasks.length,
-                      itemBuilder: (context, index) {
-                        final task = sortedTasks[index];
-                        final originalIndex = _tasks.indexOf(task);
-                        return TaskCard(
-                          task: task,
-                          onToggleComplete: () => _toggleTask(originalIndex),
-                          onDelete: () => _deleteTask(originalIndex),
-                        );
-                      },
                     ),
-          ),
-        ],
-      ),
-      floatingActionButton:
-          sortedTasks.isNotEmpty
-              ? Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  gradient: createOrangeYellowGradient(),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+                    const SizedBox(height: 16),
+                    Text(
+                      'タスクがありません',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '下部の + ボタンから新しいタスクを追加してください',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    onTap: _showSortOverlay,
-                    customBorder: const CircleBorder(),
-                    child: const Center(
-                      child: Icon(
-                        Icons.sort,
-                        color: Color(0xFF2B2B2B),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                ),
               )
-              : null,
+              : ListView.builder(
+                controller: widget.scrollController,
+                padding: const EdgeInsets.all(16),
+                itemCount: sortedTasks.length,
+                itemBuilder: (context, index) {
+                  final task = sortedTasks[index];
+                  final originalIndex = _tasks.indexOf(task);
+                  final isAnimating = _animatingTaskId == task.id;
+                  return TaskCard(
+                    task: task,
+                    onToggleComplete: () => _toggleTask(originalIndex),
+                    onEdit: () => _editTask(task),
+                    onDelete: () => _deleteTask(originalIndex),
+                    isAnimating: isAnimating,
+                    popAnimation: isAnimating ? _popAnimation : null,
+                  );
+                },
+              ),
+          // タスク数表示（左下）
+          CountBadge(count: sortedTasks.length, icon: Icons.task_alt),
+        ],
+      ),
+      floatingActionButton: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: createOrangeYellowGradient(),
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          shape: const CircleBorder(),
+          child: InkWell(
+            onTap: _showSortOverlay,
+            customBorder: const CircleBorder(),
+            child: const Center(
+              child: Icon(Icons.sort, color: Color(0xFF2B2B2B), size: 24),
+            ),
+          ),
+        ),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }

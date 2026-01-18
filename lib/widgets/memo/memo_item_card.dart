@@ -28,6 +28,24 @@ class MemoItemCard extends StatelessWidget {
     final updatedAt = memo.updatedAt;
     final isPinned = memo.isPinned;
 
+    Widget actionButton({
+      required VoidCallback onTap,
+      required Widget icon,
+      required Color backgroundColor,
+    }) {
+      return GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: icon,
+        ),
+      );
+    }
+
     Widget memoCard = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -39,7 +57,7 @@ class MemoItemCard extends StatelessWidget {
             isAnimating
                 ? [
                   BoxShadow(
-                    color: const Color(0xFFE85A3B).withValues(alpha: 0.6),
+                    color: Colors.white.withValues(alpha: 0.6),
                     blurRadius: 20,
                     offset: const Offset(0, 5),
                   ),
@@ -79,20 +97,6 @@ class MemoItemCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          // ピン留めアイコン
-                          if (isPinned) ...[
-                            ShaderMask(
-                              shaderCallback:
-                                  (bounds) => createOrangeYellowGradient()
-                                      .createShader(bounds),
-                              child: const Icon(
-                                Icons.push_pin,
-                                size: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
                           // モード表示ラベル
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -126,33 +130,57 @@ class MemoItemCard extends StatelessWidget {
                             ),
                           ),
                           // ピン留めボタン
-                          IconButton(
-                            onPressed: onTogglePin,
-                            icon: Icon(
-                              isPinned
-                                  ? Icons.push_pin
-                                  : Icons.push_pin_outlined,
-                              color:
-                                  isPinned
-                                      ? const Color(0xFFE85A3B)
-                                      : Colors.grey[500],
-                              size: 20,
+                          actionButton(
+                            onTap: onTogglePin,
+                            backgroundColor:
+                                isPinned
+                                    ? const Color(
+                                      0xFFE85A3B,
+                                    ).withValues(alpha: 0.15)
+                                    : Colors.grey[600]!.withValues(alpha: 0.2),
+                            icon: ShaderMask(
+                              shaderCallback:
+                                  (bounds) =>
+                                      isPinned
+                                          ? createOrangeYellowGradient()
+                                              .createShader(bounds)
+                                          : LinearGradient(
+                                            colors: [
+                                              Colors.grey[400]!,
+                                              Colors.grey[400]!,
+                                            ],
+                                          ).createShader(bounds),
+                              child: Icon(
+                                isPinned
+                                    ? Icons.push_pin
+                                    : Icons.push_pin_outlined,
+                                color:
+                                    isPinned ? Colors.white : Colors.grey[300],
+                                size: 18,
+                              ),
                             ),
                           ),
-                          // 編集ボタン
-                          IconButton(
-                            onPressed: onEditMemo,
+                          const SizedBox(width: 8),
+                          actionButton(
+                            onTap: onEditMemo,
+                            backgroundColor: Colors.blue[400]!.withValues(
+                              alpha: 0.1,
+                            ),
                             icon: Icon(
                               Icons.edit_outlined,
-                              color: Colors.grey[500],
-                              size: 20,
+                              color: Colors.blue[400],
+                              size: 18,
                             ),
                           ),
-                          IconButton(
-                            onPressed: onDelete,
+                          const SizedBox(width: 8),
+                          actionButton(
+                            onTap: onDelete,
+                            backgroundColor: Colors.red[400]!.withValues(
+                              alpha: 0.1,
+                            ),
                             icon: Icon(
                               Icons.delete_outline,
-                              color: Colors.grey[500],
+                              color: Colors.red[400],
                               size: 20,
                             ),
                           ),

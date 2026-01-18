@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/settings_service.dart';
+import '../../services/main_data_service.dart';
+import '../../services/local_task_service.dart';
+import '../../services/local_memo_service.dart';
+import '../../services/local_schedule_service.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_screen.dart';
+import '../../widgets/account/account_deletion_dialog.dart';
 
 /// プライバシー設定画面
 ///
@@ -13,15 +18,14 @@ import 'terms_screen.dart';
 /// - 古いメモを自動アーカイブ（有効/無効）
 /// - 全データを削除
 /// - アカウントを完全に削除
-/// - プライバシーポリシーへのリンク
-/// - 利用規約へのリンク
 ///
 /// 画面構成:
 /// - 自動削除設定セクション
-/// - リンクセクション
 /// - 危険な操作セクション（削除系）
 class PrivacySettingsScreen extends StatefulWidget {
-  const PrivacySettingsScreen({super.key});
+  final MainDataService? dataService;
+
+  const PrivacySettingsScreen({super.key, this.dataService});
 
   @override
   State<PrivacySettingsScreen> createState() => _PrivacySettingsScreenState();
@@ -29,6 +33,10 @@ class PrivacySettingsScreen extends StatefulWidget {
 
 class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
   final SettingsService _settingsService = SettingsService();
+  final LocalTaskService _taskService = LocalTaskService();
+  final LocalMemoService _memoService = LocalMemoService();
+  final LocalScheduleService _scheduleService = LocalScheduleService();
+  final SupabaseService _supabaseService = SupabaseService();
 
   String _autoDeleteCompletedTasks = 'none';
   bool _autoArchiveOldMemos = false;
@@ -78,22 +86,10 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('設定を変更しました'),
-          backgroundColor: Color(0xFFE85A3B),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppErrorHandler.showSuccess(context, '設定を変更しました');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
+      if (!mounted) return;
+      AppErrorHandler.handleError(context, e, operation: '設定の保存');
     }
   }
 
@@ -108,23 +104,17 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('設定を変更しました'),
-          backgroundColor: Color(0xFFE85A3B),
-          duration: Duration(seconds: 1),
-        ),
-      );
+      AppErrorHandler.showSuccess(context, '設定を変更しました');
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
+      if (!mounted) return;
+      AppErrorHandler.handleError(context, e, operation: '設定の保存');
     }
+  }
+
+  /// 現在のユーザーIDを取得
+  String _getUserId() {
+    final user = _supabaseService.getCurrentUser();
+    return user?.id ?? 'local';
   }
 
   /// 全データを削除
@@ -143,25 +133,27 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     });
 
     try {
-      // TODO: 実際のデータ削除処理を実装
-      await Future.delayed(const Duration(seconds: 2));
+      final userId = _getUserId();
+
+      // タスク、メモ、スケジュールを順番に物理削除
+      await _taskService.permanentlyDeleteAllTasks(userId);
+      await _memoService.permanentlyDeleteAllMemos(userId);
+      await _scheduleService.permanentlyDeleteAllSchedules(userId);
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('全データを削除しました'),
-          backgroundColor: Color(0xFFE85A3B),
-        ),
-      );
+      // MainDataServiceが渡されている場合は再読み込み
+      if (widget.dataService != null) {
+        await widget.dataService!.loadTasks();
+        await widget.dataService!.loadMemos();
+        await widget.dataService!.loadSchedules();
+      }
+
+      if (!mounted) return;
+      AppErrorHandler.showSuccess(context, '全データを削除しました');
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('削除に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: '全データの削除');
       }
     } finally {
       setState(() {
@@ -172,50 +164,36 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   /// アカウントを完全に削除
   Future<void> _deleteAccount() async {
-    final confirmed = await _showConfirmDialog(
-      title: 'アカウントを削除',
-      message: 'アカウントとすべてのデータが完全に削除されます。\n\nこの操作は取り消せません。本当に削除しますか？',
-      confirmText: 'アカウントを削除',
-      requireDoubleConfirm: true,
-    );
-
-    if (!mounted || !confirmed) return;
-
-    setState(() {
-      _isDeletingAccount = true;
-    });
-
-    try {
-      // TODO: 実際のアカウント削除処理を実装
-      await Future.delayed(const Duration(seconds: 2));
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('アカウントを削除しました'),
-          backgroundColor: Color(0xFFE85A3B),
-        ),
-      );
-      // アカウント削除後はログイン画面に遷移
-      if (!mounted) return;
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
+    final currentUser = _supabaseService.getCurrentUser();
+    if (currentUser == null || currentUser.email == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('削除に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
+        AppErrorHandler.handleError(
+          context,
+          Exception('ユーザー情報を取得できませんでした'),
+          operation: 'アカウントの削除',
         );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isDeletingAccount = false;
-        });
-      }
+      return;
     }
+
+    await AccountDeletionDialog.showAccountDeletionDialog(
+      context: context,
+      userEmail: currentUser.email!,
+      onDeletionStart: () {
+        if (mounted) {
+          setState(() {
+            _isDeletingAccount = true;
+          });
+        }
+      },
+      onDeletionComplete: () {
+        if (mounted) {
+          setState(() {
+            _isDeletingAccount = false;
+          });
+        }
+      },
+    );
   }
 
   /// 確認ダイアログを表示
@@ -326,22 +304,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
     );
 
     return secondConfirm ?? false;
-  }
-
-  /// プライバシーポリシー画面を開く
-  void _openPrivacyPolicy() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-    );
-  }
-
-  /// 利用規約画面を開く
-  void _openTerms() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const TermsScreen()),
-    );
   }
 
   @override
@@ -506,8 +468,8 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Colors.grey[700]!),
                               ),
-                              child: SwitchListTile(
-                                secondary: Container(
+                              child: ListTile(
+                                leading: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     gradient: createOrangeYellowGradient(),
@@ -534,47 +496,30 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
                                     fontSize: 14,
                                   ),
                                 ),
-                                value: _autoArchiveOldMemos,
-                                onChanged: _updateAutoArchiveSetting,
-                                thumbColor: WidgetStateProperty.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return const Color(0xFFE85A3B);
-                                  }
-                                  return Colors.grey[400];
-                                }),
-                                trackColor: WidgetStateProperty.resolveWith((
-                                  states,
-                                ) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return const Color(
-                                      0xFFE85A3B,
-                                    ).withValues(alpha: 0.3);
-                                  }
-                                  return Colors.grey[700];
-                                }),
+                                trailing: Switch(
+                                  value: _autoArchiveOldMemos,
+                                  onChanged: _updateAutoArchiveSetting,
+                                  thumbColor: WidgetStateProperty.resolveWith((
+                                    states,
+                                  ) {
+                                    if (states.contains(WidgetState.selected)) {
+                                      return const Color(0xFFE85A3B);
+                                    }
+                                    return Colors.grey[400];
+                                  }),
+                                  trackColor: WidgetStateProperty.resolveWith((
+                                    states,
+                                  ) {
+                                    if (states.contains(WidgetState.selected)) {
+                                      return const Color(
+                                        0xFFE85A3B,
+                                      ).withValues(alpha: 0.3);
+                                    }
+                                    return Colors.grey[700];
+                                  }),
+                                ),
+                                enableFeedback: false,
                               ),
-                            ),
-
-                            const SizedBox(height: 24),
-
-                            // リンクセクション
-                            _buildSectionHeader('法的情報'),
-                            const SizedBox(height: 12),
-
-                            _buildLinkCard(
-                              icon: Icons.privacy_tip,
-                              title: 'プライバシーポリシー',
-                              subtitle: '個人情報の取り扱いについて',
-                              onTap: _openPrivacyPolicy,
-                            ),
-
-                            _buildLinkCard(
-                              icon: Icons.article,
-                              title: '利用規約',
-                              subtitle: 'サービス利用規約',
-                              onTap: _openTerms,
                             ),
 
                             const SizedBox(height: 24),
@@ -665,52 +610,6 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  /// リンクカードを構築
-  ///
-  /// [icon] アイコン
-  /// [title] タイトル
-  /// [subtitle] 説明文
-  /// [onTap] タップ時の処理
-  Widget _buildLinkCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            gradient: createOrangeYellowGradient(),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[400], fontSize: 14),
-        ),
-        trailing: Icon(Icons.open_in_new, color: Colors.grey[500], size: 16),
-        onTap: onTap,
-      ),
     );
   }
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
-import '../../widgets/auth/signup_page.dart';
+import '../../utils/error_handler.dart';
+import '../../widgets/auth/signup_bottom_sheet.dart';
 import '../../widgets/auth/login_bottom_sheet.dart';
 
 class UnifiedAuthScreen extends StatefulWidget {
@@ -11,10 +13,19 @@ class UnifiedAuthScreen extends StatefulWidget {
 }
 
 class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
-  void _navigateToSignup() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const SignupPage()),
+  void _showSignupBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      enableDrag: true,
+      isDismissible: true,
+      useSafeArea: true,
+      builder: (sheetContext) => SignupBottomSheet(
+        onSignupSuccess: () {
+          Navigator.pop(sheetContext); // ボトムシートを閉じる
+        },
+      ),
     );
   }
 
@@ -51,7 +62,7 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               alignment: Alignment.centerLeft,
               child: const Text(
-                'インストールありがとう!!',
+                'ThisOne',
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -132,7 +143,7 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
                       ],
                     ),
                     child: ElevatedButton(
-                      onPressed: _navigateToSignup,
+                      onPressed: _showSignupBottomSheet,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
@@ -146,7 +157,7 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
                           Icon(Icons.person_add, color: Colors.white, size: 22),
                           SizedBox(width: 12),
                           Text(
-                            '新規会員登録',
+                            '新規登録',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 18,
@@ -195,7 +206,22 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+
+                  // 利用規約リンク
+                  TextButton(
+                    onPressed: _openTermsOfService,
+                    child: Text(
+                      '利用規約を確認する',
+                      style: TextStyle(
+                        color: Colors.grey[400],
+                        fontSize: 14,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
 
                   // 利用規約等
                   Text(
@@ -214,5 +240,26 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openTermsOfService() async {
+    final uri =
+        Uri.parse('https://kamon-tahara-504.github.io/ThisOne-Web/terms');
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // canLaunchUrl が false でも起動を試みる（Android 11+ 等で false になることがある）
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(
+          context,
+          e,
+          operation: '利用規約表示',
+        );
+      }
+    }
   }
 }

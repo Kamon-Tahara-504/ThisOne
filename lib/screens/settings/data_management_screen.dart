@@ -3,24 +3,23 @@ import '../../gradients.dart';
 import '../../services/settings_service.dart';
 import '../../services/data_export_service.dart';
 import '../../services/data_import_service.dart';
-import '../../widgets/settings/settings_toggle_item.dart';
+import '../../services/local_task_service.dart';
+import '../../services/local_memo_service.dart';
+import '../../services/local_schedule_service.dart';
+import '../../services/supabase_service.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
 
 /// データ管理画面
 ///
 /// 機能:
-/// - 自動同期の有効/無効設定
-/// - Wi-Fi接続時のみ同期する設定
-/// - 最終同期日時の表示
-/// - 手動同期ボタン
-/// - キャッシュクリア機能
-/// - データバックアップ（手動実行）
+/// - データバックアップ（エクスポート/インポート）
+/// - データ一括削除（タスク、メモ、スケジュール）
 ///
 /// 画面構成:
-/// - 同期設定セクション（自動同期、Wi-Fi限定）
-/// - 同期状態セクション（最終同期日時、手動同期ボタン）
-/// - データ管理セクション（キャッシュクリア、バックアップ）
+/// - データ管理セクション（データ統計、エクスポート、インポート）
+/// - データ削除セクション（タスク、メモ、スケジュールの一括削除）
 class DataManagementScreen extends StatefulWidget {
   const DataManagementScreen({super.key});
 
@@ -32,17 +31,19 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   final SettingsService _settingsService = SettingsService();
   final DataExportService _exportService = DataExportService();
   final DataImportService _importService = DataImportService();
+  final LocalTaskService _taskService = LocalTaskService();
+  final LocalMemoService _memoService = LocalMemoService();
+  final LocalScheduleService _scheduleService = LocalScheduleService();
+  final SupabaseService _supabaseService = SupabaseService();
 
-  bool _autoSync = true;
-  bool _syncOnWifiOnly = false;
-  String _lastSyncTime = '';
   Map<String, int> _dataCounts = {};
 
   bool _isLoading = true;
-  bool _isSyncing = false;
-  bool _isClearingCache = false;
   bool _isExporting = false;
   bool _isImporting = false;
+  bool _isDeletingTasks = false;
+  bool _isDeletingMemos = false;
+  bool _isDeletingSchedules = false;
 
   @override
   void initState() {
@@ -54,134 +55,163 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
   Future<void> _loadSettings() async {
     await _settingsService.initialize();
 
-    final autoSync = await _settingsService.getAutoSync();
-    final syncOnWifiOnly = await _settingsService.getSyncOnWifiOnly();
-    final lastSyncTime = await _settingsService.getLastSyncTime();
     final dataCounts = await _exportService.getDataCounts();
 
     setState(() {
-      _autoSync = autoSync;
-      _syncOnWifiOnly = syncOnWifiOnly;
-      _lastSyncTime = lastSyncTime;
       _dataCounts = dataCounts;
       _isLoading = false;
     });
   }
 
-  /// 設定値を更新し、SharedPreferencesに保存する
-  ///
-  /// [key] 設定のキー
-  /// [value] 新しい値
-  /// [updateState] UIの状態を更新するコールバック
-  Future<void> _updateSetting<T>(
-    String key,
-    T value,
-    VoidCallback updateState,
-  ) async {
-    updateState();
-
-    try {
-      switch (key) {
-        case 'autoSync':
-          await _settingsService.setAutoSync(value as bool);
-          break;
-        case 'syncOnWifiOnly':
-          await _settingsService.setSyncOnWifiOnly(value as bool);
-          break;
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('設定の保存に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
-    }
+  /// 現在のユーザーIDを取得
+  String _getUserId() {
+    final user = _supabaseService.getCurrentUser();
+    return user?.id ?? 'local';
   }
 
-  /// 手動同期を実行
-  Future<void> _performSync() async {
-    setState(() {
-      _isSyncing = true;
-    });
-
-    try {
-      // TODO: 実際の同期処理を実装
-      // 現在はデモとして2秒待機
-      await Future.delayed(const Duration(seconds: 2));
-
-      final now = DateTime.now().toIso8601String();
-      await _settingsService.setLastSyncTime(now);
-
-      setState(() {
-        _lastSyncTime = now;
-      });
-
+  /// すべてのタスクを削除
+  Future<void> _deleteAllTasks() async {
+    final taskCount = _dataCounts['tasks'] ?? 0;
+    if (taskCount == 0) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('同期が完了しました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
+        AppErrorHandler.showInfo(context, '削除するタスクがありません');
       }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('同期に失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
-      }
-    } finally {
-      setState(() {
-        _isSyncing = false;
-      });
+      return;
     }
-  }
 
-  /// キャッシュをクリア
-  Future<void> _clearCache() async {
     final confirmed = await _showConfirmDialog(
-      title: 'キャッシュをクリア',
-      message: 'ローカルのキャッシュデータを削除します。\nこの操作は元に戻せません。',
-      confirmText: 'クリア',
+      title: 'すべてのタスクを削除',
+      message: 'すべてのタスク（$taskCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
       isDangerous: true,
     );
 
     if (!mounted || !confirmed) return;
 
     setState(() {
-      _isClearingCache = true;
+      _isDeletingTasks = true;
     });
 
     try {
-      // TODO: 実際のキャッシュクリア処理を実装
-      await Future.delayed(const Duration(seconds: 1));
+      final userId = _getUserId();
+      await _taskService.deleteAllTasks(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('キャッシュをクリアしました'),
-            backgroundColor: Color(0xFFE85A3B),
-          ),
-        );
+        AppErrorHandler.showSuccess(context, 'すべてのタスクを削除しました');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('キャッシュのクリアに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'タスクの削除');
       }
     } finally {
       setState(() {
-        _isClearingCache = false;
+        _isDeletingTasks = false;
+      });
+    }
+  }
+
+  /// すべてのメモを削除
+  Future<void> _deleteAllMemos() async {
+    final memoCount = _dataCounts['memos'] ?? 0;
+    if (memoCount == 0) {
+      if (mounted) {
+        AppErrorHandler.showInfo(context, '削除するメモがありません');
+      }
+      return;
+    }
+
+    final confirmed = await _showConfirmDialog(
+      title: 'すべてのメモを削除',
+      message: 'すべてのメモ（$memoCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
+      isDangerous: true,
+    );
+
+    if (!mounted || !confirmed) return;
+
+    setState(() {
+      _isDeletingMemos = true;
+    });
+
+    try {
+      final userId = _getUserId();
+      await _memoService.deleteAllMemos(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
+
+      if (mounted) {
+        AppErrorHandler.showSuccess(context, 'すべてのメモを削除しました');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(context, e, operation: 'メモの削除');
+      }
+    } finally {
+      setState(() {
+        _isDeletingMemos = false;
+      });
+    }
+  }
+
+  /// すべてのスケジュールを削除
+  Future<void> _deleteAllSchedules() async {
+    final scheduleCount = _dataCounts['schedules'] ?? 0;
+    if (scheduleCount == 0) {
+      if (mounted) {
+        AppErrorHandler.showInfo(context, '削除するスケジュールがありません');
+      }
+      return;
+    }
+
+    final confirmed = await _showConfirmDialog(
+      title: 'すべてのスケジュールを削除',
+      message: 'すべてのスケジュール（$scheduleCount件）を削除します。\nこの操作は元に戻せません。',
+      confirmText: '削除する',
+      isDangerous: true,
+    );
+
+    if (!mounted || !confirmed) return;
+
+    setState(() {
+      _isDeletingSchedules = true;
+    });
+
+    try {
+      final userId = _getUserId();
+      await _scheduleService.deleteAllSchedules(userId);
+
+      // データ統計を更新
+      final newDataCounts = await _exportService.getDataCounts();
+      if (!mounted) return;
+
+      setState(() {
+        _dataCounts = newDataCounts;
+      });
+
+      if (mounted) {
+        AppErrorHandler.showSuccess(context, 'すべてのスケジュールを削除しました');
+      }
+    } catch (e) {
+      if (mounted) {
+        AppErrorHandler.handleError(context, e, operation: 'スケジュールの削除');
+      }
+    } finally {
+      setState(() {
+        _isDeletingSchedules = false;
       });
     }
   }
@@ -212,22 +242,23 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor:
-              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-          duration: Duration(seconds: result.success ? 3 : 5),
-          action:
-              result.success && result.counts != null
-                  ? SnackBarAction(
-                    label: '詳細',
-                    textColor: Colors.white,
-                    onPressed: () => _showExportDetails(result.counts!),
-                  )
-                  : null,
-        ),
-      );
+      if (result.success) {
+        AppErrorHandler.showSuccess(context, result.message);
+        // 詳細情報がある場合は表示
+        if (result.counts != null) {
+          Future.delayed(const Duration(seconds: 1), () {
+            if (mounted) {
+              _showExportDetails(result.counts!);
+            }
+          });
+        }
+      } else {
+        AppErrorHandler.handleError(
+          context,
+          result.message,
+          operation: 'エクスポート',
+        );
+      }
 
       // 成功した場合はデータ統計を更新
       if (result.success) {
@@ -239,13 +270,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('エクスポート中に予期しないエラーが発生しました'),
-            backgroundColor: Colors.red[700],
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'エクスポート');
       }
     } finally {
       setState(() {
@@ -344,13 +369,15 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       // 進行状況ダイアログを閉じる
       Navigator.pop(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.message),
-          backgroundColor:
-              result.success ? const Color(0xFFE85A3B) : Colors.red[700],
-        ),
-      );
+      if (result.success) {
+        AppErrorHandler.showSuccess(context, result.message);
+      } else {
+        AppErrorHandler.handleError(
+          context,
+          result.message,
+          operation: 'インポート',
+        );
+      }
 
       // 成功した場合はデータ統計を更新
       if (result.success) {
@@ -365,12 +392,7 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
       if (mounted) Navigator.pop(context);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('インポートに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'インポート');
       }
     } finally {
       setState(() {
@@ -438,33 +460,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
     return result ?? false;
   }
 
-  /// 最終同期日時をフォーマットして表示
-  String _formatLastSyncTime() {
-    if (_lastSyncTime.isEmpty) {
-      return '未同期';
-    }
-
-    try {
-      final dateTime = DateTime.parse(_lastSyncTime);
-      final now = DateTime.now();
-      final difference = now.difference(dateTime);
-
-      if (difference.inMinutes < 1) {
-        return 'たった今';
-      } else if (difference.inMinutes < 60) {
-        return '${difference.inMinutes}分前';
-      } else if (difference.inHours < 24) {
-        return '${difference.inHours}時間前';
-      } else if (difference.inDays < 7) {
-        return '${difference.inDays}日前';
-      } else {
-        return '${dateTime.month}/${dateTime.day} ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
-      }
-    } catch (e) {
-      return '不明';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -525,106 +520,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 同期（設定 + 状態 統合セクション）
-                            _buildSectionHeader('同期'),
-                            const SizedBox(height: 12),
-
-                            SettingsToggleItem(
-                              icon: Icons.sync,
-                              title: '自動同期',
-                              subtitle: 'データを自動的に同期する',
-                              value: _autoSync,
-                              onChanged:
-                                  (value) =>
-                                      _updateSetting('autoSync', value, () {
-                                        setState(() {
-                                          _autoSync = value;
-                                        });
-                                      }),
-                            ),
-
-                            SettingsToggleItem(
-                              icon: Icons.wifi,
-                              title: 'Wi-Fi接続時のみ同期',
-                              subtitle: 'モバイルデータ通信を節約',
-                              value: _syncOnWifiOnly,
-                              enabled: _autoSync,
-                              onChanged:
-                                  (value) => _updateSetting(
-                                    'syncOnWifiOnly',
-                                    value,
-                                    () {
-                                      setState(() {
-                                        _syncOnWifiOnly = value;
-                                      });
-                                    },
-                                  ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // 最終同期日時表示（同期セクション内に統合）
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF3A3A3A),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      gradient: createOrangeYellowGradient(),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      Icons.access_time,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          '最終同期',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _formatLastSyncTime(),
-                                          style: TextStyle(
-                                            color: Colors.grey[400],
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            SettingsActionItem(
-                              icon: Icons.sync,
-                              title: '今すぐ同期',
-                              subtitle: '手動でデータを同期する',
-                              isLoading: _isSyncing,
-                              onTap: _performSync,
-                            ),
-
-                            const SizedBox(height: 24),
-
                             // データ管理セクション
                             _buildSectionHeader('データ管理'),
                             const SizedBox(height: 12),
@@ -699,26 +594,38 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
                               onTap: _importData,
                             ),
 
-                            SettingsActionItem(
-                              icon: Icons.delete_sweep,
-                              title: 'キャッシュをクリア',
-                              subtitle: 'ローカルのキャッシュデータを削除',
-                              isLoading: _isClearingCache,
-                              isDangerous: true,
-                              onTap: _clearCache,
-                            ),
-
                             const SizedBox(height: 24),
 
-                            // ヘルプセクション
-                            _buildSectionHeader('ヘルプ'),
+                            // データ削除セクション
+                            _buildSectionHeader('データ削除'),
                             const SizedBox(height: 12),
 
                             SettingsActionItem(
-                              icon: Icons.help_outline,
-                              title: 'バックアップについて',
-                              subtitle: '使い方とよくある質問',
-                              onTap: _showBackupHelp,
+                              icon: Icons.task_alt,
+                              title: 'すべてのタスクを削除',
+                              subtitle: 'タスク: ${_dataCounts['tasks'] ?? 0}件',
+                              isLoading: _isDeletingTasks,
+                              isDangerous: true,
+                              onTap: _deleteAllTasks,
+                            ),
+
+                            SettingsActionItem(
+                              icon: Icons.note,
+                              title: 'すべてのメモを削除',
+                              subtitle: 'メモ: ${_dataCounts['memos'] ?? 0}件',
+                              isLoading: _isDeletingMemos,
+                              isDangerous: true,
+                              onTap: _deleteAllMemos,
+                            ),
+
+                            SettingsActionItem(
+                              icon: Icons.calendar_today,
+                              title: 'すべてのスケジュールを削除',
+                              subtitle:
+                                  'スケジュール: ${_dataCounts['schedules'] ?? 0}件',
+                              isLoading: _isDeletingSchedules,
+                              isDangerous: true,
+                              onTap: _deleteAllSchedules,
                             ),
                           ],
                         ),
@@ -824,88 +731,6 @@ class _DataManagementScreenState extends State<DataManagementScreen> {
             fontSize: isTotal ? 16 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
           ),
-        ),
-      ],
-    );
-  }
-
-  /// バックアップヘルプを表示（アイコンを使わない簡潔な表現）
-  void _showBackupHelp() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF3A3A3A),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: const Text(
-              'バックアップについて',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHelpSection(
-                    'エクスポート',
-                    '現在のデータをJSONファイルとして保存し、他のアプリや端末と共有できます。',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildHelpSection(
-                    'インポート',
-                    'バックアップファイルからデータを復元します。重複するデータは自動的にスキップされます。',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildHelpSection(
-                    'プライバシー',
-                    'すべてのデータは端末内に保存され、外部サーバーには送信されません。',
-                  ),
-                  const SizedBox(height: 16),
-                  _buildHelpSection(
-                    'ヒント',
-                    '• 定期的にバックアップを作成することをお勧めします\n'
-                        '• バックアップファイルは安全な場所に保管してください\n'
-                        '• 機種変更時にはエクスポート→インポートでデータ移行できます',
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  '閉じる',
-                  style: TextStyle(color: Color(0xFFE85A3B), fontSize: 16),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
-  /// ヘルプセクションを構築
-  Widget _buildHelpSection(String title, String content) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Color(0xFFE85A3B),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          content,
-          style: TextStyle(color: Colors.grey[300], fontSize: 14, height: 1.4),
         ),
       ],
     );

@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 // 外部ブラウザは使用せず、アプリ内で表示する
 import '../../gradients.dart';
+import '../../utils/error_handler.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import '../../widgets/settings/tappable_settings_card.dart';
 import 'terms_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'license_screen.dart';
 
 /// アプリ情報画面
 ///
 /// 機能:
 /// - アプリ名とバージョン情報の表示
-/// - ビルド番号の表示
 /// - 更新履歴の表示
 /// - ライセンス情報の表示
 /// - 利用規約へのリンク
@@ -52,31 +54,16 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('アプリ情報の読み込みに失敗しました: $e'),
-            backgroundColor: Colors.red[700],
-          ),
-        );
+        AppErrorHandler.handleError(context, e, operation: 'アプリ情報の読み込み');
       }
     }
   }
 
   /// ライセンス情報を表示
   void _showLicenses() {
-    showLicensePage(
-      context: context,
-      applicationName: 'ThisOne',
-      applicationVersion: _packageInfo?.version ?? '不明',
-      applicationIcon: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          gradient: createOrangeYellowGradient(),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: const Icon(Icons.apps, color: Colors.white, size: 32),
-      ),
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LicenseScreen()),
     );
   }
 
@@ -102,6 +89,16 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildChangelogItem(
+                    version: '1.1.0',
+                    date: '2026年1月',
+                    changes: [
+                      '大幅なUI/UXの改善',
+                      'アカウント認証機能の仕様変更',
+                      'パスワードリセット機能実装',
+                      'アカウント削除機能実装',
+                    ],
+                  ),
                   _buildChangelogItem(
                     version: '1.0.0',
                     date: '2025年1月',
@@ -251,26 +248,26 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                             Center(
                               child: Column(
                                 children: [
-                                  Container(
-                                    width: 100,
-                                    height: 100,
-                                    decoration: BoxDecoration(
-                                      gradient: createOrangeYellowGradient(),
-                                      borderRadius: BorderRadius.circular(24),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: const Color(
-                                            0xFFE85A3B,
-                                          ).withValues(alpha: 0.3),
-                                          blurRadius: 20,
-                                          spreadRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Icon(
-                                      Icons.apps,
-                                      color: Colors.white,
-                                      size: 50,
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Container(
+                                      width: 100,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(
+                                              0xFFE85A3B,
+                                            ).withValues(alpha: 0.3),
+                                            blurRadius: 20,
+                                            spreadRadius: 2,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Image.asset(
+                                        'assets/icons/app_icon.png',
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -288,13 +285,6 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                                     style: TextStyle(
                                       color: Colors.grey[400],
                                       fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    'ビルド ${_packageInfo?.buildNumber ?? "不明"}',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
@@ -465,13 +455,8 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
+    return TappableSettingsCard(
+      onTap: onTap,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -498,7 +483,7 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
           color: Colors.grey[500],
           size: 16,
         ),
-        onTap: onTap,
+        enableFeedback: false,
       ),
     );
   }

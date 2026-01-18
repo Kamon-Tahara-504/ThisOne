@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 class LocalDatabaseService {
   static Database? _database;
   static const String _databaseName = 'thisone.db';
-  static const int _databaseVersion = 2;
+  static const int _databaseVersion = 5;
 
   /// データベースインスタンスを取得
   ///
@@ -44,7 +44,9 @@ class LocalDatabaseService {
     await _createMemosTable(db);
     await _createTasksTable(db);
     await _createSchedulesTable(db);
-    await _createUserProfilesTable(db);
+    await _createUsersTable(db);
+    await _createScheduleTemplatesTable(db);
+    await _createTaskTemplatesTable(db);
   }
 
   /// データベースアップグレード時の処理
@@ -52,7 +54,50 @@ class LocalDatabaseService {
   /// バージョンアップ時にテーブル構造を変更
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
-      await _createUserProfilesTable(db);
+      // 旧バージョン用: user_profilesテーブルを作成（後でusersに移行）
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS user_profiles (
+          user_id TEXT PRIMARY KEY,
+          display_name TEXT,
+          phone_number TEXT,
+          avatar_url TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''');
+    }
+    if (oldVersion < 3) {
+      await _createScheduleTemplatesTable(db);
+    }
+    if (oldVersion < 4) {
+      await _createTaskTemplatesTable(db);
+    }
+    if (oldVersion < 5) {
+      // user_profilesからusersテーブルへの移行
+      await _migrateUserProfilesToUsers(db);
+    }
+  }
+
+  /// user_profilesテーブルからusersテーブルへのマイグレーション
+  Future<void> _migrateUserProfilesToUsers(Database db) async {
+    // 新しいusersテーブルを作成
+    await _createUsersTable(db);
+
+    // 既存のuser_profilesテーブルが存在する場合、データを移行
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='user_profiles'",
+    );
+
+    if (tables.isNotEmpty) {
+      // 既存データを移行
+      await db.execute('''
+        INSERT OR IGNORE INTO users (auth_id, display_name, phone_number, avatar_url, created_at, updated_at)
+        SELECT user_id, display_name, phone_number, avatar_url, created_at, updated_at
+        FROM user_profiles
+      ''');
+
+      // 古いテーブルを削除
+      await db.execute('DROP TABLE IF EXISTS user_profiles');
     }
   }
 
@@ -84,13 +129,14 @@ class LocalDatabaseService {
     await db.execute('CREATE INDEX idx_memos_is_deleted ON memos(is_deleted)');
   }
 
-  /// ユーザープロフィールテーブルを作成
+  /// ユーザーテーブルを作成
   ///
-  /// アカウント情報を保存するテーブル
-  Future<void> _createUserProfilesTable(Database db) async {
+  /// ユーザー情報を保存するテーブル（Supabase Auth連携）
+  Future<void> _createUsersTable(Database db) async {
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS user_profiles (
-        user_id TEXT PRIMARY KEY,
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        auth_id TEXT UNIQUE NOT NULL,
         display_name TEXT,
         phone_number TEXT,
         avatar_url TEXT,
@@ -100,7 +146,10 @@ class LocalDatabaseService {
     ''');
 
     await db.execute(
-      'CREATE INDEX IF NOT EXISTS idx_user_profiles_phone ON user_profiles(phone_number)',
+      'CREATE INDEX IF NOT EXISTS idx_users_auth_id ON users(auth_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number)',
     );
   }
 
@@ -164,6 +213,62 @@ class LocalDatabaseService {
     );
     await db.execute(
       'CREATE INDEX idx_schedules_is_deleted ON schedules(is_deleted)',
+    );
+  }
+
+  /// スケジュールテンプレートテーブルを作成
+  ///
+  /// スケジュールテンプレートデータを保存するテーブル
+  Future<void> _createScheduleTemplatesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS schedule_templates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        is_all_day INTEGER NOT NULL DEFAULT 0,
+        location TEXT,
+        reminder_minutes INTEGER NOT NULL DEFAULT 0,
+        color_hex TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // インデックスの作成
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_schedule_templates_user_id ON schedule_templates(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_schedule_templates_created_at ON schedule_templates(created_at)',
+    );
+  }
+
+  /// タスクテンプレートテーブルを作成
+  ///
+  /// タスクテンプレートデータを保存するテーブル
+  Future<void> _createTaskTemplatesTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS task_templates (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        priority INTEGER NOT NULL DEFAULT 0,
+        due_date TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+
+    // インデックスの作成
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_templates_user_id ON task_templates(user_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_task_templates_created_at ON task_templates(created_at)',
     );
   }
 

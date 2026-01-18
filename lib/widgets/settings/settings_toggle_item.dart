@@ -78,7 +78,7 @@ class SettingsToggleItem extends StatelessWidget {
             return Colors.grey[700];
           }),
         ),
-        onTap: enabled ? () => onChanged(!value) : null,
+        enableFeedback: false,
       ),
     );
   }

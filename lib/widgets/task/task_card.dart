@@ -6,12 +6,18 @@ class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback onToggleComplete;
   final VoidCallback onDelete;
+  final VoidCallback? onEdit;
+  final bool isAnimating;
+  final Animation<double>? popAnimation;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.onToggleComplete,
     required this.onDelete,
+    this.onEdit,
+    this.isAnimating = false,
+    this.popAnimation,
   });
 
   Color _getDueDateColor() {
@@ -35,7 +41,7 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    Widget taskCard = Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: const Color(0xFF3A3A3A),
@@ -46,6 +52,17 @@ class TaskCard extends StatelessWidget {
                   ? const Color(0xFFE85A3B).withValues(alpha: 0.3)
                   : Colors.grey[700]!,
         ),
+        // アニメーション中は特別な装飾を追加
+        boxShadow:
+            isAnimating
+                ? [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
+                  ),
+                ]
+                : null,
       ),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -106,73 +123,115 @@ class TaskCard extends StatelessWidget {
                           task.isCompleted ? TextDecoration.lineThrough : null,
                     ),
                   ),
-                  if (task.dueDate != null) ...[
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.schedule,
-                          size: 14,
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, size: 14, color: _getDueDateColor()),
+                      const SizedBox(width: 4),
+                      Text(
+                        task.dueDate != null
+                            ? task.dueDateDisplayString
+                            : 'To Do設定',
+                        style: TextStyle(
                           color: _getDueDateColor(),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          task.dueDateDisplayString,
-                          style: TextStyle(
-                            color: _getDueDateColor(),
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
+                      ),
+                      if (task.dueDate != null && task.isOverdue) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFFF44336,
+                            ).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '期限切れ',
+                            style: TextStyle(
+                              color: Color(0xFFF44336),
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        if (task.isOverdue) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(
-                                0xFFF44336,
-                              ).withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '期限切れ',
-                              style: TextStyle(
-                                color: Color(0xFFF44336),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ],
               ),
             ),
 
-            // 削除ボタン
-            GestureDetector(
-              onTap: onDelete,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red[400]!.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+            // 編集ボタンと削除ボタン
+            Row(
+              children: [
+                // 編集ボタン
+                if (onEdit != null)
+                  GestureDetector(
+                    onTap: onEdit,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[400]!.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        color: Colors.blue[400],
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                if (onEdit != null) const SizedBox(width: 8),
+                // 削除ボタン
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red[400]!.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: Colors.red[400],
+                      size: 20,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.delete_outline,
-                  color: Colors.red[400],
-                  size: 20,
-                ),
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
+
+    // アニメーション中の場合は、スケールとバウンス効果を適用
+    if (isAnimating && popAnimation != null) {
+      return Material(
+        color: Colors.transparent,
+        child: AnimatedBuilder(
+          animation: popAnimation!,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 0.8 + (popAnimation!.value * 0.2),
+              child: Transform.translate(
+                offset: Offset(0, -10 * (1 - popAnimation!.value)),
+                child: child,
+              ),
+            );
+          },
+          child: taskCard,
+        ),
+      );
+    }
+
+    // 通常状態
+    return Material(color: Colors.transparent, child: taskCard);
   }
 }

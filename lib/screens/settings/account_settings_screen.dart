@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
-import '../../services/local_user_profile_service.dart';
+import '../../services/user_service.dart';
+import '../../utils/error_handler.dart';
+import '../../utils/phone_validator.dart';
 import '../../widgets/account/not_logged_in_view.dart';
 import '../../widgets/account/logged_in_view.dart';
 
@@ -14,14 +16,14 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final SupabaseService _supabaseService = SupabaseService();
-  final LocalUserProfileService _localUserProfileService =
-      LocalUserProfileService();
+  final UserService _userService = UserService();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   bool _isLoading = true;
   bool _isEditing = false;
   Map<String, dynamic>? _userProfile;
+  String? _phoneErrorText;
 
   @override
   void initState() {
@@ -49,13 +51,10 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         return;
       }
 
-      var profile = await _localUserProfileService.getUserProfile(user.id);
+      var profile = await _userService.getUser(user.id);
 
       // プロフィールが存在しない場合は初期レコードを作成
-      if (profile == null) {
-        await _localUserProfileService.upsertUserProfile(userId: user.id);
-        profile = await _localUserProfileService.getUserProfile(user.id);
-      }
+      profile ??= await _userService.upsertUser(authId: user.id);
 
       setState(() {
         _userProfile = profile;
@@ -64,6 +63,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('_loadUserProfile error: $e');
       setState(() {
         _isLoading = false;
       });
@@ -80,35 +80,38 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       }
 
       final displayName = _displayNameController.text.trim();
-      final phoneNumber = _phoneController.text.trim();
+      final phoneInput = _phoneController.text.trim();
 
-      await _localUserProfileService.upsertUserProfile(
-        userId: user.id,
+      // 電話番号のバリデーション
+      final phoneValidation = PhoneValidator.validate(phoneInput);
+      if (!phoneValidation.isValid) {
+        setState(() {
+          _phoneErrorText = phoneValidation.errorMessage;
+        });
+        return;
+      }
+
+      // 正規化された電話番号を使用（空の場合はnull）
+      final phoneNumber = phoneValidation.normalizedValue;
+
+      final updatedProfile = await _userService.upsertUser(
+        authId: user.id,
         displayName: displayName,
         phoneNumber: phoneNumber,
       );
 
       setState(() {
         _isEditing = false;
-        _userProfile = {
-          'user_id': user.id,
-          'display_name': displayName,
-          'phone_number': phoneNumber,
-        };
+        _phoneErrorText = null;
+        _userProfile = updatedProfile;
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('プロフィールを更新しました')));
+        AppErrorHandler.showSuccess(context, 'プロフィールを更新しました');
       }
-
-      await _loadUserProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('プロフィールの更新に失敗しました: $e')));
+        AppErrorHandler.handleError(context, e, operation: 'プロフィールの更新');
       }
     }
   }
@@ -116,6 +119,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   void _cancelEdit() {
     setState(() {
       _isEditing = false;
+      _phoneErrorText = null;
       _displayNameController.text = _userProfile?['display_name'] ?? '';
       _phoneController.text = _userProfile?['phone_number'] ?? '';
     });
@@ -123,7 +127,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   void _handleLogout() {
     if (mounted) {
-      Navigator.pop(context); // アカウント画面を閉じる
+      // ログアウト後はルート画面（AuthGate）まで戻る
+      // AuthGateが認証状態の変化を検知して自動的にログイン画面を表示する
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 
@@ -184,6 +190,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       onPressed: () {
                         setState(() {
                           _isEditing = true;
+                          _phoneErrorText = null;
                         });
                       },
                       child: const Text(
@@ -249,6 +256,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       displayNameController: _displayNameController,
                       phoneController: _phoneController,
                       onLogout: _handleLogout,
+                      phoneErrorText: _phoneErrorText,
                     ),
           ),
         ],

@@ -10,7 +10,7 @@
 
 ### プロジェクト工程
 - **開発開始日**: 2025/ 5/27
-- **リリース予定日**: 未定
+- **リリース日**: 2025/ 12/18
 
 ##  主要機能
 
@@ -95,7 +95,7 @@ lib/
     ├── auth/                           # 認証関連ウィジェット
     │   ├── google_signin_button.dart   # Googleサインインボタン
     │   ├── login_bottom_sheet.dart     # ログインボトムシート
-    │   ├── signup_page.dart            # サインアップページ
+    │   ├── signup_bottom_sheet.dart    # サインアップボトムシート
     │   └── x_signin_button.dart        # X（Twitter）サインインボタン
     ├── memo/                           # メモ関連ウィジェット
     │   ├── empty_memo_state.dart       # 空のメモ状態表示
@@ -104,7 +104,7 @@ lib/
     │   ├── memo_item_card.dart         # メモアイテムカード
     │   └── memo_save_manager.dart      # メモ自動保存管理
     ├── navigation/
-    │   └── custom_bottom_navigation_bar.dart # カスタムボトムナビゲーション
+    │   └── bottom_navigation_bar.dart # カスタムボトムナビゲーション
     ├── overlays/
     │   ├── account_info_overlay.dart   # アカウント情報オーバーレイ
     │   └── custom_bottom_sheet.dart    # カスタムボトムシート
@@ -141,164 +141,6 @@ assets/
 
 env.example                            # 環境変数設定例
 ```
-
-##  データベース構造
-
-### テーブル一覧
-```sql
--- ユーザープロファイル
-user_profiles (id, user_id, display_name, phone_number, avatar_url, created_at, updated_at)
-
--- タスク管理（完全実装済み）
-tasks (id, user_id, title, description, is_completed, priority, due_date, created_at, updated_at, completed_at)
-
--- メモ機能（完全実装済み）
-memos (id, user_id, title, content, mode, rich_content, is_pinned, color_tag, created_at, updated_at)
-
--- スケジュール管理（完全実装済み）
-schedules (id, user_id, title, description, schedule_date, start_time, end_time, is_all_day, location, reminder_minutes, color_hex, created_at, updated_at)
-
--- ユーザー設定（準備済み）
-user_settings (id, user_id, theme_mode, notification_enabled, default_reminder_minutes, first_day_of_week, created_at, updated_at)
-```
-
-##  セットアップ手順
-
-### 1. 依存関係のインストール
-
-```bash
-flutter pub get
-```
-
-### 2. Supabaseプロジェクトの設定
-
-1. [Supabase](https://supabase.com)でアカウント作成・プロジェクト作成
-2. ダッシュボードの「Settings」→「API」から以下を取得：
-   - **Project URL**
-   - **Anon public key**
-
-### 3. データベーススキーマの作成
-
-1. Supabaseダッシュボードの「SQL Editor」を開く
-2. `database/schema/initial_schema.sql`の内容をコピー&実行
-3. 必要に応じてマイグレーションファイルも実行：
-   - `database/migrations/001_memo_mode.sql`
-   - `database/migrations/002_phone_field.sql`
-   - `database/migrations/003_rich_content.sql`
-   - `database/migrations/004_smart_trigger.sql`
-   - `database/migrations/005_add_schedule_color.sql`
-
-### 4. 環境変数の設定
-
-**開発環境での設定方法：**
-
-1. プロジェクトルートに`.env`ファイルを作成：
-```bash
-# .env ファイル
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-2. `.gitignore`に`.env`を追加（重要！）：
-```gitignore
-.env
-```
-
-3. Flutter実行時に環境変数を指定：
-```bash
-flutter run --dart-define=SUPABASE_URL=https://your-project.supabase.co --dart-define=SUPABASE_ANON_KEY=your-anon-key-here
-```
-
-**本番環境での設定方法**
-
-- CI/CDパイプラインで環境変数を設定
-- デプロイ時に`--dart-define`で値を指定
-
-**セキュリティ注意事項**
-- `.env`ファイルは絶対にGitにコミットしない
-- APIキーは環境変数で管理する
-- 本番環境では必須チェックが有効
-
-### 5. アプリの実行
-
-```bash
-flutter run --verbose
-```
-
-##  現在の実装状況
-
-### ✅ 完了機能
-- [x] 基本UI・ナビゲーション設計
-- [x] カスタムグラデーションシステム
-- [x] **認証システム（Supabase完全連携）**
-  - [x] サインアップ・ログイン・ログアウト
-  - [x] 認証状態管理
-  - [x] エラーハンドリング
-  - [x] 統合認証画面（サインアップ・ログイン統合）
-  - [x] **ソーシャルログイン対応**
-    - [x] Googleサインイン
-    - [x] X（Twitter）サインイン
-- [x] **タスク管理（Supabase完全連携）**
-  - [x] タスクの追加・完了・削除・更新
-  - [x] 優先度・期日管理
-  - [x] リアルタイム同期
-- [x] **メモ機能（Supabase完全連携）**
-  - [x] リッチテキストエディタ（Flutter Quill）
-  - [x] 自動保存機能（デバウンス機能付き）
-  - [x] メモの追加・編集・削除
-  - [x] リッチコンテンツ保存（JSON Delta形式）
-  - [x] カラータグ・ピン留め機能
-  - [x] メモモード（memo/note）対応
-- [x] **スケジュール管理（Supabase完全連携）**
-  - [x] カレンダー表示（table_calendar）
-  - [x] スケジュールの追加・編集・削除
-  - [x] 日時指定・終日設定
-  - [x] リマインダー設定
-  - [x] カラーテーマ対応
-- [x] **アカウント管理（Supabase完全連携）**
-  - [x] ユーザープロフィール編集
-  - [x] 表示名・電話番号管理
-  - [x] プロフィール自動作成
-- [x] **設定画面（基本UI実装）**
-  - [x] アカウント設定への遷移
-  - [x] 通知・テーマ・データ・プライバシー設定項目
-  - [x] ヘルプ・アプリ情報項目
-  - [x] 静的ヘッダーガイドライン統一
-  - [x] 設定画面の詳細実装
-    - [x] アカウント設定画面（プロフィール編集・ログアウト）
-    - [x] 通知設定画面（プッシュ通知・リマインダー設定）
-    - [x] テーマ設定画面（ダーク/ライト/システム設定）
-    - [x] データ管理画面（同期・バックアップ・キャッシュクリア）
-    - [x] プライバシー設定画面（自動削除・データ削除）
-    - [x] ヘルプ画面（FAQ・フィードバック・お問い合わせ）
-    - [x] アプリ情報画面（バージョン・ライセンス・開発者情報）
-- [x] Supabase設定・サービス層
-- [x] データベーススキーマ設計・作成
-- [x] RLSセキュリティ設定
-- [x] 国際化設定（日本語対応）
-- [x] アニメーション・UI/UX改善
-- [x] カスタムスクロール制御
-
-### 🚧 開発中・今後の予定
-- [ ] **設定画面の機能実装**
-  - [ ] テーマ設定の実際の動作実装
-  - [ ] 通知設定の実際の動作実装
-  - [ ] データ設定の実際の動作実装
-  - [ ] プライバシー設定の実際の動作実装
-  - [ ] ヘルプ・サポート機能の実際の動作実装
-- [ ] **追加機能**
-  - [ ] プッシュ通知機能
-  - [ ] データエクスポート・インポート機能
-  - [ ] オフライン対応
-  - [ ] タスクとスケジュールの連携機能
-  - [ ] モバイル通知欄でのタスク表示
-  - [ ] 他言語対応（英語）
-  - [ ] データ同期の最適化
-  - [ ] パフォーマンス向上
-  - [ ] タスクの機能改善
-  - [ ] タスク作成画面のUI/UX作成
-  - [ ] タスクでのアラーム機能実装
-  - [ ] 設定画面の実装
 
 ##  技術スタック
 
@@ -428,4 +270,4 @@ dependencies:
 プロジェクトへの貢献は歓迎します！  
 新しい機能の提案やバグ報告は、GitHubのIssueでお知らせください。
 
-*README最終更新: 2025/10/23*  
+*README最終更新: 2025/12/18*  

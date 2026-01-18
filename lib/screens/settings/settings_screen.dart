@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../services/main_data_service.dart';
+import '../../widgets/settings/tappable_settings_card.dart';
 import 'account_settings_screen.dart';
 import 'notification_settings_screen.dart';
 import 'data_management_screen.dart';
@@ -25,8 +27,9 @@ import 'app_info_screen.dart';
 /// - アプリについて: バージョン情報とライセンス
 class SettingsScreen extends StatefulWidget {
   final ScrollController? scrollController;
+  final MainDataService? dataService;
 
-  const SettingsScreen({super.key, this.scrollController});
+  const SettingsScreen({super.key, this.scrollController, this.dataService});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -101,7 +104,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const PrivacySettingsScreen(),
+                  builder:
+                      (context) => PrivacySettingsScreen(
+                        dataService: widget.dataService,
+                      ),
                 ),
               );
             },
@@ -139,13 +145,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required String subtitle,
     required VoidCallback onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3A3A3A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[700]!),
-      ),
+    return TappableSettingsCard(
+      onTap: onTap,
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -168,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           style: TextStyle(color: Colors.grey[400], fontSize: 14),
         ),
         trailing: Icon(Icons.chevron_right, color: Colors.grey[500]),
-        onTap: onTap,
+        enableFeedback: false,
       ),
     );
   }

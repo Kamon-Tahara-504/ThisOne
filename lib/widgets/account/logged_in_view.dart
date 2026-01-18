@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
+import '../../utils/text_selection_menu_builder.dart';
+import '../../utils/phone_validator.dart';
+import '../../utils/error_handler.dart';
 import 'account_info_item.dart';
 import 'logout_dialog.dart';
 import '../../services/supabase_service.dart';
+import 'account_deletion_dialog.dart';
 
 class LoggedInView extends StatelessWidget {
   final dynamic user;
@@ -11,6 +15,7 @@ class LoggedInView extends StatelessWidget {
   final TextEditingController displayNameController;
   final TextEditingController phoneController;
   final VoidCallback onLogout;
+  final String? phoneErrorText;
 
   const LoggedInView({
     super.key,
@@ -20,6 +25,7 @@ class LoggedInView extends StatelessWidget {
     required this.displayNameController,
     required this.phoneController,
     required this.onLogout,
+    this.phoneErrorText,
   });
 
   @override
@@ -75,6 +81,7 @@ class LoggedInView extends StatelessWidget {
                         borderSide: const BorderSide(color: Color(0xFFE85A3B)),
                       ),
                     ),
+                    contextMenuBuilder: nativeTextSelectionMenuBuilder,
                   )
                 else
                   Text(
@@ -124,11 +131,15 @@ class LoggedInView extends StatelessWidget {
                 isEditing
                     ? null
                     : (userProfile?['phone_number']?.isEmpty == false
-                        ? userProfile!['phone_number']
+                        ? PhoneValidator.format(userProfile!['phone_number'])
                         : '未設定'),
             isEditable: true,
             isEditing: isEditing,
             controller: isEditing ? phoneController : null,
+            hintText: '例: 090-1234-5678',
+            keyboardType: TextInputType.phone,
+            inputFormatters: [PhoneInputFormatter()],
+            errorText: phoneErrorText,
           ),
 
           // ログイン済み表示
@@ -144,31 +155,98 @@ class LoggedInView extends StatelessWidget {
           const SizedBox(height: 32),
 
           // ログアウトボタン
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              leading: Icon(Icons.logout, color: Colors.red[400]),
-              title: Text(
-                'ログアウト',
-                style: TextStyle(
-                  color: Colors.red[400],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              onTap: () {
-                showLogoutDialog(
-                  context: context,
-                  supabaseService: SupabaseService(),
-                  onLogoutSuccess: onLogout,
+          _AccountActionButton(
+            icon: Icons.logout,
+            label: 'ログアウト',
+            onTap: () {
+              showLogoutDialog(
+                context: context,
+                supabaseService: SupabaseService(),
+                onLogoutSuccess: onLogout,
+              );
+            },
+          ),
+
+          // アカウント削除ボタン
+          _AccountActionButton(
+            icon: Icons.person_remove,
+            label: 'アカウント削除',
+            onTap: () {
+              final userEmail = user.email ?? '';
+              if (userEmail.isEmpty) {
+                AppErrorHandler.handleError(
+                  context,
+                  Exception('メールアドレスを取得できませんでした'),
+                  operation: 'アカウント削除',
                 );
-              },
-            ),
+                return;
+              }
+              AccountDeletionDialog.showAccountDeletionDialog(
+                context: context,
+                userEmail: userEmail,
+              );
+            },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// アカウント情報のメールアドレス・電話番号ボックスと同じ大きさのアクションボタン
+class _AccountActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _AccountActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3A3A3A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.red.withValues(alpha: 0.5)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: Colors.red[400], size: 20),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.red[400],
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
