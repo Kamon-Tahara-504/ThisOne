@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../gradients.dart';
 import '../../services/supabase_service.dart';
-import '../../services/local_user_profile_service.dart';
+import '../../services/local_user_service.dart';
 import '../../utils/error_handler.dart';
+import '../../utils/phone_validator.dart';
 import '../../widgets/account/not_logged_in_view.dart';
 import '../../widgets/account/logged_in_view.dart';
 
@@ -15,14 +16,14 @@ class AccountSettingsScreen extends StatefulWidget {
 
 class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   final SupabaseService _supabaseService = SupabaseService();
-  final LocalUserProfileService _localUserProfileService =
-      LocalUserProfileService();
+  final LocalUserService _localUserService = LocalUserService();
   final TextEditingController _displayNameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   bool _isLoading = true;
   bool _isEditing = false;
   Map<String, dynamic>? _userProfile;
+  String? _phoneErrorText;
 
   @override
   void initState() {
@@ -50,12 +51,12 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         return;
       }
 
-      var profile = await _localUserProfileService.getUserProfile(user.id);
+      var profile = await _localUserService.getUser(user.id);
 
       // プロフィールが存在しない場合は初期レコードを作成
       if (profile == null) {
-        await _localUserProfileService.upsertUserProfile(userId: user.id);
-        profile = await _localUserProfileService.getUserProfile(user.id);
+        await _localUserService.upsertUser(authId: user.id);
+        profile = await _localUserService.getUser(user.id);
       }
 
       setState(() {
@@ -81,18 +82,31 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       }
 
       final displayName = _displayNameController.text.trim();
-      final phoneNumber = _phoneController.text.trim();
+      final phoneInput = _phoneController.text.trim();
 
-      await _localUserProfileService.upsertUserProfile(
-        userId: user.id,
+      // 電話番号のバリデーション
+      final phoneValidation = PhoneValidator.validate(phoneInput);
+      if (!phoneValidation.isValid) {
+        setState(() {
+          _phoneErrorText = phoneValidation.errorMessage;
+        });
+        return;
+      }
+
+      // 正規化された電話番号を使用（空の場合はnull）
+      final phoneNumber = phoneValidation.normalizedValue;
+
+      await _localUserService.upsertUser(
+        authId: user.id,
         displayName: displayName,
         phoneNumber: phoneNumber,
       );
 
       setState(() {
         _isEditing = false;
+        _phoneErrorText = null;
         _userProfile = {
-          'user_id': user.id,
+          'auth_id': user.id,
           'display_name': displayName,
           'phone_number': phoneNumber,
         };
@@ -113,6 +127,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
   void _cancelEdit() {
     setState(() {
       _isEditing = false;
+      _phoneErrorText = null;
       _displayNameController.text = _userProfile?['display_name'] ?? '';
       _phoneController.text = _userProfile?['phone_number'] ?? '';
     });
@@ -181,6 +196,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       onPressed: () {
                         setState(() {
                           _isEditing = true;
+                          _phoneErrorText = null;
                         });
                       },
                       child: const Text(
@@ -246,6 +262,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       displayNameController: _displayNameController,
                       phoneController: _phoneController,
                       onLogout: _handleLogout,
+                      phoneErrorText: _phoneErrorText,
                     ),
           ),
         ],
