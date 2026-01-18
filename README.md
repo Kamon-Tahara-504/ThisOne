@@ -95,7 +95,7 @@ lib/
     ├── auth/                           # 認証関連ウィジェット
     │   ├── google_signin_button.dart   # Googleサインインボタン
     │   ├── login_bottom_sheet.dart     # ログインボトムシート
-    │   ├── signup_page.dart            # サインアップページ
+    │   ├── signup_bottom_sheet.dart    # サインアップボトムシート
     │   └── x_signin_button.dart        # X（Twitter）サインインボタン
     ├── memo/                           # メモ関連ウィジェット
     │   ├── empty_memo_state.dart       # 空のメモ状態表示
