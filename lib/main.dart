@@ -23,6 +23,7 @@ import 'controllers/header_controller.dart';
 import 'controllers/page_controller.dart';
 import 'services/main_data_service.dart';
 import 'screens/auth/unified_auth_screen.dart';
+import 'screens/auth/password_reset_screen.dart';
 
 // カスタムScrollPhysics for スワイプアニメーション速度調整
 class CustomPageScrollPhysics extends ScrollPhysics {
@@ -129,8 +130,15 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _isPasswordRecoveryMode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +153,33 @@ class AuthGate extends StatelessWidget {
             debugPrint('AuthGate StreamBuilder error: ${snapshot.error}');
             // エラーが発生しても認証画面を表示（オフライン対応）
             return const UnifiedAuthScreen();
+          }
+
+          // パスワードリカバリーイベントをチェック
+          if (snapshot.hasData) {
+            final authState = snapshot.data!;
+            if (authState.event == AuthChangeEvent.passwordRecovery) {
+              // パスワードリカバリーモードに設定
+              if (!_isPasswordRecoveryMode) {
+                _isPasswordRecoveryMode = true;
+                // 次のフレームでパスワードリセット画面に遷移
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PasswordResetScreen(
+                          onPasswordResetComplete: () {
+                            setState(() {
+                              _isPasswordRecoveryMode = false;
+                            });
+                          },
+                        ),
+                      ),
+                    );
+                  }
+                });
+              }
+            }
           }
 
           try {

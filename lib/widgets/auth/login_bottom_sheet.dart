@@ -3,6 +3,7 @@ import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/text_selection_menu_builder.dart';
+import 'password_reset_email_bottom_sheet.dart';
 
 class LoginBottomSheet extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
@@ -46,6 +47,33 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     super.dispose();
+  }
+
+  void _showPasswordResetBottomSheet() {
+    // 親のNavigatorコンテキストを保持
+    final navigator = Navigator.of(context);
+    final rootContext = navigator.context;
+
+    // 現在のログインボトムシートを閉じてから、パスワードリセット用のボトムシートを表示
+    navigator.pop();
+
+    // 次のフレームでパスワードリセットボトムシートを表示
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      showModalBottomSheet(
+        context: rootContext,
+        backgroundColor: Colors.transparent,
+        isScrollControlled: true,
+        enableDrag: true,
+        isDismissible: true,
+        useSafeArea: true,
+        builder:
+            (sheetContext) => PasswordResetEmailBottomSheet(
+              onEmailSent: () {
+                Navigator.pop(sheetContext); // ボトムシートを閉じる
+              },
+            ),
+      );
+    });
   }
 
   Future<void> _loginWithEmail() async {
@@ -252,10 +280,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
         // パスワードを忘れた方
         Center(
           child: TextButton(
-            onPressed: () {
-              // パスワードリセット機能の実装
-              AppErrorHandler.showInfo(context, 'パスワードリセット機能は準備中です');
-            },
+            onPressed: _showPasswordResetBottomSheet,
             child: Text(
               'パスワードを忘れた方',
               style: TextStyle(

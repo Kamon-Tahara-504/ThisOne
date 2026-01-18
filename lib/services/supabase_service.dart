@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../supabase_config.dart';
 
 /// Supabase認証サービス
 ///
@@ -38,6 +39,26 @@ class SupabaseService {
   /// サインアウト
   Future<void> signOut() async {
     await _supabase.auth.signOut();
+  }
+
+  /// パスワードリセットメールを送信
+  ///
+  /// 指定されたメールアドレスにパスワードリセット用のリンクを送信します。
+  /// リンクをタップすると、アプリがディープリンクで起動し、
+  /// 新しいパスワードを設定できます。
+  Future<void> resetPassword({required String email}) async {
+    await _supabase.auth.resetPasswordForEmail(
+      email,
+      redirectTo: SupabaseConfig.passwordResetRedirectUrl,
+    );
+  }
+
+  /// パスワードを更新
+  ///
+  /// パスワードリセットのディープリンクからアプリが起動された後、
+  /// 新しいパスワードを設定するために使用します。
+  Future<void> updatePassword({required String newPassword}) async {
+    await _supabase.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   /// アカウントを削除

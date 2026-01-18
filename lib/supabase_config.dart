@@ -2,6 +2,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 
 class SupabaseConfig {
+  // ディープリンクスキーム（パスワードリセット等で使用）
+  static const String deepLinkScheme = 'thisone';
+  static const String passwordResetRedirectUrl = 'thisone://reset-password';
+
   // Supabase設定（認証専用）
   // 開発モード: フォールバック値を使用（利便性のため）
   // リリースモード: 環境変数必須（セキュリティのため）
@@ -50,7 +54,11 @@ class SupabaseConfig {
       // セキュリティチェック: URLとキーの基本検証
       _validateConfiguration();
 
-      await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
+        authOptions: FlutterAuthClientOptions(authFlowType: AuthFlowType.pkce),
+      );
 
       if (kDebugMode) {
         print('Supabase初期化完了');
