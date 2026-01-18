@@ -13,7 +13,6 @@ import 'license_screen.dart';
 ///
 /// 機能:
 /// - アプリ名とバージョン情報の表示
-/// - ビルド番号の表示
 /// - 更新履歴の表示
 /// - ライセンス情報の表示
 /// - 利用規約へのリンク
@@ -90,6 +89,16 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _buildChangelogItem(
+                    version: '1.1.0',
+                    date: '2026年1月',
+                    changes: [
+                      '大幅なUI/UXの改善',
+                      'アカウント認証機能の仕様変更',
+                      'パスワードリセット機能実装',
+                      'アカウント削除機能実装',
+                    ],
+                  ),
                   _buildChangelogItem(
                     version: '1.0.0',
                     date: '2025年1月',
@@ -276,13 +285,6 @@ class _AppInfoScreenState extends State<AppInfoScreen> {
                                     style: TextStyle(
                                       color: Colors.grey[400],
                                       fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    'ビルド ${_packageInfo?.buildNumber ?? "不明"}',
-                                    style: TextStyle(
-                                      color: Colors.grey[500],
-                                      fontSize: 14,
                                     ),
                                   ),
                                 ],
