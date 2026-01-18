@@ -129,7 +129,9 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
 
   void _handleLogout() {
     if (mounted) {
-      Navigator.pop(context); // アカウント画面を閉じる
+      // ログアウト後はルート画面（AuthGate）まで戻る
+      // AuthGateが認証状態の変化を検知して自動的にログイン画面を表示する
+      Navigator.of(context).popUntil((route) => route.isFirst);
     }
   }
 

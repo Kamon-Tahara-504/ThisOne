@@ -245,13 +245,18 @@ class _UnifiedAuthScreenState extends State<UnifiedAuthScreen> {
   Future<void> _openTermsOfService() async {
     final uri =
         Uri.parse('https://kamon-tahara-504.github.io/ThisOne-Web/terms');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        // canLaunchUrl が false でも起動を試みる（Android 11+ 等で false になることがある）
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
       if (mounted) {
         AppErrorHandler.handleError(
           context,
-          '利用規約ページを開けませんでした',
+          e,
           operation: '利用規約表示',
         );
       }
