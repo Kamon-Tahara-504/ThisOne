@@ -9,6 +9,7 @@ import '../../services/supabase_service.dart';
 import '../../utils/error_handler.dart';
 import '../../widgets/settings/settings_action_item.dart';
 import '../../widgets/app_bars/static_header_guideline.dart';
+import '../../widgets/account/account_deletion_dialog.dart';
 
 /// プライバシー設定画面
 ///
@@ -163,52 +164,36 @@ class _PrivacySettingsScreenState extends State<PrivacySettingsScreen> {
 
   /// アカウントを完全に削除
   Future<void> _deleteAccount() async {
-    final confirmed = await _showConfirmDialog(
-      title: 'アカウントを削除',
-      message: 'アカウントとすべてのデータが完全に削除されます。\n\nこの操作は取り消せません。本当に削除しますか？',
-      confirmText: 'アカウントを削除',
-      requireDoubleConfirm: true,
-    );
-
-    if (!mounted || !confirmed) return;
-
-    setState(() {
-      _isDeletingAccount = true;
-    });
-
-    try {
-      final userId = _getUserId();
-
-      // Supabaseのアカウントを削除（サーバー側のデータも削除される）
-      await _supabaseService.deleteAccount();
-
-      // ローカルデータベースのデータも削除
-      await _taskService.permanentlyDeleteAllTasks(userId);
-      await _memoService.permanentlyDeleteAllMemos(userId);
-      await _scheduleService.permanentlyDeleteAllSchedules(userId);
-
-      if (!mounted) return;
-
-      // サインアウト
-      await _supabaseService.signOut();
-
-      if (!mounted) return;
-
-      AppErrorHandler.showSuccess(context, 'アカウントを削除しました');
-
-      // アカウント削除後はログイン画面に遷移
-      Navigator.of(context).popUntil((route) => route.isFirst);
-    } catch (e) {
+    final currentUser = _supabaseService.getCurrentUser();
+    if (currentUser == null || currentUser.email == null) {
       if (mounted) {
-        AppErrorHandler.handleError(context, e, operation: 'アカウントの削除');
+        AppErrorHandler.handleError(
+          context,
+          Exception('ユーザー情報を取得できませんでした'),
+          operation: 'アカウントの削除',
+        );
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isDeletingAccount = false;
-        });
-      }
+      return;
     }
+
+    await AccountDeletionDialog.showAccountDeletionDialog(
+      context: context,
+      userEmail: currentUser.email!,
+      onDeletionStart: () {
+        if (mounted) {
+          setState(() {
+            _isDeletingAccount = true;
+          });
+        }
+      },
+      onDeletionComplete: () {
+        if (mounted) {
+          setState(() {
+            _isDeletingAccount = false;
+          });
+        }
+      },
+    );
   }
 
   /// 確認ダイアログを表示

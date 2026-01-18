@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../gradients.dart';
 import '../../utils/text_selection_menu_builder.dart';
 import '../../utils/phone_validator.dart';
@@ -7,6 +6,7 @@ import '../../utils/error_handler.dart';
 import 'account_info_item.dart';
 import 'logout_dialog.dart';
 import '../../services/supabase_service.dart';
+import 'account_deletion_dialog.dart';
 
 class LoggedInView extends StatelessWidget {
   final dynamic user;
@@ -171,28 +171,25 @@ class LoggedInView extends StatelessWidget {
           _AccountActionButton(
             icon: Icons.person_remove,
             label: 'アカウント削除',
-            onTap: () => _openDeleteAccountPage(context),
+            onTap: () {
+              final userEmail = user.email ?? '';
+              if (userEmail.isEmpty) {
+                AppErrorHandler.handleError(
+                  context,
+                  Exception('メールアドレスを取得できませんでした'),
+                  operation: 'アカウント削除',
+                );
+                return;
+              }
+              AccountDeletionDialog.showAccountDeletionDialog(
+                context: context,
+                userEmail: userEmail,
+              );
+            },
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _openDeleteAccountPage(BuildContext context) async {
-    final uri = Uri.parse(
-      'https://kamon-tahara-504.github.io/ThisOne-Web/delete-account',
-    );
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppErrorHandler.handleError(context, e, operation: 'アカウント削除');
-      }
-    }
   }
 }
 
