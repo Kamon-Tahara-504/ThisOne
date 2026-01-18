@@ -54,9 +54,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
       var profile = await _userService.getUser(user.id);
 
       // プロフィールが存在しない場合は初期レコードを作成
-      if (profile == null) {
-        profile = await _userService.upsertUser(authId: user.id);
-      }
+      profile ??= await _userService.upsertUser(authId: user.id);
 
       setState(() {
         _userProfile = profile;
