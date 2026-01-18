@@ -3,9 +3,6 @@ import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/text_selection_menu_builder.dart';
-import 'google_signin_button.dart';
-import 'x_signin_button.dart';
-import 'disabled_auth_button.dart';
 
 class LoginBottomSheet extends StatefulWidget {
   final VoidCallback? onLoginSuccess;
@@ -24,7 +21,6 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
   final _supabaseService = SupabaseService();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _showEmailLogin = false;
 
   @override
   void initState() {
@@ -80,66 +76,6 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     }
   }
 
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _loginWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithGoogle();
-      if (mounted) {
-        if (success) {
-          AppErrorHandler.showSuccess(context, 'Googleでログインしました！');
-          widget.onLoginSuccess?.call();
-        } else {
-          AppErrorHandler.showInfo(context, 'Google認証がキャンセルされました');
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        AppErrorHandler.handleError(context, error, operation: 'Google認証');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _loginWithX() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithTwitter();
-      if (mounted) {
-        if (success) {
-          AppErrorHandler.showSuccess(context, 'Xでログインしました！');
-          widget.onLoginSuccess?.call();
-        } else {
-          AppErrorHandler.showInfo(context, 'X認証がキャンセルされました');
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        AppErrorHandler.handleError(context, error, operation: 'X認証');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // キーボードの高さを検知
@@ -150,23 +86,12 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     final hasFocus = _emailFocusNode.hasFocus || _passwordFocusNode.hasFocus;
 
     // モーダルの高さを計算
+    // フォーカスがあるか、キーボードが表示されている場合は大きくする
     double modalHeight;
-    if (_showEmailLogin) {
-      // メールログイン画面: フォーカスがあるか、キーボードが表示されている場合は大きくする
-      // フォーカスがある場合はキーボードが表示されることが予測できるので、即座に高さを大きくする
-      if (viewInsets > 0 || hasFocus) {
-        modalHeight = screenHeight * 0.9;
-      } else {
-        modalHeight = screenHeight * 0.55;
-      }
+    if (viewInsets > 0 || hasFocus) {
+      modalHeight = screenHeight * 0.9;
     } else {
-      // ログイン選択画面: キーボードが表示されている場合は利用可能な高さを考慮
-      // キーボードが表示されていない場合は固定で35%
-      final availableHeight = screenHeight - viewInsets;
-      final desiredHeight = screenHeight * 0.35;
-      // 利用可能な高さを超えないようにする
-      modalHeight =
-          desiredHeight <= availableHeight ? desiredHeight : availableHeight;
+      modalHeight = screenHeight * 0.55;
     }
 
     return AnimatedContainer(
@@ -199,10 +124,7 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child:
-                  _showEmailLogin
-                      ? _buildEmailLoginForm()
-                      : _buildLoginOptions(),
+              child: _buildEmailLoginForm(),
             ),
           ),
         ],
@@ -210,94 +132,10 @@ class _LoginBottomSheetState extends State<LoginBottomSheet> {
     );
   }
 
-  Widget _buildLoginOptions() {
-    return Column(
-      children: [
-        const SizedBox(height: 20),
-
-        // メールログインボタン
-        Container(
-          width: double.infinity,
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: createHorizontalOrangeYellowGradient(),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: ElevatedButton(
-            onPressed:
-                _isLoading
-                    ? null
-                    : () {
-                      setState(() {
-                        _showEmailLogin = true;
-                      });
-                    },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.email_outlined, color: Colors.white, size: 22),
-                SizedBox(width: 12),
-                Text(
-                  'メールアドレスでログイン',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Googleログインボタン - ブランディングガイドライン準拠（開発中）
-        DisabledAuthButton(
-          button: GoogleSignInButton(
-            onPressed: null, // 無効化
-            text: "Googleでログイン",
-            borderRadius: 12.0,
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Xログインボタン - ブランディングガイドライン準拠（開発中）
-        DisabledAuthButton(
-          button: XSignInButton(
-            onPressed: null, // 無効化
-            text: "Xでログイン",
-            borderRadius: 12.0,
-          ),
-        ),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
   Widget _buildEmailLoginForm() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 戻るボタン
-        TextButton.icon(
-          onPressed: () {
-            setState(() {
-              _showEmailLogin = false;
-            });
-          },
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 16),
-          label: const Text(
-            '戻る',
-            style: TextStyle(color: Colors.white, fontSize: 14),
-          ),
-        ),
         const SizedBox(height: 20),
 
         // メールアドレス入力

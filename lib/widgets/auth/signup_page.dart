@@ -3,9 +3,6 @@ import '../../services/supabase_service.dart';
 import '../../gradients.dart';
 import '../../utils/error_handler.dart';
 import '../../utils/text_selection_menu_builder.dart';
-import 'google_signin_button.dart';
-import 'x_signin_button.dart';
-import 'disabled_auth_button.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -66,66 +63,6 @@ class _SignupPageState extends State<SignupPage> {
     } catch (error) {
       if (mounted) {
         AppErrorHandler.handleError(context, error, operation: 'サインアップ');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _signUpWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithGoogle();
-      if (mounted) {
-        if (success) {
-          AppErrorHandler.showSuccess(context, 'Googleで登録しました！');
-          Navigator.pop(context, true);
-        } else {
-          AppErrorHandler.showInfo(context, 'Google認証がキャンセルされました');
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        AppErrorHandler.handleError(context, error, operation: 'Google認証');
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  // TODO: 開発中の機能 - 今後実装予定
-  // ignore: unused_element
-  Future<void> _signUpWithX() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final success = await _supabaseService.signInWithTwitter();
-      if (mounted) {
-        if (success) {
-          AppErrorHandler.showSuccess(context, 'Xで登録しました！');
-          Navigator.pop(context, true);
-        } else {
-          AppErrorHandler.showInfo(context, 'X認証がキャンセルされました');
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        AppErrorHandler.handleError(context, error, operation: 'X認証');
       }
     } finally {
       if (mounted) {
@@ -364,49 +301,6 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                               ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // OR区切り
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: Colors.grey[600])),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          'または',
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: Colors.grey[600])),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // ソーシャル登録ボタン
-                  Column(
-                    children: [
-                      // Google登録 - ブランディングガイドライン準拠（開発中）
-                      DisabledAuthButton(
-                        button: GoogleSignInButton(
-                          onPressed: null, // 無効化
-                          text: "Googleで新規会員登録",
-                          borderRadius: 12.0,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // X登録 - ブランディングガイドライン準拠（開発中）
-                      DisabledAuthButton(
-                        button: XSignInButton(
-                          onPressed: null, // 無効化
-                          text: "Xで新規会員登録",
-                          borderRadius: 12.0,
-                        ),
-                      ),
-                    ],
                   ),
                   const SizedBox(height: 40),
                 ],

@@ -78,30 +78,4 @@ class SupabaseService {
       return Stream<AuthState>.empty();
     }
   }
-
-  /// Google OAuthでサインイン
-  Future<bool> signInWithGoogle() async {
-    try {
-      return await _supabase.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: null, // アプリ構成に応じて設定
-      );
-    } catch (e) {
-      debugPrint('Google認証エラー: $e');
-      rethrow;
-    }
-  }
-
-  /// X(Twitter) OAuthでサインイン
-  Future<bool> signInWithTwitter() async {
-    try {
-      return await _supabase.auth.signInWithOAuth(
-        OAuthProvider.twitter,
-        redirectTo: null, // アプリ構成に応じて設定
-      );
-    } catch (e) {
-      debugPrint('X認証エラー: $e');
-      rethrow;
-    }
-  }
 }
