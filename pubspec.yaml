@@ -39,7 +39,8 @@ dependencies:
   # Supabase dependencies
   supabase_flutter: ^2.5.6
   table_calendar: ^3.0.9
-  
+  holiday_jp: ^0.0.8  # 日本の祝日判定（カレンダーで祝日を赤表示）
+
   # Google Fonts for custom typography (Android simulator compatibility)
   google_fonts: ^6.1.0
   
