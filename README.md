@@ -15,11 +15,12 @@
 ##  主要機能
 
 ###  アプリ機能
-- **タスク管理** ✅: タスクの追加・完了・削除・更新（Supabase完全連携済み）
-- **メモ機能** ✅: リッチテキストエディタ搭載、自動保存機能 (Supabase完全連携済み)
-- **ユーザー認証** ✅: サインアップ・ログイン・ログアウト（Supabase Auth完全連携）
-- **アカウント管理** ✅: プロフィール編集、ユーザー情報管理（Supabase完全連携済み）
-- **スケジュール管理** : カレンダー表示での予定管理（Supabase完全連携済み）
+- **タスク管理** : タスクの追加・完了・削除・更新
+- **スケジュール管理** : カレンダー表示での予定管理
+- **メモ機能** : リッチテキストエディタ搭載、自動保存機能
+- **ユーザー認証** : サインアップ・ログイン・ログアウト
+- **アカウント管理** : プロフィール編集、ユーザー情報管理
+
 - **設定画面** : アプリケーション設定管理（基本UI実装済み）
 
 ###  UI/UX
@@ -51,6 +52,7 @@ lib/
 ├── supabase_config.dart               # Supabase接続設定
 ├── controllers/
 │   ├── header_controller.dart         # ヘッダー制御コントローラー
+│   ├── page_controller.dart           # ページ制御コントローラー
 │   └── scroll_controller_manager.dart # スクロール制御マネージャー
 ├── examples/
 │   └── gradient_showcase.dart         # グラデーション表示例
@@ -58,32 +60,59 @@ lib/
 │   ├── app_error.dart                 # アプリエラーモデル
 │   ├── memo.dart                      # メモモデル
 │   ├── schedule.dart                  # スケジュールモデル
-│   └── task.dart                      # タスクモデル
+│   ├── schedule_template.dart        # スケジュールテンプレートモデル
+│   ├── task.dart                      # タスクモデル
+│   └── task_template.dart             # タスクテンプレートモデル
 ├── services/
-│   └── supabase_service.dart          # データベース操作サービス（認証・タスク・メモ・スケジュール）
+│   ├── supabase_service.dart          # Supabaseデータベース操作サービス（認証・タスク・メモ・スケジュール）
+│   ├── user_service.dart              # ユーザー管理サービス
+│   ├── settings_service.dart          # 設定管理サービス
+│   ├── main_data_service.dart         # メインデータ管理サービス
+│   ├── data_export_service.dart       # データエクスポートサービス
+│   ├── data_import_service.dart       # データインポートサービス
+│   ├── local_database_service.dart    # ローカルデータベースサービス
+│   ├── local_task_service.dart        # ローカルタスクサービス
+│   ├── local_task_template_service.dart # ローカルタスクテンプレートサービス
+│   ├── local_memo_service.dart        # ローカルメモサービス
+│   ├── local_schedule_service.dart    # ローカルスケジュールサービス
+│   └── local_schedule_template_service.dart # ローカルスケジュールテンプレートサービス
 ├── screens/
-│   ├── task_screen.dart               # タスク管理画面
-│   ├── schedule_screen.dart           # スケジュール管理画面
-│   ├── memo_screen.dart               # メモ一覧画面
-│   ├── memo_detail_screen.dart        # メモ詳細・編集画面
-│   ├── unified_auth_screen.dart       # 統合認証画面
-│   ├── account_screen.dart            # アカウント管理画面
-│   ├── settings_screen.dart           # 設定画面
+│   ├── auth/                          # 認証関連画面
+│   │   ├── unified_auth_screen.dart   # 統合認証画面（ログイン・新規登録）
+│   │   └── password_reset_screen.dart # パスワードリセット画面
+│   ├── task/
+│   │   └── task_screen.dart           # タスク管理画面
+│   ├── schedule/                      # スケジュール関連画面
+│   │   ├── schedule_screen.dart       # スケジュール管理画面
+│   │   ├── schedule_calendar.dart     # スケジュールカレンダー
+│   │   ├── schedule_calendar_header.dart # カレンダーヘッダー
+│   │   ├── schedule_list_title.dart   # スケジュールリストタイトル
+│   │   └── empty_schedule_state.dart  # 空のスケジュール状態表示
+│   ├── memo/                          # メモ関連画面
+│   │   ├── memo_screen.dart           # メモ一覧画面
+│   │   └── memo_detail_screen.dart    # メモ詳細・編集画面
 │   └── settings/                      # 設定画面群
+│       ├── settings_screen.dart       # 設定メイン画面
 │       ├── account_settings_screen.dart    # アカウント設定画面
 │       ├── app_info_screen.dart           # アプリ情報画面
 │       ├── data_management_screen.dart     # データ管理画面
 │       ├── help_screen.dart               # ヘルプ画面
+│       ├── license_screen.dart            # ライセンス画面
 │       ├── notification_settings_screen.dart # 通知設定画面
 │       ├── privacy_settings_screen.dart    # プライバシー設定画面
+│       ├── privacy_policy_screen.dart      # プライバシーポリシー画面
+│       ├── terms_screen.dart               # 利用規約画面
 │       └── theme_settings_screen.dart      # テーマ設定画面
 ├── utils/
 │   ├── calculator_utils.dart          # 計算ユーティリティ
 │   ├── color_utils.dart               # カラーユーティリティ
 │   ├── error_handler.dart             # エラーハンドリングユーティリティ
-│   └── network_utils.dart             # ネットワークユーティリティ
+│   ├── network_utils.dart             # ネットワークユーティリティ
+│   ├── phone_validator.dart           # 電話番号バリデーター
+│   └── text_selection_menu_builder.dart # テキスト選択メニュービルダー
 └── widgets/
     ├── account/                        # アカウント関連ウィジェット
+    │   ├── account_deletion_dialog.dart # アカウント削除ダイアログ
     │   ├── account_info_item.dart      # アカウント情報アイテム
     │   ├── logged_in_view.dart         # ログイン済み表示
     │   ├── logout_dialog.dart          # ログアウトダイアログ
@@ -93,53 +122,67 @@ lib/
     │   ├── custom_app_bar.dart         # カスタムアプリバー
     │   └── static_header_guideline.dart # 静的ヘッダーガイドライン
     ├── auth/                           # 認証関連ウィジェット
-    │   ├── google_signin_button.dart   # Googleサインインボタン
     │   ├── login_bottom_sheet.dart     # ログインボトムシート
     │   ├── signup_bottom_sheet.dart    # サインアップボトムシート
-    │   └── x_signin_button.dart        # X（Twitter）サインインボタン
+    │   └── password_reset_email_bottom_sheet.dart # パスワードリセットメール送信ボトムシート
+    ├── common/                         # 共通ウィジェット
+    │   ├── bottom_sheet_header.dart   # ボトムシートヘッダー
+    │   ├── count_badge.dart           # カウントバッジ
+    │   └── time_picker_bottom_sheet.dart # 時間選択ボトムシート
+    ├── error/                          # エラー関連ウィジェット
+    │   └── error_banner.dart          # エラーバナー
     ├── memo/                           # メモ関連ウィジェット
+    │   ├── color_filter_bottom_sheet.dart # カラーフィルターボトムシート
     │   ├── empty_memo_state.dart       # 空のメモ状態表示
     │   ├── memo_back_header.dart       # メモ画面ヘッダー
+    │   ├── memo_color_selector.dart    # メモカラーセレクター
+    │   ├── memo_dialog.dart            # メモダイアログ
+    │   ├── memo_edit_dialog.dart       # メモ編集ダイアログ
+    │   ├── memo_edit_form_header.dart  # メモ編集フォームヘッダー
+    │   ├── memo_edit_submit_button.dart # メモ編集送信ボタン
+    │   ├── memo_filter_header.dart     # メモフィルターヘッダー
     │   ├── memo_filter.dart            # メモフィルター
     │   ├── memo_item_card.dart         # メモアイテムカード
-    │   └── memo_save_manager.dart      # メモ自動保存管理
+    │   ├── memo_mode_selector.dart     # メモモードセレクター
+    │   └── memo_save_manager.dart       # メモ自動保存管理
     ├── navigation/
     │   └── bottom_navigation_bar.dart # カスタムボトムナビゲーション
     ├── overlays/
     │   ├── account_info_overlay.dart   # アカウント情報オーバーレイ
-    │   └── custom_bottom_sheet.dart    # カスタムボトムシート
+    │   ├── memo_sort_overlay.dart      # メモソートオーバーレイ
+    │   └── sort_overlay.dart           # ソートオーバーレイ
     ├── schedule/                       # スケジュール関連ウィジェット
-    │   ├── add_schedule_bottom_sheet.dart # スケジュール追加ボトムシート
-    │   ├── custom_time_picker.dart     # カスタム時間選択ピッカー（PageView版）
+    │   ├── color_picker_bottom_sheet.dart # カラーピッカーボトムシート
     │   ├── notification_settings.dart  # 通知設定ウィジェット
-    │   └── time_setting_widget.dart    # 時間設定ウィジェット（間隔選択・時間選択）
+    │   ├── schedule_basic_settings.dart # スケジュール基本設定
+    │   ├── schedule_card.dart           # スケジュールカード
+    │   ├── schedule_dialog.dart        # スケジュールダイアログ
+    │   ├── schedule_form_header.dart   # スケジュールフォームヘッダー
+    │   ├── schedule_form_submit_button.dart # スケジュールフォーム送信ボタン
+    │   ├── schedule_template_bottom_sheet.dart # スケジュールテンプレートボトムシート
+    │   └── schedule_time_selector.dart # スケジュール時間セレクター
     ├── settings/                       # 設定関連ウィジェット
     │   ├── settings_action_item.dart   # 設定アクションアイテム
     │   ├── settings_navigation_item.dart # 設定ナビゲーションアイテム
     │   ├── settings_selection_item.dart # 設定選択アイテム
-    │   └── settings_toggle_item.dart   # 設定トグルアイテム
+    │   ├── settings_toggle_item.dart   # 設定トグルアイテム
+    │   └── tappable_settings_card.dart # タップ可能な設定カード
+    ├── task/                           # タスク関連ウィジェット
+    │   ├── task_card.dart              # タスクカード
+    │   ├── task_dialog.dart            # タスクダイアログ
+    │   ├── task_due_date_selector.dart # タスク期日セレクター
+    │   ├── task_form_header.dart       # タスクフォームヘッダー
+    │   ├── task_form_submit_button.dart # タスクフォーム送信ボタン
+    │   ├── task_priority_selector.dart # タスク優先度セレクター
+    │   ├── task_template_bottom_sheet.dart # タスクテンプレートボトムシート
+    │   └── task_title_input.dart       # タスクタイトル入力
+    ├── template/                       # テンプレート関連ウィジェット
+    │   ├── empty_template_state.dart   # 空のテンプレート状態表示
+    │   └── template_create_button.dart # テンプレート作成ボタン
     ├── color_palette.dart              # カラーパレット
     ├── quill_color_panel.dart          # Quillカラーパネル
     ├── quill_rich_editor.dart          # リッチテキストエディタ
     └── quill_toolbar.dart              # エディタツールバー
-
-database/
-├── README.md                          # データベースドキュメント
-├── schema/
-│   └── initial_schema.sql             # データベーススキーマ定義
-└── migrations/
-    ├── 001_memo_mode.sql              # メモモード追加
-    ├── 002_phone_field.sql            # 電話番号フィールド追加
-    ├── 003_rich_content.sql           # リッチコンテンツ対応
-    ├── 004_smart_trigger.sql          # スマートトリガー実装
-    └── 005_add_schedule_color.sql     # スケジュール色設定追加
-
-assets/
-├── icons/
-│   └── app_icon.png                   # アプリアイコン
-└── x_logo_white.svg                   # Xロゴ（白）
-
-env.example                            # 環境変数設定例
 ```
 
 ##  技術スタック
@@ -270,4 +313,4 @@ dependencies:
 プロジェクトへの貢献は歓迎します！  
 新しい機能の提案やバグ報告は、GitHubのIssueでお知らせください。
 
-*README最終更新: 2025/12/18*  
+*README最終更新: 2025/1/19*  
