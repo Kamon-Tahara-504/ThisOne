@@ -64,4 +64,9 @@ BUILD_INSTRUCTIONS.md
 ANDROID_RELEASE_SETUP.md
 GOOGLE_PLAY_RELEASE_GUIDE.md
 
+# Cursor and VS Code related
 .cursor
+.vscode
+
+# Scripts
+scripts/

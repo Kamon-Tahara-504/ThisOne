@@ -68,6 +68,10 @@ class SupabaseConfig {
       if (kDebugMode) {
         print('Supabase初期化エラー: $e');
       }
+      // 環境変数が設定されていない場合のエラーを特別に処理
+      if (e.toString().contains('環境変数が設定されていません')) {
+        rethrow; // 環境変数エラーはそのまま再スロー
+      }
       // 本番環境では詳細なエラー情報を隠す
       if (kReleaseMode) {
         throw Exception('データベースの初期化に失敗しました。');

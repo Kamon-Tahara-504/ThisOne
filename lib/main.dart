@@ -840,7 +840,7 @@ class ErrorApp extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'アプリを再起動してください。\n問題が続く場合は、アプリを再インストールしてください。',
+                  _getErrorMessage(error),
                   style: TextStyle(color: Colors.grey[400], fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -880,5 +880,23 @@ class ErrorApp extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// エラーメッセージを取得（環境変数エラーの場合、より詳細な情報を表示）
+  static String _getErrorMessage(Object error) {
+    final errorString = error.toString();
+    
+    // 環境変数が設定されていない場合のエラー
+    if (errorString.contains('環境変数が設定されていません') ||
+        errorString.contains('SUPABASE_URL') ||
+        errorString.contains('SUPABASE_ANON_KEY')) {
+      return 'アプリの設定が正しくありません。\n'
+          '開発者にお問い合わせください。\n\n'
+          'エラー: 環境変数が設定されていません';
+    }
+    
+    // その他のエラー
+    return 'アプリを再起動してください。\n'
+        '問題が続く場合は、アプリを再インストールしてください。';
   }
 }
